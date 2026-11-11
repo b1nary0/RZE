@@ -189,7 +189,7 @@ A scene can have any number of cameras; one of them is the **main camera**, whic
 - `GameObjectLoader` creates objects from a batch of entries (a whole file). It links each to its parent by the GUID **saved in the batch**, so links hold even when an object is given a new GUID; a parent that isn't in the batch is looked up in the scene by GUID. `GetTopLevelObjects()` returns the ones whose parent wasn't in the batch.
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     File["scene file"] --> Parse["ParseSceneFile / Parse"]
     Parse --> Up["SceneFormat::Upgrade<br/>v1 -> v2, validate"]

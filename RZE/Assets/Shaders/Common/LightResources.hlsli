@@ -24,8 +24,11 @@ struct Light
 	float3 Colour;    // sRGB
 	float  Strength;
 	int    ShadowIndex; // Which of its type's shadow maps it casts into; -1 for none
-	// Without it, LightCount would pack into the last light's spare bytes instead of where the C++ layout has it
-	float3 _Pad;
+	// Without it, LightCount would pack into the last light's spare bytes instead of where the C++ layout has it. Three
+	// scalars rather than a float3: GLSL can't place a vector at this offset, and the layout is the same.
+	float _Pad0;
+	float _Pad1;
+	float _Pad2;
 };
 
 // Mirrors GraphicsLayouts::LightBufferLayout (Graphics/GraphicsLayouts.h)
@@ -122,7 +125,7 @@ float SampleDirectionalShadow(float3 worldPos, float3 vertexNormal)
 
 // The direction to sample a cube texture with to read what was rendered towards worldDirection. D3D's cube is
 // left-handed with +Z forward and ours is right-handed with -Z forward, so Z flips. Mirrors
-// CubeMap::ToSampleDirection (Graphics/CubeMap.h).
+// CubeMap::ToSampleDirection (Engine/Src/Graphics/CubeMap.h).
 float3 ToCubeSampleDirection(float3 worldDirection)
 {
 	return float3(worldDirection.xy, -worldDirection.z);

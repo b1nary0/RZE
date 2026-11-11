@@ -35,10 +35,12 @@
 #include <Utils/Math/Ray.h>
 #include <Utils/Math/Units.h>
 
-#include <ImGui/imgui.h>
-#include <imGUI/ImGuizmo.h>
+#include <imgui/imgui.h>
+#include <imgui/ImGuizmo.h>
 
 #include <algorithm>
+#include <optional>
+#include <string>
 
 namespace
 {
@@ -62,6 +64,47 @@ namespace
 			return *groundPoint;
 		}
 		return pick.CameraRay.GetPoint(k_fallbackDistance);
+	}
+
+	// The grid's square size for the toolbar, e.g. "1 m squares"
+	std::string GetSquareSizeText(float squareSize)
+	{
+		return Editor::EditorUI::FormatMetres(squareSize) + " squares";
+	}
+
+	// The widest the square size text gets: the squares start at a snap size and grow tenfold up to k_maxLevels times
+	float GetWidestSquareSizeTextWidth()
+	{
+		float widest = 0.0f;
+		for (const float snapSize : Editor::EditorSettings::k_snapSizeOptions)
+		{
+			float squareSize = snapSize;
+			for (int level = 0; level <= Editor::EditorGrid::k_maxLevels; ++level)
+			{
+				widest = std::max(widest, ImGui::CalcTextSize(GetSquareSizeText(squareSize).c_str()).x);
+				squareSize *= 10.0f;
+			}
+		}
+		return widest;
+	}
+
+	// One radio button per option, labelled by format, on the line of what's before them (e.g. a label). Returns the
+	// option clicked this frame.
+	template <size_t Count>
+	std::optional<float> DrawStepOptions(const char* id, const float (&options)[Count], float value, std::string (*format)(float))
+	{
+		std::optional<float> picked;
+		ImGui::PushID(id);
+		for (const float option : options)
+		{
+			ImGui::SameLine();
+			if (ImGui::RadioButton(format(option).c_str(), value == option))
+			{
+				picked = option;
+			}
+		}
+		ImGui::PopID();
+		return picked;
 	}
 }
 
@@ -155,8 +198,65 @@ namespace Editor
 			ImGui::EndDisabled();
 		}
 
-		m_gizmoState.m_snapper.DisplayControls(context.GetSettings(), m_gizmoState.m_currentOpMode);
-		m_grid.DisplayControls();
+		DrawSnapControls(context.GetSettings());
+		DrawGridControls();
+	}
+
+	void SceneViewPanel::DrawSnapControls(EditorSettings& settings)
+	{
+		const EditorUI::ScopedToolbarSpacing spacing;
+		const int operation = m_gizmoState.m_currentOpMode;
+		GizmoSnapper& snapper = m_gizmoState.m_snapper;
+
+		// Greyed out rather than hidden, so the centred toolbar doesn't shift. Scaling doesn't snap.
+		EditorUI::ToolbarGroupSeparator();
+		ImGui::BeginDisabled(operation == ImGuizmo::SCALE);
+		bool isSnapping = snapper.IsEnabled();
+		if (ImGui::Checkbox("Snap (X)", &isSnapping))
+		{
+			snapper.ToggleEnabled();
+		}
+		ImGui::EndDisabled();
+
+		EditorUI::ToolbarGroupSeparator();
+		ImGui::BeginDisabled(operation != ImGuizmo::TRANSLATE);
+		ImGui::TextUnformatted("Move step:");
+		if (const std::optional<float> snapSize = DrawStepOptions("SnapSize", EditorSettings::k_snapSizeOptions, settings.GetSnapSize(), &EditorUI::FormatMetres))
+		{
+			settings.SetSnapSize(*snapSize);
+		}
+		ImGui::EndDisabled();
+
+		EditorUI::ToolbarGroupSeparator();
+		ImGui::BeginDisabled(operation != ImGuizmo::ROTATE);
+		ImGui::TextUnformatted("Rotate step:");
+		if (const std::optional<float> rotationStep = DrawStepOptions("RotationStep", EditorSettings::k_rotationStepOptions, settings.GetRotationStep(), &EditorUI::FormatDegrees))
+		{
+			settings.SetRotationStep(*rotationStep);
+		}
+		ImGui::EndDisabled();
+	}
+
+	void SceneViewPanel::DrawGridControls()
+	{
+		const EditorUI::ScopedToolbarSpacing spacing;
+
+		EditorUI::ToolbarGroupSeparator();
+		bool isVisible = m_grid.IsVisible();
+		if (ImGui::Checkbox("Grid", &isVisible))
+		{
+			m_grid.SetVisible(isVisible);
+		}
+
+		// So it's clear which level is showing once the squares outgrow the snap size. Shown with the grid hidden too,
+		// and given the room of the widest it gets, so the centred toolbar doesn't shift.
+		ImGui::TextDisabled("%s", GetSquareSizeText(m_grid.GetSquareSize()).c_str());
+		const float spare = GetWidestSquareSizeTextWidth() - ImGui::GetItemRectSize().x;
+		if (spare > 0.0f)
+		{
+			ImGui::SameLine(0.0f, 0.0f);
+			ImGui::Dummy(ImVec2(spare, 0.0f));
+		}
 	}
 
 	void SceneViewPanel::Draw(EditorContext& context)
@@ -166,26 +266,17 @@ namespace Editor
 
 		viewport.IsHovered = IsHovered();
 
-		ImVec2 viewportPos = ImGui::GetWindowPos();
-		if (viewportPos.x != m_position.X() && viewportPos.y != m_position.Y())
-		{
-			m_position.SetXY(viewportPos.x, viewportPos.y);
-		}
+		// Every frame, whichever way the panel moved: picks, icons, drops and the gizmo are placed from it
+		const ImVec2 viewportPos = ImGui::GetWindowPos();
+		m_position.SetXY(viewportPos.x, viewportPos.y);
 
 		ImVec2 viewportDims = ImGui::GetContentRegionAvail();
 		if (viewportDims.x != m_dimensions.X() || viewportDims.y != m_dimensions.Y())
 		{
 			m_dimensions.SetXY(viewportDims.x, viewportDims.y);
 			viewport.Size = m_dimensions;
+			// The cameras frame this size (CameraComponent::CreateRenderCamera, EditorCameraComponent)
 			RZE().GetRenderEngine().GetMainView().ViewportSize = m_dimensions;
-
-			// The editor camera doesn't exist while a scene is loading; it picks up
-			// the viewport size when it's created (SceneDocument::CreateEditorCamera).
-			GameObjectComponentPtr<EditorCameraComponent> cameraComponent = context.GetEditorCameraComponent();
-			if (cameraComponent != nullptr)
-			{
-				cameraComponent->SetAspectRatio(m_dimensions.X() / m_dimensions.Y());
-			}
 		}
 
 		Rendering::RenderTargetTexture* const pRTT = RZE().GetApplication().GetRTT();
@@ -502,8 +593,8 @@ namespace Editor
 		const Vector3D right = forward.Cross(camera.GetUpDir()).Normalized();
 		const Vector3D up = right.Cross(forward);
 
-		// The aspect ratio is only set once the camera is in a scene; fall back to the scene view's
-		const float aspectRatio = camera.GetAspectRatio() > 0.0f ? camera.GetAspectRatio() : GetDimensions().X() / GetDimensions().Y();
+		// A camera takes the shape of the view it renders into: here, the scene view
+		const float aspectRatio = GetDimensions().X() / GetDimensions().Y();
 		const float tanHalfFov = std::tan(camera.GetFOV() * 0.5f * MathUtils::ToRadians);
 
 		// Corner i is on the right if bit 0 is set and on top if bit 1 is set
@@ -768,32 +859,33 @@ namespace Editor
 
 		Functor<void, const InputKey&> keyFunc([this, &inputHandler](const InputKey& key)
 			{
-				if (inputHandler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) != EButtonState::ButtonState_Pressed)
+				// Not while flying the camera, which uses the same keys
+				if (!inputHandler.GetMouseState().IsDownThisFrame(EMouseButton::MouseButton_Right))
 				{
 					switch (key.GetKeyCode())
 					{
-					case Win32KeyCode::Key_W:
+					case KeyCode::Key_W:
 						m_gizmoState.m_currentOpMode = ImGuizmo::TRANSLATE;
 						break;
-					case Win32KeyCode::Key_E:
+					case KeyCode::Key_E:
 						m_gizmoState.m_currentOpMode = ImGuizmo::ROTATE;
 						break;
-					case Win32KeyCode::Key_R:
+					case KeyCode::Key_R:
 						m_gizmoState.m_currentOpMode = ImGuizmo::SCALE;
 						break;
-					case Win32KeyCode::Key_Q:
+					case KeyCode::Key_Q:
 						m_gizmoState.m_transformationSpace = (m_gizmoState.m_transformationSpace == ImGuizmo::WORLD) ? ImGuizmo::LOCAL : ImGuizmo::WORLD;
 						break;
-					case Win32KeyCode::Key_X:
+					case KeyCode::Key_X:
 						m_gizmoState.m_snapper.ToggleEnabled();
 						break;
 					}
 				}
 			});
-		inputHandler.BindAction(Win32KeyCode::Key_W, EButtonState::ButtonState_Pressed, keyFunc);
-		inputHandler.BindAction(Win32KeyCode::Key_E, EButtonState::ButtonState_Pressed, keyFunc);
-		inputHandler.BindAction(Win32KeyCode::Key_R, EButtonState::ButtonState_Pressed, keyFunc);
-		inputHandler.BindAction(Win32KeyCode::Key_Q, EButtonState::ButtonState_Pressed, keyFunc);
-		inputHandler.BindAction(Win32KeyCode::Key_X, EButtonState::ButtonState_Pressed, keyFunc);
+		inputHandler.BindAction(KeyCode::Key_W, EButtonState::ButtonState_Pressed, keyFunc);
+		inputHandler.BindAction(KeyCode::Key_E, EButtonState::ButtonState_Pressed, keyFunc);
+		inputHandler.BindAction(KeyCode::Key_R, EButtonState::ButtonState_Pressed, keyFunc);
+		inputHandler.BindAction(KeyCode::Key_Q, EButtonState::ButtonState_Pressed, keyFunc);
+		inputHandler.BindAction(KeyCode::Key_X, EButtonState::ButtonState_Pressed, keyFunc);
 	}
 }

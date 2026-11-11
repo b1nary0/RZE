@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Game/World/GameObjectComponents/ReflectionProbeComponent.h>
 
 #include <Game/GameScene.h>

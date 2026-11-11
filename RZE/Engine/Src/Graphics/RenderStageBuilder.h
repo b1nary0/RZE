@@ -5,6 +5,7 @@
 
 #include <Utils/DebugUtils/Debug.h>
 
+#include <algorithm>
 #include <vector>
 
 enum class ERenderDataAccess
@@ -57,10 +58,9 @@ private:
 	{
 		static_assert(IsRenderStageData<T>, "Render stage data must derive from RenderStageData<T>");
 
-		for (const RenderStageDeclaration::DataAccess& existing : m_declaration.Accesses)
-		{
-			AssertMsg(existing.TypeId != T::TypeId(), "A stage may declare each data contract only once");
-		}
+		AssertMsg(std::none_of(m_declaration.Accesses.begin(), m_declaration.Accesses.end(),
+			[](const RenderStageDeclaration::DataAccess& existing) { return existing.TypeId == T::TypeId(); }),
+			"A stage may declare each data contract only once");
 
 		m_declaration.Accesses.push_back({ T::TypeId(), T::Name(), access });
 	}

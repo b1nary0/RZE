@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Utils/Math/ViewProjection.h>
 
 #include <Utils/Math/Matrix4x4.h>

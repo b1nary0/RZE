@@ -9,7 +9,7 @@
 
 #include <Utils/Platform/Folders.h>
 
-#include <ImGui/imgui.h>
+#include <imgui/imgui.h>
 
 namespace
 {

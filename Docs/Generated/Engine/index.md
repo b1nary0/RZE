@@ -1,23 +1,26 @@
 # RZE Engine Knowledgebase
 
-RZE is a custom C++ game engine built with a hand-rolled entity/component scene model, a command-buffer DirectX 11 renderer running on its own thread, and an offline "asset burning" content pipeline. This knowledgebase documents how it works, organized by system.
+RZE is a custom C++ game engine built with a hand-rolled entity/component scene model, a command-buffer renderer running on its own thread (DirectX 11 on Windows, OpenGL 4.5 on Linux, behind one RHI), and an offline "asset burning" content pipeline. It builds and runs on Windows and Linux. This knowledgebase documents how it works, organized by system.
 
-This documentation is generated from a point-in-time read of the codebase. File paths are given relative to `C:\dev\RZE\RZE\` unless stated otherwise. When code and docs disagree, trust the code — grep the cited path to confirm before relying on a claim here.
+This documentation is generated from a point-in-time read of the codebase. File paths are given relative to the repo's `RZE/` folder unless stated otherwise. When code and docs disagree, trust the code — grep the cited path to confirm before relying on a claim here.
 
 ## How the repo is laid out
 
 ```
-RZE/                    (repo root, C:\dev\RZE)
+RZE/                    (repo root)
   RZE/                  (all source + build config)
     Engine/              — core engine library (this is the "Engine" module, not this knowledgebase)
-    Modules/Rendering/   — low-level DX11 renderer, independent of Engine
-    Editor/              — level/scene editor application (exe)
+    Modules/Rendering/   — low-level renderer behind an RHI (DX11, OpenGL), independent of Engine
+    Editor/              — level/scene editor application (exe), as EditorLib + EditorMain
+    EditorHarness/       — the Editor driven through stdin/stdout, for automation (exe)
     Game/                — shippable game application (exe)
     Utils/               — foundational library (math, containers, platform, no engine deps)
-    Externals/           — vendored source (ImGui + extensions)
+    Externals/           — vendored source (ImGui + extensions; glad and SPIRV-Cross for OpenGL)
     SourceAssetBurner/   — offline asset conditioning tool (exe)
-    ThirdParty/          — vendored prebuilt libs (Assimp, DirectXTK, GLM, RapidJSON, ...)
+    ThirdParty/          — vendored prebuilt libs and headers (SDL3, Assimp, DirectXTK, GLM, RapidJSON, ...)
     Config/, ProjectData/, Assets/, Make/, _project/, _build/
+  .claude/               — the run-rze skill (Editor drivers), WindowsChecks.md
+  .github/workflows/     — Windows.yml and Linux.yml CI
   Docs/                  — hand-written design notes + this generated knowledgebase
   DrawIO/                — original architecture diagrams (source for several diagrams reproduced here)
   Tools/                 — RZEHub.exe, Sharpmake, Assimp, Optick binaries
@@ -28,14 +31,15 @@ RZE/                    (repo root, C:\dev\RZE)
 Everything is wired together by Sharpmake (`RZE.sharpmake.cs`), and dependencies flow strictly one way — nothing later in this list is depended on by anything earlier:
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
-graph LR
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
+flowchart TD
     Utils["Utils<br/>(math, containers, platform — zero deps)"]
     Externals["Externals<br/>(vendored ImGui + extensions)"]
-    Rendering["Modules/Rendering<br/>(DX11 command-buffer renderer)"]
+    Rendering["Modules/Rendering<br/>(command-buffer renderer, DX11 or OpenGL)"]
     Engine["Engine<br/>(scene, components, resources, input)"]
     EditorLib["EditorLib<br/>(the Editor's code)"]
     Editor["Editor<br/>(exe)"]
+    Harness["EditorHarness<br/>(exe)"]
     Tests["UnitTests<br/>(exe)"]
     Game["Game<br/>(exe)"]
     SAB["SourceAssetBurner<br/>(exe)"]
@@ -48,11 +52,12 @@ graph LR
     Engine --> SAB
     Engine --> EditorLib
     EditorLib --> Editor
+    EditorLib --> Harness
     EditorLib --> Tests
     Engine --> Game
 ```
 
-Only the solid edges shown above are declared directly in Sharpmake (`AddPublicDependency<T>`). `EditorLib`, `Game`, and `SourceAssetBurner` each declare a *single* explicit dependency — on `Engine` (and `Editor` and `UnitTests` on `EditorLib`) — and receive `Utils`/`Externals`/`Rendering` transitively, because Sharpmake propagates a project's *public* dependencies to everything that depends on it. See [02-Architecture/Module-Dependency-Graph.md](02-Architecture/Module-Dependency-Graph.md) for the exact declarations and this transitivity mechanic.
+Only the solid edges shown above are declared directly in Sharpmake (`AddPublicDependency<T>`). `EditorLib`, `Game`, and `SourceAssetBurner` each declare a *single* explicit dependency — on `Engine` (and `Editor`, `EditorHarness` and `UnitTests` on `EditorLib`) — and receive `Utils`/`Externals`/`Rendering` transitively, because Sharpmake propagates a project's *public* dependencies to everything that depends on it. See [02-Architecture/Module-Dependency-Graph.md](02-Architecture/Module-Dependency-Graph.md) for the exact declarations and this transitivity mechanic.
 
 ## Navigating this knowledgebase
 
@@ -63,8 +68,8 @@ Only the solid edges shown above are declared directly in Sharpmake (`AddPublicD
 | [03-SceneAndGameObjects](03-SceneAndGameObjects/Scene-And-GameObject-Model.md) | GameScene, GameObject, the component system, built-in components |
 | [04-Rendering](04-Rendering/Rendering-Overview.md) | RenderEngine, render stages, materials/meshes/shaders, the low-level renderer module |
 | [05-AssetPipeline](05-AssetPipeline/Asset-Burning-Pipeline.md) | Offline asset burning (SourceAssetBurner) and runtime asset loading |
-| [06-Platform-And-Infrastructure](06-Platform-And-Infrastructure/Input-System.md) | Input, events, windowing, config, threading, memory, debug services, Utils reference |
-| [07-Editor](07-Editor/Editor-Overview.md) | The ImGui-based scene editor: its [framework](07-Editor/Editor-Framework.md) (context, panels, commands, undo, events), panels, [Object Inspector and property descriptors](07-Editor/Object-Inspector-And-Properties.md), gizmo snapping and grid, the [file browser and thumbnails](07-Editor/Thumbnails-And-File-Browser.md), the [status bar and Settings window](07-Editor/Status-Bar-And-Settings.md), and [every shortcut](07-Editor/Editor-Shortcuts.md) |
+| [06-Platform-And-Infrastructure](06-Platform-And-Infrastructure/Input-System.md) | [Platforms and graphics APIs](06-Platform-And-Infrastructure/Platforms-And-Graphics-APIs.md) (what differs per OS and API, and where), input, events, windowing, config, threading, memory, debug services, Utils reference |
+| [07-Editor](07-Editor/Editor-Overview.md) | The ImGui-based scene editor: its [framework](07-Editor/Editor-Framework.md) (context, panels, commands, undo, events), panels, [Object Inspector and property descriptors](07-Editor/Object-Inspector-And-Properties.md), gizmo snapping and grid, the [file browser and thumbnails](07-Editor/Thumbnails-And-File-Browser.md), the [status bar and Settings window](07-Editor/Status-Bar-And-Settings.md), [every shortcut](07-Editor/Editor-Shortcuts.md), and [EditorHarness and the drivers](07-Editor/EditorHarness-And-Drivers.md) that run it for automated checks |
 | [08-Game](08-Game/Game-App.md) | The playable game application shell |
 | [09-BuildSystem](09-BuildSystem/Sharpmake-Project-Graph.md) | Sharpmake project definitions, third-party dependencies |
 | [10-KnownIssues](10-KnownIssues/Architectural-Notes-And-TODOs.md) | Documented rough edges and TODOs found in the source |
@@ -72,7 +77,7 @@ Only the solid edges shown above are declared directly in Sharpmake (`AddPublicD
 ## Where to start
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart LR
     A["Building-And-Running"] --> B["World-Conventions<br/>(metres, +Y up, degrees)"]
     B --> C["Engine-Startup-And-Frame-Loop"]
@@ -93,7 +98,7 @@ timeline
     2026-10-09 : Declarative render pipeline (Render-Stages)
                : Frustum culling, cached shadow map
                : Async scene loading + job system rework (Asset-Import-Runtime, Threading-And-Jobs)
-               : RZE_LOG in Release and in the Editor's Log panel
+               : RZE_LOG in Release (now Development) and in the Editor's Log panel
     2026-10-10 : Camera icons and frustums, mesh bounds on selection
                : Assimp 6, metres and +Y-up conventions, no more mirrored models (World-Conventions)
                : 0..1 depth projections
@@ -148,16 +153,25 @@ timeline
                : Texture arrays and cube maps (Low-Level-Renderer-Module)
                : Point light range spheres, debug lines that show through walls (Editor-Panels)
     2026-10-25 : Shadow maps cached per light, SceneChangeLog (Render-Stages)
+    2026-11-04 : Builds and runs on Linux, Makefiles from Sharpmake, CI for both (Building-And-Running)
+               : SDL window, input and displays on both platforms (Windowing)
+               : IGFXDevice RHI with DX11 and OpenGL 4.5 backends, HLSL translated to GLSL (Low-Level-Renderer-Module)
+               : EditorHarness and drivers for automated checks (EditorHarness-And-Drivers)
+    2026-11-06 : SMAA beside FXAA, anti-aliasing in its own stage (Render-Stages)
+               : Graphics settings page, drop-downs on every page (Status-Bar-And-Settings)
+    2026-11-08 : Development (was Release) - optimized, with Debug's tools, the default build (Building-And-Running)
+               : Graphics validation by flag, per-function optimization switch (Debug-Services-And-Logging)
+               : VS Code workspace for Linux (Building-And-Running)
 ```
 
 | Area | What changed | Read |
 |---|---|---|
-| Rendering | Stages declare the data they read and write; the pipeline orders them. Main and secondary views. Culling, shadow caching, eye adaptation + ACES, FXAA (Off/Low/Medium/High, from Engine.ini's `[Rendering]` or Settings > Scene View). GPU picking stage. | [Render-Stages](04-Rendering/Render-Stages.md), [Engine-Graphics-Layer](04-Rendering/Engine-Graphics-Layer.md) |
+| Rendering | Stages declare the data they read and write; the pipeline orders them. Main and secondary views. Culling, shadow caching, eye adaptation + ACES, anti-aliasing by SMAA (the default, at High) or FXAA at up to four qualities, from Engine.ini's `[Rendering]` or Settings > Graphics. GPU picking stage. | [Render-Stages](04-Rendering/Render-Stages.md), [Engine-Graphics-Layer](04-Rendering/Engine-Graphics-Layer.md) |
 | Lights | One `LightComponent` with a Type drop-down: Point (the default) or Directional. Up to 16 lights, each lit by its type; point lights fall off over their range. The first directional light and the first 8 point lights cast shadows (a fitted 2D map, a cube each), each map rendered again only when its light or what it sees changes. The Rendering module makes texture arrays and cube maps. The editor shows point lights' range and how far they outshine the ambient light. Scenes saved with `DirectionalLightComponent` were rewritten; that name no longer loads. | [Built-In-Components](03-SceneAndGameObjects/Built-In-Components.md#lightcomponent), [Engine-Graphics-Layer](04-Rendering/Engine-Graphics-Layer.md#lightobject), [Render-Stages](04-Rendering/Render-Stages.md#shadowrenderstage), [Low-Level-Renderer-Module](04-Rendering/Low-Level-Renderer-Module.md#texture-arrays-and-cube-maps) |
 | Loading | Scenes load asynchronously: parsing on workers, GPU uploads time-sliced on the main thread. | [Asset-Import-Runtime](05-AssetPipeline/Asset-Import-Runtime.md), [Threading-And-Jobs](06-Platform-And-Infrastructure/Threading-And-Jobs.md) |
 | Content | Assimp 6.0.5, units converted to metres, models no longer mirrored, deterministic burns. **Re-burn after pulling.** | [Asset-Burning-Pipeline](05-AssetPipeline/Asset-Burning-Pipeline.md), [World-Conventions](02-Architecture/World-Conventions.md) |
 | Editor | Orbit/pan/dolly camera, glide-to-frame, light and camera icons, multi-select, click and marquee picking. Gizmo snapping (X, Ctrl to invert) and a fading ground grid. All shortcuts in one table. | [Editor-Panels](07-Editor/Editor-Panels.md), [Editor-Camera-And-Build-Launch](07-Editor/Editor-Camera-And-Build-Launch.md), [Gizmo-Snapping-And-Grid](07-Editor/Gizmo-Snapping-And-Grid.md), [Editor-Shortcuts](07-Editor/Editor-Shortcuts.md) |
-| Diagnostics | `RZE_LOG` in Release and in the Log panel, clearer assert dialogs, PIX markers only when a profiler is attached. `-perfcapture` frame-time recording for A/B comparisons. Log levels (Debug, Info, Warning, Error) with `[Level]` prefixes in the log file and colours in the Log panel, which filters by channel and search text; shader compile warnings and errors reach the log. | [Debug-Services-And-Logging](06-Platform-And-Infrastructure/Debug-Services-And-Logging.md), [Editor-Panels](07-Editor/Editor-Panels.md#log-logpanel) |
+| Diagnostics | `RZE_LOG` in Release (now Development) and in the Log panel, clearer assert dialogs, PIX markers only when a profiler is attached. `-perfcapture` frame-time recording for A/B comparisons. Log levels (Debug, Info, Warning, Error) with `[Level]` prefixes in the log file and colours in the Log panel, which filters by channel and search text; shader compile warnings and errors reach the log. | [Debug-Services-And-Logging](06-Platform-And-Infrastructure/Debug-Services-And-Logging.md), [Editor-Panels](07-Editor/Editor-Panels.md#log-logpanel) |
 | Editor framework | Panels share an `EditorContext` and register themselves; each has a data step (`Update`, before ImGui's frame) and a draw step. Scene changes are commands applied once per frame; an event bus reports loads, saves, edits and selection changes. Window title shows unsaved changes. | [Editor-Framework](07-Editor/Editor-Framework.md) |
 | Inspector | Components describe their properties in the Engine with no ImGui; the "Object Inspector" (was "Component View") draws them, nests materials, meshes and textures, and edits several selected objects at once. `OnEditorInspect` is gone. | [Object-Inspector-And-Properties](07-Editor/Object-Inspector-And-Properties.md), [Component-System](03-SceneAndGameObjects/Component-System.md) |
 | Scene model | `GameObjectPtr` / `GameObjectComponentPtr` know when their target is destroyed. Objects have a saved GUID; names can repeat. Scene files are version 2 (an array keyed by GUID); version 1 files convert on load. **Resave scenes to update them.** | [Scene-And-GameObject-Model](03-SceneAndGameObjects/Scene-And-GameObject-Model.md) |
@@ -168,7 +182,7 @@ timeline
 | Build | Editor's code is the `EditorLib` library; `UnitTests` (doctest) covers Editor and Engine code and runs in CI. | [Building-And-Running](01-GettingStarted/Building-And-Running.md#unit-tests), [Sharpmake-Project-Graph](09-BuildSystem/Sharpmake-Project-Graph.md) |
 | File browser | Load Scene, Save on a new scene and the inspector's asset paths open a modal browser of thumbnail tiles, with search and subfolders. The Win32 file dialogs are gone. | [Thumbnails-And-File-Browser](07-Editor/Thumbnails-And-File-Browser.md) |
 | Thumbnails | Scene and mesh thumbnails render **in the background** in a `HeadlessScene`: on save, on load, for a tile with none, or from Settings. They're in `ProjectData` and aren't tracked. | [Thumbnails-And-File-Browser](07-Editor/Thumbnails-And-File-Browser.md) |
-| Render scenes | Each `GameScene` owns a `RenderScene` (objects, lights, debug lines, shadow maps); any view can render any scene. `ViewCapture` renders one to a PNG through `Renderer::ReadTexture`. | [Engine-Graphics-Layer](04-Rendering/Engine-Graphics-Layer.md#scene-data), [Low-Level-Renderer-Module](04-Rendering/Low-Level-Renderer-Module.md#reading-back-from-the-gpu-readtexel-and-readtexture) |
+| Render scenes | Each `GameScene` owns a `RenderScene` (objects, lights, debug lines, shadow maps); any view can render any scene. `ViewCapture` renders one to a PNG through `Renderer::ReadTexture`. | [Engine-Graphics-Layer](04-Rendering/Engine-Graphics-Layer.md#scene-data), [Low-Level-Renderer-Module](04-Rendering/Low-Level-Renderer-Module.md#reading-back-from-the-gpu-readtexel-readtexture-and-readbackbuffer) |
 | Background work | `Background` async operations tick after foreground ones with their own small budget, and their jobs never take every worker. Operations say their kind and whether they're a `SubStep` of another; an `AsyncOperationFilter` (Engine.ini's `[BackgroundTasks]`, Settings > Background Tasks) picks which progress displays show. Operations can log steps and warnings, time themselves, and be grouped as one (`AsyncOperationGroup`). | [Threading-And-Jobs](06-Platform-And-Infrastructure/Threading-And-Jobs.md#background-work), [Asset-Import-Runtime](05-AssetPipeline/Asset-Import-Runtime.md#async-operations) |
 | Resources | Loads in flight are shared between batches. A resource is destroyed as soon as its last handle goes: the render thread's commands hold what they still use, including the textures the UI draws. | [Asset-Import-Runtime](05-AssetPipeline/Asset-Import-Runtime.md#releasing-resources) |
 | Bounds & transforms | `BoundingBox`; render objects, render scenes and object hierarchies cache their bounds, and moving doesn't rebuild them. World matrices are worked out when read, so they're right without an update. | [Scene-And-GameObject-Model](03-SceneAndGameObjects/Scene-And-GameObject-Model.md#bounds), [Built-In-Components](03-SceneAndGameObjects/Built-In-Components.md#transformcomponent) |
@@ -177,16 +191,19 @@ timeline
 | Inspector, part 2 | Components describe their lists' elements, edited through property paths with undo and multi-select. Properties can be overridable, enums, grouped into sections, disabled for a reason, or previews. A Materials list edits each slot; asset paths show file names with thumbnails and hover previews. | [Object-Inspector-And-Properties](07-Editor/Object-Inspector-And-Properties.md) |
 | Content Browser | Rename (F2), delete (to the editor's trash) and new folders, all undoable and surviving scene loads; changes on disk show as they happen; files drag onto the Object Inspector's asset fields. | [Thumbnails-And-File-Browser](07-Editor/Thumbnails-And-File-Browser.md#the-content-browser-contentbrowserpanel), [Editor-Framework](07-Editor/Editor-Framework.md#undo-and-redo) |
 | Loading without stalling | A mesh dropped in the scene view, and a mesh, material or texture set on an asset field (`.Preload<T>()`), load in the background first and show as tasks. Loads report real progress; a folder's images are one "Loading thumbnails" task. | [Object-Inspector-And-Properties](07-Editor/Object-Inspector-And-Properties.md#asset-fields), [Asset-Import-Runtime](05-AssetPipeline/Asset-Import-Runtime.md#one-resource-pendingresource) |
-| Frame pacing | The main loop is paced: frame rate caps, a slower rate while unfocused, a steadier delta time and real vsync on a flip-model swap chain. Spare frame time goes to async operations. The UI can update less often than the scene (every frame while you interact). Every queued window message is handled each frame, and input is let go when the window loses focus. The status bar shows frame stats; Settings has a Frame Rate page. | [Engine-Startup-And-Frame-Loop](02-Architecture/Engine-Startup-And-Frame-Loop.md#frame-pacing), [Low-Level-Renderer-Module](04-Rendering/Low-Level-Renderer-Module.md#the-swap-chain-and-vsync), [Input-System](06-Platform-And-Infrastructure/Input-System.md#interaction-and-focus), [Status-Bar-And-Settings](07-Editor/Status-Bar-And-Settings.md) |
-| Data location | The Editor, the Game and `SourceAssetBurner` all read `Assets`, `Config` and `ProjectData` from the source tree (`EDirectoryContext::Source`, was `Tools`); nothing is copied into `_build`, and `AssetCpy.bat` is gone. `BuildGame.bat` finds MSBuild itself; Launch Game starts `_build\debug\Game.exe` in the scene that's open in the editor, after offering to save it. | [Building-And-Running](01-GettingStarted/Building-And-Running.md), [Editor-Camera-And-Build-Launch](07-Editor/Editor-Camera-And-Build-Launch.md) |
+| Frame pacing | The main loop is paced: frame rate caps, a slower rate while unfocused, a steadier delta time and real vsync on a flip-model swap chain. Spare frame time goes to async operations. The UI can update less often than the scene (every frame while you interact). Every queued window message is handled each frame, and input is let go when the window loses focus. The status bar shows frame stats; Settings has a Frame Rate page. | [Engine-Startup-And-Frame-Loop](02-Architecture/Engine-Startup-And-Frame-Loop.md#frame-pacing), [Low-Level-Renderer-Module](04-Rendering/Low-Level-Renderer-Module.md#presenting-and-vsync), [Input-System](06-Platform-And-Infrastructure/Input-System.md#interaction-and-focus), [Status-Bar-And-Settings](07-Editor/Status-Bar-And-Settings.md) |
+| Data location | The Editor, the Game and `SourceAssetBurner` all read `Assets`, `Config` and `ProjectData` from the source tree (`EDirectoryContext::Source`, was `Tools`); nothing is copied into `_build`, and `AssetCpy.bat` is gone. `BuildGame.bat` finds MSBuild itself, and `BuildGame.sh` runs make on Linux; Launch Game starts `_build/development/Game` in the scene that's open in the editor, after offering to save it. | [Building-And-Running](01-GettingStarted/Building-And-Running.md), [Editor-Camera-And-Build-Launch](07-Editor/Editor-Camera-And-Build-Launch.md) |
 | Windowed apps | The Editor and the Game are windowed apps, so they open focused: as console apps, Windows Terminal's console window came up after theirs and took the foreground. `-console` opens a console. Asserts reach the log file and the Log panel. Build Game runs without a window. | [Debug-Services-And-Logging](06-Platform-And-Infrastructure/Debug-Services-And-Logging.md#the-console), [Editor-Camera-And-Build-Launch](07-Editor/Editor-Camera-And-Build-Launch.md) |
-| Start-up | The Editor shows a splash screen with the logo, what start-up is doing and the start scene's progress. The window is made cloaked and only appears once the start scene has loaded and the first frames are drawn, so it opens ready to use instead of white, half drawn or behind a loading dialog. An application opts in with `GetSplashScreenImage` and `IsReadyToShow`; the Game has no splash screen. | [Engine-Startup-And-Frame-Loop](02-Architecture/Engine-Startup-And-Frame-Loop.md#startup-sequence), [Windowing](06-Platform-And-Infrastructure/Windowing.md#splashscreen-splashscreenhcpp), [App-Shell-Pattern](02-Architecture/App-Shell-Pattern.md) |
+| Linux | RZE builds on Linux (clang, GNU make from Sharpmake, `-Werror`) and runs there with OpenGL 4.5; CI builds and tests both platforms. Per-platform code lives in `Windows/`, `Linux/`, `DX11/` and `OpenGL/` folders that only their platform compiles. Scene files save the same on both (components in the file's order, `\\` separators). | [Platforms-And-Graphics-APIs](06-Platform-And-Infrastructure/Platforms-And-Graphics-APIs.md), [Building-And-Running](01-GettingStarted/Building-And-Running.md), [Sharpmake-Project-Graph](09-BuildSystem/Sharpmake-Project-Graph.md), [ThirdParty-And-Externals](09-BuildSystem/ThirdParty-And-Externals.md) |
+| Automation | `EditorHarness` is the Editor with a harness beside it: input, screenshots read back from the back buffer, and state queries, as JSON lines on stdin, so the real cursor and focus are left alone. `driver.py` (Linux) and `driver.ps1` (Windows) drive the Editor through the harness or real input; on Linux a nested session runs it off-screen, in a KWin of its own. `.claude/WindowsChecks.md` lists what Windows still has to check. | [EditorHarness-And-Drivers](07-Editor/EditorHarness-And-Drivers.md), [Building-And-Running](01-GettingStarted/Building-And-Running.md#driving-the-running-editor) |
+| Start-up | The Editor shows a splash screen with the logo, what start-up is doing and the start scene's progress. The window is made cloaked and only appears once the start scene has loaded and the first frames are drawn, so it opens ready to use instead of white, half drawn or behind a loading dialog. An application opts in with `GetSplashScreenImage` and `IsReadyToShow`; the Game has no splash screen. | [Engine-Startup-And-Frame-Loop](02-Architecture/Engine-Startup-And-Frame-Loop.md#startup-sequence), [Windowing](06-Platform-And-Infrastructure/Windowing.md#splashscreen-splashscreenh), [App-Shell-Pattern](02-Architecture/App-Shell-Pattern.md) |
+| Configurations | Debug, Development and Retail. Development (formerly Release) is optimized and keeps every debugging aid: asserts, logging, the Game's ImGui, `START_TIMED_BLOCK`, symbols, and on Linux frame pointers. It's the default for `make`, the drivers, VS Code and the Editor's Build and Launch Game. Graphics validation is on in Debug and `-gfxvalidation` away in Development. `RZE_DISABLE_OPTIMIZATION` unoptimizes one function to debug it, and fails Retail's build if left in. | [Building-And-Running](01-GettingStarted/Building-And-Running.md#configurations), [Debug-Services-And-Logging](06-Platform-And-Infrastructure/Debug-Services-And-Logging.md#which-builds-have-what) |
 
 ## Key architectural themes (read this before diving into a section)
 
 1. **Singleton/service-locator core.** `RZE()` (a free function returning a global `RZE_Engine&`) is the hub nearly everything reaches through — `RZE().GetResourceHandler()`, `RZE().GetRenderEngine()`, etc. There is no dependency injection; see [Engine-Startup-And-Frame-Loop.md](02-Architecture/Engine-Startup-And-Frame-Loop.md).
 2. **Entity + component composition, not a data-oriented ECS.** `GameObject` owns a `std::vector<GameObjectComponentBase*>` of polymorphic components — classic OOP composition. Component type IDs are assigned via a CRTP static counter and a manual registration macro, not real reflection. See [Component-System.md](03-SceneAndGameObjects/Component-System.md).
-3. **Engine and low-level Renderer are separate libraries.** `Modules/Rendering` has zero dependency on `Engine` — it's a standalone DX11 abstraction with its own render thread and command queue. `Engine/Graphics` sits on top of it. See [Low-Level-Renderer-Module.md](04-Rendering/Low-Level-Renderer-Module.md).
+3. **Engine and low-level Renderer are separate libraries.** `Modules/Rendering` has zero dependency on `Engine` — it's a standalone renderer with its own render thread and command queue, over an RHI (`IGFXDevice`) with a DX11 and an OpenGL backend. Nothing above it knows the API, and nothing outside `Windowing/` and `Utils/Platform` knows the OS; see [Platforms-And-Graphics-APIs.md](06-Platform-And-Infrastructure/Platforms-And-Graphics-APIs.md). `Engine/Graphics` sits on top of it. See [Low-Level-Renderer-Module.md](04-Rendering/Low-Level-Renderer-Module.md).
 4. **Assets are "burned" offline, not loaded from source formats at runtime.** A separate tool, `SourceAssetBurner`, converts `.obj`/`.fbx` (via Assimp) into RZE's own binary `.meshasset`/`.materialasset` formats ahead of time; the runtime only ever reads the burned format, and loads scenes asynchronously. See [Asset-Burning-Pipeline.md](05-AssetPipeline/Asset-Burning-Pipeline.md).
 5. **Render passes are declarative.** Each render stage says what data it writes, reads or modifies, and the pipeline works out the order and checks it. Stages never call each other. See [Render-Stages.md](04-Rendering/Render-Stages.md).
 6. **The Editor and Game are thin shells over the same Engine.** Both subclass `RZE_Application` and mostly just configure render targets/stages and scene loading; nearly all logic lives in `Engine`. See [App-Shell-Pattern.md](02-Architecture/App-Shell-Pattern.md).

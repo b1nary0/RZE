@@ -21,7 +21,7 @@
 #include <Utils/Platform/Filepath.h>
 
 #ifdef IMGUI_ENABLED
-#include <imGUI/imgui.h>
+#include <imgui/imgui.h>
 #include <Graphics/RenderStages/ImGuiRenderStage.h>
 #endif
 
@@ -62,6 +62,7 @@ void GameApp::Initialize()
 	CreateRenderTarget(GetWindow()->GetClientSize());
 
 	RZE().GetRenderEngine().GetMainView().Target = m_renderTarget.get();
+	RZE().GetRenderEngine().GetMainView().ViewportSize = GetWindow()->GetClientSize();
 
 	GameScene& activeScene = RZE().GetActiveScene();
 
@@ -106,41 +107,42 @@ void GameApp::ShutDown()
 
 void GameApp::RegisterInputEvents(InputHandler& inputHandler)
 {
-	Functor<void, const InputKey&> keyFunc([this](const InputKey& key)
+	Functor<void, const InputKey&> keyFunc([](const InputKey& key)
 	{
-		if (key.GetKeyCode() == Win32KeyCode::Escape)
+		if (key.GetKeyCode() == KeyCode::Escape)
 		{
 			RZE().PostExit();
 		}
-		else if (key.GetKeyCode() == Win32KeyCode::F1)
+		else if (key.GetKeyCode() == KeyCode::F1)
 		{
 			RZE().SetWindowSize(Vector2D(1280, 720));
 		}
-		else if (key.GetKeyCode() == Win32KeyCode::F2)
+		else if (key.GetKeyCode() == KeyCode::F2)
 		{
 			RZE().SetWindowSize(Vector2D(1600, 900));
 		}
-		else if (key.GetKeyCode() == Win32KeyCode::F3)
+		else if (key.GetKeyCode() == KeyCode::F3)
 		{
 			RZE().SetWindowSize(Vector2D(1920, 1080));
 		}
 	});
-	inputHandler.BindAction(Win32KeyCode::Escape, EButtonState::ButtonState_Pressed, keyFunc);
-	inputHandler.BindAction(Win32KeyCode::F1, EButtonState::ButtonState_Pressed, keyFunc);
-	inputHandler.BindAction(Win32KeyCode::F2, EButtonState::ButtonState_Pressed, keyFunc);
-	inputHandler.BindAction(Win32KeyCode::F3, EButtonState::ButtonState_Pressed, keyFunc);
-	inputHandler.BindAction(Win32KeyCode::Key_K, EButtonState::ButtonState_Pressed, keyFunc);
+	inputHandler.BindAction(KeyCode::Escape, EButtonState::ButtonState_Pressed, keyFunc);
+	inputHandler.BindAction(KeyCode::F1, EButtonState::ButtonState_Pressed, keyFunc);
+	inputHandler.BindAction(KeyCode::F2, EButtonState::ButtonState_Pressed, keyFunc);
+	inputHandler.BindAction(KeyCode::F3, EButtonState::ButtonState_Pressed, keyFunc);
 }
 
-bool GameApp::ProcessInput(const InputHandler& handler)
+InputGate GameApp::ProcessInput(const InputHandler& handler)
 {
 #ifdef IMGUI_ENABLED
 	ImGuiInput::SubmitInput(handler);
 
-	return false;
-#endif
-
+	// Each device goes to the game unless ImGui is using it: the keyboard while typing in a field, the mouse over a window
+	const ImGuiIO& io = ImGui::GetIO();
+	return InputGate{ !io.WantCaptureKeyboard, !io.WantCaptureMouse };
+#else
 	return RZE_Application::ProcessInput(handler);
+#endif
 }
 
 void GameApp::OnWindowResize(const Vector2D& newSize)
@@ -150,18 +152,8 @@ void GameApp::OnWindowResize(const Vector2D& newSize)
 	CreateRenderTarget(newSize);
 	RZE().GetRenderEngine().GetMainView().Target = m_renderTarget.get();
 
+	// The main camera frames the view's size
 	RZE().GetRenderEngine().GetMainView().ViewportSize = newSize;
-
-	// @TODO This needs to be moved into a better spot. it is not wise to have this as boilerplate for such
-	// a low level concept (resizing camera to viewport)
-	GameObjectPtr cameraObject = RZE().GetActiveScene().GetMainCamera();
-	if (cameraObject == nullptr)
-	{
-		return;
-	}
-
-	GameObjectComponentPtr<CameraComponent> camera = cameraObject->GetComponent<CameraComponent>();
-	camera->SetAspectRatio(newSize.X() / newSize.Y());
 }
 
 void GameApp::CreateRenderTarget(const Vector2D& dimensions)

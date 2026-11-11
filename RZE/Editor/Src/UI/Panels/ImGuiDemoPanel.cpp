@@ -2,7 +2,7 @@
 
 #include <UI/Framework/PanelRegistry.h>
 
-#include <ImGui/imgui.h>
+#include <imgui/imgui.h>
 
 namespace Editor
 {

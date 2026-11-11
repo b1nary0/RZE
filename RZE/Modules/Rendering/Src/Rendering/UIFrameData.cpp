@@ -1,6 +1,6 @@
 #include <Rendering/UIFrameData.h>
 
-#include <imGUI/imgui.h>
+#include <imgui/imgui.h>
 
 namespace Rendering
 {

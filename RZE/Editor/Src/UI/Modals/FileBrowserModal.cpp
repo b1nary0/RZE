@@ -3,6 +3,7 @@
 #include <UI/Framework/EditorUI.h>
 
 #include <Utils/Platform/FileNames.h>
+#include <Utils/StringUtils.h>
 
 #include <algorithm>
 #include <cstring>
@@ -480,7 +481,7 @@ namespace Editor
 
 	void FileBrowserModal::SetFileName(const std::string& name)
 	{
-		strncpy_s(m_save->FileName, name.c_str(), _TRUNCATE);
+		StringUtils::CopyTruncated(m_save->FileName, name);
 		m_save->Error.clear();
 		m_save->PendingReplace = Filepath();
 	}

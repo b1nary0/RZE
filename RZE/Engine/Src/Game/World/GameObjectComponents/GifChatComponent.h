@@ -9,18 +9,15 @@
 
 #include <memory>
 
-struct GifData;
-
 class MaterialInstance;
 class RenderObject;
 class RenderScene;
 class Texture2D;
 
-class GifChatComponent : public GameObjectComponent<GifChatComponent>
+class GifChatComponent final : public GameObjectComponent<GifChatComponent>
 {
 public:
 	GifChatComponent();
-	~GifChatComponent() override;
 
 	//
 	// GameObjectComponent interface
@@ -29,6 +26,8 @@ public:
 	static void DescribeProperties(PropertyBuilder<GifChatComponent>& properties);
 
 	void Initialize() override;
+	// Releases the GIF's frames, material and mesh
+	void Uninitialize() override;
 	void OnAddToScene() override;
 	void OnRemoveFromScene() override;
 
@@ -53,7 +52,8 @@ private:
 	// never change scene
 	RenderScene* m_renderScene = nullptr;
 
-	int m_totalFrames;
+	// 0 until a GIF has loaded
+	int m_totalFrames = 0;
 	int m_currentDisplayingFrame = 0;
 	float m_elapsedMS = 0.0f;
 	std::vector<int> m_frameDelays;

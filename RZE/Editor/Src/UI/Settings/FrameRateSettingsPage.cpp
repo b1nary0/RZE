@@ -1,5 +1,6 @@
 #include <UI/Settings/FrameRateSettingsPage.h>
 
+#include <UI/Framework/EditorUI.h>
 #include <UI/Settings/SettingsPageRegistry.h>
 
 #include <RZE.h>
@@ -7,10 +8,11 @@
 #include <EngineCore/Config/FrameSettings.h>
 #include <EngineCore/Timing/FramePacer.h>
 
-#include <ImGui/imgui.h>
+#include <imgui/imgui.h>
 
 #include <cmath>
 #include <string>
+#include <vector>
 
 namespace
 {
@@ -22,7 +24,8 @@ namespace
 	constexpr int k_unfocusedFrameRateOptions[] = { 0, 10, 15, 30, 60 };
 	constexpr int k_uiFrameRateOptions[] = { 0, 60, 30, 20, 15 };
 
-	// A label, then one radio button per option on its line, with zeroLabel for 0. True when an option was picked.
+	// A label, then a drop-down of the options, with zeroLabel for 0. A rate Engine.ini set that isn't an option shows
+	// as itself. True when an option was picked.
 	template <size_t Count>
 	bool DrawFrameRateOptions(const char* label, const char* tooltip, float optionsX, const int (&options)[Count], const char* zeroLabel, double& frameRate)
 	{
@@ -30,22 +33,25 @@ namespace
 		ImGui::TextUnformatted(label);
 		ImGui::SetItemTooltip("%s", tooltip);
 		ImGui::SameLine(optionsX);
-		ImGui::Dummy(ImVec2(0.0f, 0.0f));
 
-		bool isPicked = false;
-		ImGui::PushID(label);
-		for (const int option : options)
+		std::vector<std::string> labels;
+		size_t selected = Count;
+		for (size_t option = 0; option < Count; ++option)
 		{
-			ImGui::SameLine();
-			const std::string optionLabel = option == 0 ? std::string(zeroLabel) : std::to_string(option);
-			if (ImGui::RadioButton(optionLabel.c_str(), std::lround(frameRate) == option))
+			labels.push_back(options[option] == 0 ? std::string(zeroLabel) : std::to_string(options[option]));
+			if (std::lround(frameRate) == options[option])
 			{
-				frameRate = static_cast<double>(option);
-				isPicked = true;
+				selected = option;
 			}
 		}
-		ImGui::PopID();
 
+		ImGui::PushID(label);
+		const bool isPicked = Editor::EditorUI::Combo("##FrameRate", labels, selected, std::to_string(std::lround(frameRate)).c_str());
+		ImGui::PopID();
+		if (isPicked)
+		{
+			frameRate = static_cast<double>(options[selected]);
+		}
 		return isPicked;
 	}
 }

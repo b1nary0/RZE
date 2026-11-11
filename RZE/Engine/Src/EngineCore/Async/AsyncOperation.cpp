@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <EngineCore/Async/AsyncOperation.h>
 
 #include <EngineCore/Threading/MainThreadDispatcher.h>

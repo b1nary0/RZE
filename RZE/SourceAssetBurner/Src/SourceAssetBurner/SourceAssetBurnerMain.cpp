@@ -17,6 +17,7 @@ namespace
 	}
 }
 
+// Exits with 1 if any source failed to import, so a build step running the burn fails with it
 int main(int argc, char* argv[])
 {
 	Filepath::SetDirectoryContext(EDirectoryContext::Source);
@@ -24,6 +25,8 @@ int main(int argc, char* argv[])
 	{
 		// Troll Assets/3D and BURN IT ALL
 		// MUAHAHAHAHAHAHAHAHAHAHAHAHHAHA HAH AH AA
+		size_t importedCount = 0;
+		size_t failedCount = 0;
 		Filepath assetsDir3D("Assets/3D/");
 		for (const auto& dirEntry : std::filesystem::recursive_directory_iterator(assetsDir3D.GetAbsolutePath()))
 		{
@@ -37,11 +40,25 @@ int main(int argc, char* argv[])
 					Filepath fp(path);
 
 					AssimpSourceImporter assimpImporter;
-					assimpImporter.Import(fp);
+					if (assimpImporter.Import(fp))
+					{
+						++importedCount;
+					}
+					else
+					{
+						++failedCount;
+					}
 				}
 			}
 		}
 
+		if (failedCount > 0)
+		{
+			RZE_LOG_ERROR_ARGS("SourceAssetBurner : %zu of %zu sources failed to import", failedCount, importedCount + failedCount);
+			return 1;
+		}
+
+		RZE_LOG_ARGS("SourceAssetBurner : imported %zu sources", importedCount);
 		return 0;
 	}
 	else
@@ -50,12 +67,13 @@ int main(int argc, char* argv[])
 		// argv[0] is executable path
 		Filepath sourcePath(argv[1]);
 
-		if (sourcePath.IsValid())
+		if (!sourcePath.IsValid())
 		{
-			AssimpSourceImporter assimpImporter;
-			assimpImporter.Import(sourcePath);
+			RZE_LOG_ERROR_ARGS("SourceAssetBurner : no source file at [%s]", argv[1]);
+			return 1;
 		}
 
-		return 0;
+		AssimpSourceImporter assimpImporter;
+		return assimpImporter.Import(sourcePath) ? 0 : 1;
 	}
 }

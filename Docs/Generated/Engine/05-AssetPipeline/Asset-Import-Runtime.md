@@ -37,7 +37,7 @@ Used for `StaticMeshResource`, `MaterialResource`, `Texture2D`, `VertexShader` /
 A resource opts in by returning `true` from `SupportsAsyncLoad()` and splitting its load in two. Today `StaticMeshResource`, `MaterialResource` and `Texture2D` do; anything else requested through a batch falls back to a normal synchronous load.
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     Req["batch.Request&lt;T&gt;(path)"] --> Loaded{"already<br/>loaded?"}
     Loaded -->|yes| Ref["just reference it"]
@@ -101,17 +101,21 @@ At shutdown, `ResourceHandler::ShutDown()` releases whatever is still loaded, lo
 Long-running work, like loading a scene or building the game, runs as an **`AsyncOperation`** (`Engine\Src\EngineCore\Async\`), driven by `AsyncOperationManager` (`RZE().GetAsyncOperationManager()`).
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 stateDiagram-v2
     [*] --> Running: Start() / OnStart()
-    Running --> Running: OnTick(budget) each frame,<br/>again with spare time (idle)<br/>(+ worker jobs via PushWorkerJob)
+    note right of Running
+    While running: OnTick(budget) each
+    frame, and again with spare time
+    (idle), plus worker jobs (PushWorkerJob)
+end note
     Running --> Finishing: Complete() / Fail() / cancel
     Finishing --> Finished: no worker jobs left<br/>OnFinished(state) + completion callback
     Finished --> [*]: same tick: OnCleanup(), released
 ```
 
 - **Threading rules:** progress, status text and cancellation can be set from any thread. Every hook and the completion callback run on the main thread. The manager won't finish an operation while any of its worker jobs are still running, so jobs can safely capture `this`.
-- **Frame budget** (`AsyncFrameBudget`): shared by the foreground operations each frame. It allows **8 ms** of main-thread time and **16 MB** of GPU uploads (soft limits; the first piece of work each frame always runs, so everything makes progress), and leaves **8 MB** of headroom in the render command arena (a hard limit). Background operations get a budget of their own on top (below).
+- **Frame budget** (`AsyncFrameBudget`): shared by the foreground operations each frame. It allows **8 ms** of main-thread time and **16 MB** of GPU uploads (soft limits; the first piece of work each frame always runs, so everything makes progress), and leaves **8 MB** of headroom in the render command arena (a hard limit, to keep uploads inside it; the arena [spills to the heap](../04-Rendering/Low-Level-Renderer-Module.md#arena-allocations) rather than overrunning when it's full). A step that needs more than the arena's size less that headroom fails with `exceeds the arena`, so with an arena under 8 MB, every step that needs arena memory fails (`CanEverAfford`). Background operations get a budget of their own on top (below).
 - **Idle time:** when a paced frame finishes early, `AsyncOperationManager::TickIdle(ms)` gives the spare time before the next frame to the running operations, foreground before background, right after the frame is handed to the renderer, so it adds nothing to that frame's latency. Its budget says it's idle (`AsyncFrameBudget::IsIdle()`): extra time within the same frame, not a new one, so work that counts frames counts only ticks where it's false (`CaptureBatchOperation`'s settle frames do). Idle ticks only give operations more time; finishing and cleaning them up, their callbacks, and starting new ones stay in `Tick()`. What an idle tick records goes out with the next frame, so the upload and arena bytes it uses come out of that frame's allowance. Frames only have idle time with vsync or a frame rate cap ([Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#waiting-for-the-next-frame)).
 - **Flags** (`EAsyncOperationFlags`, combinable):
 
@@ -157,7 +161,7 @@ Operations only describe themselves (their kind, and whether they're a `SubStep`
 `Engine\Src\Game\SceneLoadOperation.h/.cpp` loads a `.scene` file into a `GameScene` in three phases. The engine loads into the active scene, `Blocking`. A [`HeadlessScene`](../03-SceneAndGameObjects/Scene-And-GameObject-Model.md#headlessscene-a-scene-rendered-off-screen) loads into its own, `Background | SubStep`; the operation holds that scene by `shared_ptr`, so it stays alive until the load finishes even if its owner lets go.
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 sequenceDiagram
     participant Main as Main thread
     participant W as Worker threads

@@ -2,19 +2,24 @@
 
 #include <Rendering/Renderer.h>
 
+#include <Utils/EnumNames.h>
 #include <Utils/Math/Math.h>
 
-#include <ImGui/imgui_internal.h> // ImGui::GetCurrentTable
+#include <imgui/imgui_internal.h> // ImGui::GetCurrentTable
 
 #include <algorithm>
 #include <cmath>
 #include <cstdarg>
+#include <cstdio>
 
 namespace
 {
 	// Toolbar spacing, in pixels
 	constexpr float k_itemSpacingInGroup = 6.0f;
 	constexpr float k_groupGap = 12.0f;
+
+	// A settings drop-down's width, in font sizes: enough for its longest option ("Ambient occlusion")
+	constexpr float k_comboWidth = 11.0f;
 
 	// The label column never takes more than this share of a property table
 	constexpr float k_maxLabelColumnFraction = 0.5f;
@@ -367,6 +372,60 @@ namespace Editor
 			ImFont* const font = ImGui::GetFont();
 			const ImVec2 size = font->CalcTextSizeA(fontSize, FLT_MAX, 0.0f, text);
 			drawList->AddText(font, fontSize, ImVec2(centre.x - size.x * 0.5f, centre.y - size.y * 0.5f), colour, text);
+		}
+
+		std::string FormatMetres(float metres)
+		{
+			char text[32];
+			snprintf(text, sizeof(text), "%g m", metres);
+			return text;
+		}
+
+		std::string FormatDegrees(float degrees)
+		{
+			char text[32];
+			// UTF-8 degree sign, spelled out so it doesn't depend on the source file's encoding
+			snprintf(text, sizeof(text), "%g\xC2\xB0", degrees);
+			return text;
+		}
+
+		bool Combo(const char* id, const std::vector<std::string>& labels, size_t& selected, const char* unlisted)
+		{
+			bool isChanged = false;
+			ImGui::SetNextItemWidth(ImGui::GetFontSize() * k_comboWidth);
+			if (ImGui::BeginCombo(id, selected < labels.size() ? labels[selected].c_str() : unlisted))
+			{
+				for (size_t option = 0; option < labels.size(); ++option)
+				{
+					const bool isSelected = option == selected;
+					if (ImGui::Selectable(labels[option].c_str(), isSelected) && !isSelected)
+					{
+						selected = option;
+						isChanged = true;
+					}
+					if (isSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				ImGui::EndCombo();
+			}
+			return isChanged;
+		}
+
+		bool EnumCombo(const char* id, const EnumNames& names, size_t& selected)
+		{
+			return EnumCombo(id, names, names.GetCount(), selected);
+		}
+
+		bool EnumCombo(const char* id, const EnumNames& names, size_t count, size_t& selected)
+		{
+			std::vector<std::string> labels;
+			for (size_t value = 0; value < std::min(count, names.GetCount()); ++value)
+			{
+				labels.emplace_back(names.GetName(value));
+			}
+			return Combo(id, labels, selected);
 		}
 
 		ScopedToolbarSpacing::ScopedToolbarSpacing()

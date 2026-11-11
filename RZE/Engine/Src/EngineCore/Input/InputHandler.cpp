@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <EngineCore/Input/InputHandler.h>
 
 #include <DebugUtils/DebugServices.h>
@@ -16,15 +15,37 @@ void InputHandler::Initialize()
 	mInputKeyRegistry.reserve(MAX_KEYCODES_SUPPORTED);
 	for (U32 keyCodeIdx = 0; keyCodeIdx < MAX_KEYCODES_SUPPORTED; keyCodeIdx++)
 	{
-		// #TODO(Josh) Possibly do a better cast here -- maybe throw in a function too? Do some research
 		mInputKeyRegistry.insert({keyCodeIdx, InputKey(static_cast<unsigned char>(keyCodeIdx), keyCodeIdx)});
 	}
 }
 
-void InputHandler::RaiseEvents()
+void InputHandler::RaiseEvents(const InputGate& gate)
 {
-	mMouseState = mProxyMouseState;
-	mKeyboardState = mProxyKeyboardState;
+	// Keyboard first, then mouse, so a frame's key bindings fire before its mouse bindings
+	if (gate.Keyboard)
+	{
+		RaiseKeyboardEvents();
+	}
+	else
+	{
+		ResetKeyboard();
+	}
+
+	if (gate.Mouse)
+	{
+		RaiseMouseEvents();
+	}
+	else
+	{
+		ResetMouse();
+	}
+}
+
+void InputHandler::RaiseKeyboardEvents()
+{
+	// Prev becomes last frame's Cur, so GetButtonState and WasDownLastFrame count frames, however many events came
+	mKeyboardState.PrevKeyStates = mKeyboardState.CurKeyStates;
+	mKeyboardState.CurKeyStates = mProxyKeyboardState.CurKeyStates;
 
 	while (!mKeyActionQueue.empty())
 	{
@@ -32,8 +53,20 @@ void InputHandler::RaiseEvents()
 		mKeyActionQueue.pop();
 
 		AssertExpr(action.Key.IsValid());
-		RaiseKeyEvent(action.Key);
+		RaiseKeyEvent(action.Key, action.State);
 	}
+}
+
+void InputHandler::RaiseMouseEvents()
+{
+	// As for the keys: Prev is last frame's Cur
+	const std::bitset<MAX_MOUSE_BTN_SUPPORTED> lastFrameMouseBtnStates = mMouseState.CurMouseBtnStates;
+	const Vector2D lastFramePosition = mMouseState.CurPosition;
+	mMouseState = mProxyMouseState;
+	mMouseState.PrevMouseBtnStates = lastFrameMouseBtnStates;
+	// With no position last frame (none reported yet), this frame's: the first one isn't a move
+	mMouseState.PrevPosition = mHasMousePosition ? lastFramePosition : mMouseState.CurPosition;
+	mHasMousePosition = mProxyHasMousePosition;
 
 	while (!mMouseActionQueue.empty())
 	{
@@ -77,23 +110,46 @@ void InputHandler::BindMouseAction(EMouseButton::T button, EButtonState::T state
 	mMouseBtnBindings[button].emplace_back(button, state, func);
 }
 
-void InputHandler::OnKeyDown(const Int32 key, bool bIsRepeat)
+void InputHandler::BeginFrame()
 {
-	/* 
-	 * This function should take the "raw" input and translate it into
-	 * the first step of the abstraction process. Possibly immediately into a {Key}
-	 * that we can then store in some state.
-	 * Possibly send this info off to another processing stage? Should this class be
-	 * an intermediate?
-	 */
+	mKeysPressedThisFrame.reset();
+	mMouseBtnsPressedThisFrame.reset();
 
-	mProxyKeyboardState.PrevKeyStates[key] = mProxyKeyboardState.CurKeyStates[key];
+	const std::bitset<MAX_KEYCODES_SUPPORTED> deferredKeyReleases = mDeferredKeyReleases;
+	mDeferredKeyReleases.reset();
+	for (Int32 key = 0; key < MAX_KEYCODES_SUPPORTED; ++key)
+	{
+		if (deferredKeyReleases[key])
+		{
+			ReleaseKey(key);
+		}
+	}
+
+	const std::bitset<MAX_MOUSE_BTN_SUPPORTED> deferredMouseBtnReleases = mDeferredMouseBtnReleases;
+	mDeferredMouseBtnReleases.reset();
+	for (Int32 button = 0; button < MAX_MOUSE_BTN_SUPPORTED; ++button)
+	{
+		if (deferredMouseBtnReleases[button])
+		{
+			const Vector2D& position = mDeferredMouseReleasePositions[button];
+			ReleaseMouseButton(static_cast<EMouseButton::T>(button), static_cast<Int32>(position.X()), static_cast<Int32>(position.Y()));
+		}
+	}
+}
+
+void InputHandler::OnKeyDown(const Int32 key, bool isRepeat)
+{
 	mProxyKeyboardState.CurKeyStates[key] = true;
+	// Down again before its release was let go: it's held, so that release no longer happens
+	mDeferredKeyReleases[key] = false;
+	if (!isRepeat)
+	{
+		mKeysPressedThisFrame[key] = true;
+	}
 
- 	InputKey& inputKey = mInputKeyRegistry[key];
 	KeyboardAction action;
-	action.Key = inputKey;
-	action.State = mProxyKeyboardState.GetButtonState(key);
+	action.Key = mInputKeyRegistry[key];
+	action.State = isRepeat ? EButtonState::ButtonState_Hold : EButtonState::ButtonState_Pressed;
 
 	mKeyActionQueue.push(std::move(action));
 	CountInputEvent();
@@ -101,13 +157,22 @@ void InputHandler::OnKeyDown(const Int32 key, bool bIsRepeat)
 
 void InputHandler::OnKeyUp(const Int32 key)
 {
-	mProxyKeyboardState.PrevKeyStates[key] = mProxyKeyboardState.CurKeyStates[key];
+	if (mKeysPressedThisFrame[key])
+	{
+		mDeferredKeyReleases[key] = true;
+		return;
+	}
+
+	ReleaseKey(key);
+}
+
+void InputHandler::ReleaseKey(Int32 key)
+{
 	mProxyKeyboardState.CurKeyStates[key] = false;
 
-	InputKey& inputKey = mInputKeyRegistry[key];
 	KeyboardAction action;
-	action.Key = inputKey;
-	action.State = mProxyKeyboardState.GetButtonState(key);
+	action.Key = mInputKeyRegistry[key];
+	action.State = EButtonState::ButtonState_Released;
 
 	mKeyActionQueue.push(std::move(action));
 	CountInputEvent();
@@ -115,8 +180,9 @@ void InputHandler::OnKeyUp(const Int32 key)
 
 void InputHandler::OnMouseMove(const Int32 xPos, const Int32 yPos)
 {
-	mProxyMouseState.PrevPosition.SetXY(mProxyMouseState.CurPosition.X(), mProxyMouseState.CurPosition.Y());
+	const Vector2D previousPosition = mProxyMouseState.CurPosition;
 	mProxyMouseState.CurPosition.SetXY(static_cast<float>(xPos), static_cast<float>(yPos));
+	mProxyHasMousePosition = true;
 
 	MouseAction action;
 	action.Button = EMouseButton::MouseButton_Move;
@@ -124,7 +190,7 @@ void InputHandler::OnMouseMove(const Int32 xPos, const Int32 yPos)
 	action.State = EButtonState::ButtonState_Pressed;
 	action.Wheel = 0;
 
-	if (mProxyMouseState.CurPosition != mProxyMouseState.PrevPosition)
+	if (mProxyMouseState.CurPosition != previousPosition)
 	{
 		mMouseActionQueue.push(std::move(action));
 		CountInputEvent();
@@ -134,7 +200,6 @@ void InputHandler::OnMouseMove(const Int32 xPos, const Int32 yPos)
 void InputHandler::OnMouseWheel(const Int32 value)
 {
 	// Adds up: every queued message is handled each frame, so one frame can bring several wheel messages
-	mProxyMouseState.PrevWheelVal = mProxyMouseState.CurWheelVal;
 	mProxyMouseState.CurWheelVal += value;
 
 	// This may give slightly incorrect values, 
@@ -154,19 +219,20 @@ void InputHandler::OnMouseWheel(const Int32 value)
 
 void InputHandler::ClearMouseWheel()
 {
-	mProxyMouseState.PrevWheelVal = mProxyMouseState.CurWheelVal;
 	mProxyMouseState.CurWheelVal = 0;
 }
 
 void InputHandler::OnMouseDown(const EMouseButton::T button, const Int32 xPos, const Int32 yPos)
 {
-	mProxyMouseState.PrevMouseBtnStates[button] = mProxyMouseState.CurMouseBtnStates[button];
 	mProxyMouseState.CurMouseBtnStates[button] = true;
+	// Down again before its release was let go: it's held, so that release no longer happens
+	mDeferredMouseBtnReleases[button] = false;
+	mMouseBtnsPressedThisFrame[button] = true;
 
 	MouseAction action;
 	action.Button = button;
-	action.State = mProxyMouseState.GetButtonState(button);
-	action.Position = std::move(Vector2D(xPos, yPos));
+	action.State = EButtonState::ButtonState_Pressed;
+	action.Position = Vector2D(xPos, yPos);
 	action.Wheel = 0;
 
 	mMouseActionQueue.push(std::move(action));
@@ -175,13 +241,24 @@ void InputHandler::OnMouseDown(const EMouseButton::T button, const Int32 xPos, c
 
 void InputHandler::OnMouseUp(const EMouseButton::T button, const Int32 xPos, const Int32 yPos)
 {
-	mProxyMouseState.PrevMouseBtnStates[button] = mProxyMouseState.CurMouseBtnStates[button];
+	if (mMouseBtnsPressedThisFrame[button])
+	{
+		mDeferredMouseBtnReleases[button] = true;
+		mDeferredMouseReleasePositions[button] = Vector2D(xPos, yPos);
+		return;
+	}
+
+	ReleaseMouseButton(button, xPos, yPos);
+}
+
+void InputHandler::ReleaseMouseButton(EMouseButton::T button, Int32 xPos, Int32 yPos)
+{
 	mProxyMouseState.CurMouseBtnStates[button] = false;
 
 	MouseAction action;
 	action.Button = button;
-	action.State = mProxyMouseState.GetButtonState(button);
-	action.Position = std::move(Vector2D(xPos, yPos));
+	action.State = EButtonState::ButtonState_Released;
+	action.Position = Vector2D(xPos, yPos);
 	action.Wheel = 0;
 
 	mMouseActionQueue.push(std::move(action));
@@ -190,11 +267,15 @@ void InputHandler::OnMouseUp(const EMouseButton::T button, const Int32 xPos, con
 
 void InputHandler::ReleaseAll()
 {
+	// Deferred releases are of keys and buttons still down, so the loops below let go of them too
+	mDeferredKeyReleases.reset();
+	mDeferredMouseBtnReleases.reset();
+
 	for (Int32 key = 0; key < MAX_KEYCODES_SUPPORTED; ++key)
 	{
 		if (mProxyKeyboardState.CurKeyStates[key])
 		{
-			OnKeyUp(key);
+			ReleaseKey(key);
 		}
 	}
 
@@ -204,7 +285,7 @@ void InputHandler::ReleaseAll()
 	{
 		if (mProxyMouseState.CurMouseBtnStates[button])
 		{
-			OnMouseUp(static_cast<EMouseButton::T>(button), xPos, yPos);
+			ReleaseMouseButton(static_cast<EMouseButton::T>(button), xPos, yPos);
 		}
 	}
 }
@@ -230,26 +311,39 @@ void InputHandler::CountInputEvent()
 
 void InputHandler::Reset()
 {
-	std::queue<MouseAction>().swap(mMouseActionQueue);
-	std::queue<KeyboardAction>().swap(mKeyActionQueue);
-
-	mMouseState.Reset();
-	mKeyboardState.Reset();
-
-	// Keep the cursor position current while input is gated, otherwise anything tracking
-	// per-frame mouse deltas sees a jump from the stale position once input resumes.
-	mMouseState.CurPosition = mProxyMouseState.CurPosition;
-	mMouseState.PrevPosition = mProxyMouseState.PrevPosition;
+	ResetKeyboard();
+	ResetMouse();
 }
 
-void InputHandler::RaiseKeyEvent(const InputKey& inputKey)
+void InputHandler::ResetKeyboard()
 {
-	EButtonState::T buttonState = mProxyKeyboardState.GetButtonState(inputKey.GetKeyCode());
+	std::queue<KeyboardAction>().swap(mKeyActionQueue);
+	mKeyboardState.Reset();
+}
+
+void InputHandler::ResetMouse()
+{
+	std::queue<MouseAction>().swap(mMouseActionQueue);
+	mMouseState.Reset();
+
+	// The wheel too: it's only cleared in the proxy, so a turn in the last frame the app took the mouse would
+	// otherwise be read again every frame until it takes it back (the editor camera would keep dollying)
+	mMouseState.CurWheelVal = 0;
+
+	// Keep the position current, but with no delta: the pointer doesn't move as far as the app can tell, and once it
+	// takes the mouse again, its first delta is that frame's movement, not everything since
+	mMouseState.CurPosition = mProxyMouseState.CurPosition;
+	mMouseState.PrevPosition = mMouseState.CurPosition;
+	mHasMousePosition = mProxyHasMousePosition;
+}
+
+void InputHandler::RaiseKeyEvent(const InputKey& inputKey, EButtonState::T state)
+{
 	auto bindingIt = mKeyboardBindings.find(inputKey.GetKeyCode());
 	if (bindingIt != mKeyboardBindings.end())
 	{
 	 	KeyboardActionBinding& actionBinding = (*bindingIt).second;
-	 	if (actionBinding.State == buttonState)
+	 	if (actionBinding.State == state)
 	 	{
 	 		actionBinding.Func(inputKey);
 	 	}

@@ -6,8 +6,10 @@
 
 class Filepath;
 
-// A small window with an image and what start-up is doing, shown while the engine loads. It has its own thread and
-// message loop, so it keeps drawing (and Windows doesn't call it not responding) while the main thread is busy.
+// A small window with an image and what start-up is doing, shown while the engine loads. On Windows it has its own
+// thread and message loop, so it keeps drawing (and Windows doesn't call it not responding) while the main thread is
+// busy. On Linux, where SDL only draws windows on the main thread, it's drawn there whenever the main thread sets the
+// status.
 class SplashScreen
 {
 public:

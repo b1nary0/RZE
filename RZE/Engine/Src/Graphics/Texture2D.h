@@ -49,7 +49,6 @@ private:
 
 	Int32 m_width;
 	Int32 m_height;
-	Int32 m_channels;
 
 	Filepath m_filepath;
 

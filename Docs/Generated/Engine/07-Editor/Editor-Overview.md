@@ -8,7 +8,7 @@ Its UI code is organised around an `EditorContext` that panels share, self-regis
 
 ```
 +---------------------------------------------------------------------------------+
-| File Edit View Help |  RenderCommand MemArena: 4 KB / 64 MB  Peak ...           |
+| File Edit View Help      RZEStudio - Assets/Scenes/<scene>.scene       _  []  X |
 +---------------------------------------------------------------+-----------------+
 | SceneView  (gizmo | snap | grid toolbar)                      | Scene           |
 |                                                               |  Camera         |
@@ -20,13 +20,13 @@ Its UI code is organised around an `EditorContext` that panels share, self-regis
 +---------------------------------------------------------------+-----------------+
 | Content Browser   Log      (the bottom dock area, auto-hidden)            [pin] |
 +---------------------------------------------------------------------------------+
-| Ready   16.7 ms · 60 FPS · idle 9.8 ms          (o) [Rendering thumbnails  33%] |
+| Ready  MemArena: 4 KB / 2048 MB   16.7 ms ...   (o) [Rendering thumbnails  33%] |
 +---------------------------------------------------------------------------------+
 ```
 
 The layout is an ImGui dockspace, saved in `Config\imgui.ini`; without one, each panel docks where its `PanelDesc::DefaultDock` says. Nothing docks into the scene view itself. The panels along the bottom (Content Browser and Log) are in the **bottom dock area**, which starts auto-hidden: a strip of tabs, where clicking one opens the area over the bottom of the scene view until focus goes elsewhere. Its pin keeps it open instead ([Editor-Framework.md](Editor-Framework.md#the-bottom-dock-area)). Each panel is described in [Editor-Panels.md](Editor-Panels.md), and the inspector in [Object-Inspector-And-Properties.md](Object-Inspector-And-Properties.md); the camera and the build/launch tools are in [Editor-Camera-And-Build-Launch.md](Editor-Camera-And-Build-Launch.md); gizmo snapping and the ground grid are in [Gizmo-Snapping-And-Grid.md](Gizmo-Snapping-And-Grid.md). Every keyboard and mouse shortcut is in [Editor-Shortcuts.md](Editor-Shortcuts.md).
 
-- The **status bar** along the bottom shows the frame time, frames a second and idle time, and background tasks, their progress and their history; Edit > **Settings** opens the Settings window, whose Frame Rate page sets vsync, the frame rate caps and how often the UI updates. Both are in [Status-Bar-And-Settings.md](Status-Bar-And-Settings.md).
+- The **status bar** along the bottom shows the render command arena's use, the frame time, frames a second and idle time, and background tasks, their progress and their history; Edit > **Settings** opens the Settings window, whose Frame Rate page sets vsync, the frame rate caps and how often the UI updates. Both are in [Status-Bar-And-Settings.md](Status-Bar-And-Settings.md).
 - Scenes and meshes are picked in a **file browser** of thumbnails, which the editor renders in the background, and the **Content Browser** panel shows the project's files the same way, with meshes that can be dragged into the scene: [Thumbnails-And-File-Browser.md](Thumbnails-And-File-Browser.md).
 
 ## Launching
@@ -38,17 +38,18 @@ While it starts, the Editor shows a splash screen with the logo and what start-u
 | Argument | Effect |
 |---|---|
 | `-scene <file>` | Opens `Assets/Scenes/<file>` (e.g. `-scene Sponza.scene`). Without it, the Editor opens `Assets/Scenes/RenderTest.scene`. |
-| `-launchMonitor <n>` | Opens the window on monitor *n*, overriding the config's launch monitor. Handled by the engine, so the Game accepts it too. |
+| `-launchMonitor <n>` | Opens the window on monitor *n*, overriding the config's launch monitor. Handled by the engine, so the Game accepts it too. Does nothing on Wayland, where the compositor places windows; there, `driver.py launch --output` picks the monitor ([EditorHarness-And-Drivers.md](EditorHarness-And-Drivers.md#picking-the-monitor---output-linux)). |
 | `-console` | Opens a console showing the log (stdout and stderr). Handled by the engine, so the Game accepts it too. |
+| `-gfxvalidation [0]` | Turns the graphics API's validation on, or off with `0` (on by default in Debug only; never in Retail). Handled by the engine, so the Game accepts it too. See [Debug-Services-And-Logging.md](../06-Platform-And-Infrastructure/Debug-Services-And-Logging.md#graphics-validation). |
 
 `Editor\_project\Editor.args.json` holds presets for these in Visual Studio.
 
-The Editor is built as a windowed app, like the Game, with `main` kept as its entry point (`/ENTRY:mainCRTStartup`), so it has no console unless `-console` asks for one. As a console app it opened unfocused: Windows Terminal hosted its console, and that window came up after the Editor's and took the foreground. See [Debug-Services-And-Logging.md](../06-Platform-And-Infrastructure/Debug-Services-And-Logging.md#the-console).
+On Windows the Editor is built as a windowed app, like the Game, with `main` kept as its entry point (`/ENTRY:mainCRTStartup`), so it has no console unless `-console` asks for one. As a console app it opened unfocused: Windows Terminal hosted its console, and that window came up after the Editor's and took the foreground. Linux has no console/windowed split (`ConfigureAsWindowedApp` does nothing there): the log goes to the terminal it was started from, if any, and `-console` changes nothing. See [Debug-Services-And-Logging.md](../06-Platform-And-Infrastructure/Debug-Services-And-Logging.md#the-console).
 
 ## How the Editor fits together
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     App["EditorApp"] --> Ctx["EditorContext<br/>selection, settings, services"]
     App --> RT["Offscreen render target"]
@@ -74,7 +75,7 @@ flowchart TD
 Scene loading is **asynchronous**, so the Editor stays responsive and shows progress while big scenes like Sponza stream in.
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 sequenceDiagram
     participant User
     participant App as SceneDocument
@@ -107,20 +108,18 @@ sequenceDiagram
 | View | Windows: Log, Object Inspector, Resource Monitor, Scene (built from each panel's `MenuPath`, checked while open) |
 | Help | ImGui Demo |
 
-`MainMenuBar` (`UI\MainMenuBar.h/.cpp`) draws the menus and readouts and handles the Edit shortcuts. File items call `SceneDocument` and `GameBuilder`, through `UnsavedChangesPrompt` where changes could be lost; New, Load and Launch Game are disabled while a load runs, Build and Launch while a build does. Undo and Redo name the step they'd undo ("Undo Delete GameObject") and are greyed out when there's nothing to undo or redo.
+`MainMenuBar` (`UI\MainMenuBar.h/.cpp`) draws the menus and handles the Edit shortcuts. File items call `SceneDocument` and `GameBuilder`, through `UnsavedChangesPrompt` where changes could be lost; New, Load and Launch Game are disabled while a load runs, Build and Launch while a build does. Undo and Redo name the step they'd undo ("Undo Delete GameObject") and are greyed out when there's nothing to undo or redo.
 
 ### The title bar
 
-The menu bar is also the window's title bar: `EditorApp` turns off the OS's (`Win32Window::SetCustomTitleBar`, [Windowing.md](../06-Platform-And-Infrastructure/Windowing.md)) before maximizing. From left to right it has the logo, the menus, the arena readout, the window's title centred in the space left, and minimize, maximize (restore while maximized) and close buttons, the size of Windows' own. It's 40 px tall at 96 DPI, taller than the OS's title bar (31), to give the logo room, and never shorter than the OS's.
+The menu bar is also the window's title bar: `EditorApp` turns off the OS's (`Window::SetCustomTitleBar`, [Windowing.md](../06-Platform-And-Infrastructure/Windowing.md#custom-title-bar)) before maximizing. On Windows a subclass of the window answers the OS's hit tests; on Linux the window is borderless and SDL's hit test asks the same `TitleBarLayout`. From left to right it has the logo, the menus, the window's title centred in the space left, and minimize, maximize (restore while maximized) and close buttons, the size of Windows' own. It's 40 px tall at 96 DPI, taller than the OS's title bar (31), to give the logo room, and never shorter than the OS's.
 
-- **Moving and sizing.** Dragging the bar's free space moves the window, double-clicking it maximizes, and its top edge resizes, as with a normal title bar. Hovering the maximize button shows Windows 11's Snap Layouts. While a menu is open the whole bar takes clicks, so a click on it closes the menu rather than moving the window.
+- **Moving and sizing.** Dragging the bar's free space moves the window, double-clicking it maximizes, and its top edge resizes, as with a normal title bar. Hovering the maximize button shows Windows 11's Snap Layouts. On Linux the other edges resize from a band just inside the window, and on Wayland double-clicking the bar does nothing ([known issue 36](../10-KnownIssues/Architectural-Notes-And-TODOs.md#36-wayland-limits-the-custom-title-bar-and-the-window)). While a menu is open the whole bar takes clicks, so a click on it closes the menu rather than moving the window.
 - **`Editor::TitleBar`** (`UI\TitleBar.h/.cpp`), which `MainMenuBar` owns and calls first and last in the bar, draws the logo, the title and the buttons. It collects where the menus and buttons are as they're drawn and gives the window that `TitleBarLayout` at the end of the bar. The title and the button glyphs dim while the window isn't focused.
 - **The logo** is `RZE\logo.png`: the gizmo hexagon, "RZE" and a divider. It's authored at twice the 24 px it's drawn at (ImGui only samples a texture's top mip), and the menus start as far past the divider as the letters are before it. Its source is `RZE\Assets\Editor\logo.svg`, which says how to render it again.
 - **Menu highlights.** A menu's header is hovered anywhere up and down the bar. `MainMenuBar` draws its highlight in place of ImGui's, inset from the bar a little, with [rounded corners](Editor-Framework.md#rounded-corners) and a dark grey edge.
 
 The Game keeps the OS's title bar.
-
-The right side of the menu bar shows the render command arena's use (`RenderCommand MemArena: current / total`, plus the peak), colour-coded by pressure. It's a quick way to see what a change costs on the render path. Frame times are in the status bar.
 
 ## Edit: copy, paste and duplicate
 
@@ -150,7 +149,7 @@ What a paste does to the copies:
 ## Editor vs Game: where the picture goes
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     subgraph Editor
         direction TB

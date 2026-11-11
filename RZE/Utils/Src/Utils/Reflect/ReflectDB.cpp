@@ -1,5 +1,3 @@
-#include <StdAfx.h>
-
 #include <Utils/Reflect/ReflectDB.h>
 
 ReflectDB::ReflectRegistry ReflectDB::m_registry;

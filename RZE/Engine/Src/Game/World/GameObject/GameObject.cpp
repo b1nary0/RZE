@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Game/World/GameObject/GameObject.h>
 
 #include <Game/World/GameObject/GameObjectComponent.h>
@@ -53,6 +52,7 @@ GameObject::GameObject(GameScene& scene, const std::string& name, ObjectGUID gui
 
 GameObject::~GameObject()
 {
+	AssertMsg(m_components.empty(), "GameObject destroyed without Uninitialize: its components were never released");
 	AliveGameObjects().Release(m_id);
 }
 
@@ -62,9 +62,16 @@ void GameObject::Initialize()
 
 void GameObject::Uninitialize()
 {
-	for (auto& component : m_components)
+	AssertMsg(!m_stateFlags.IsInScene, "GameObject uninitialized while it's still in the scene: call OnRemoveFromScene first");
+
+	// Newest first, so the TransformComponent, added first, is there for the others' Uninitialize. All of them before
+	// any is deleted, so each can still reach the rest.
+	for (auto it = m_components.rbegin(); it != m_components.rend(); ++it)
 	{
-		// @TODO component->Uninitialize here?
+		(*it)->Uninitialize();
+	}
+	for (GameObjectComponentBase* component : m_components)
+	{
 		delete component;
 	}
 	m_components.clear();
@@ -75,7 +82,7 @@ bool GameObject::RemoveComponentByID(GameObjectComponentID id)
 	auto it = std::find_if(m_components.begin(), m_components.end(),
 		[id](const GameObjectComponentBase* component)
 		{
-			return id == component->m_id;
+			return id == component->GetTypeID();
 		});
 
 	if (it == m_components.end())
@@ -88,6 +95,7 @@ bool GameObject::RemoveComponentByID(GameObjectComponentID id)
 	{
 		component->OnRemoveFromScene();
 	}
+	component->Uninitialize();
 	m_components.erase(it);
 	delete component;
 	MarkHierarchyBoundsChanged();
@@ -96,12 +104,12 @@ bool GameObject::RemoveComponentByID(GameObjectComponentID id)
 
 GameObjectComponentBase* GameObject::AddComponentByID(GameObjectComponentID id)
 {
-	// #TODO Slow function
-
+	// The same linear search as GetComponent, to refuse a second component of one type. Runs once per add (scene
+	// load, editor commands), so load time grows with objects x components per object; see GetComponent for the fix.
 	auto it = std::find_if(m_components.begin(), m_components.end(),
 		[id](const GameObjectComponentBase* component)
 		{
-			return id == component->m_id;
+			return id == component->GetTypeID();
 		});
 
 	if (it == m_components.end())
@@ -303,7 +311,7 @@ void GameObject::DetachFromParent()
 
 void GameObject::AddChild(GameObject* child, int childIndex)
 {
-#ifdef _DEBUG
+#ifdef RZE_ASSERTS_ENABLED
 	auto existingChild = std::find_if(m_children.begin(), m_children.end(), [&child](GameObjectPtr gameObject)
 		{
 			return gameObject == child;
@@ -384,14 +392,20 @@ void GameObject::LoadComponents(const rapidjson::Value& entry)
 		return;
 	}
 
+	// In the file's order, which Save writes them back in, so a scene saves the same on every platform. The registry's
+	// own order is its hash map's, which differs between standard libraries.
 	const GameObjectComponentRegistry::ComponentNameIDMap& componentInfo = GameObjectComponentRegistry::GetAllComponentReflectData();
-	for (auto& dataPair : componentInfo)
+	for (const auto& componentData : components->value.GetObject())
 	{
-		const auto componentData = components->value.FindMember(dataPair.second.c_str());
-		if (componentData != components->value.MemberEnd())
+		const auto registered = std::find_if(componentInfo.begin(), componentInfo.end(),
+			[&componentData](const auto& dataPair)
+			{
+				return dataPair.second == componentData.name.GetString();
+			});
+		if (registered != componentInfo.end())
 		{
-			GameObjectComponentBase* component = AddComponentByID(dataPair.first);
-			component->Deserialize(componentData->value);
+			GameObjectComponentBase* component = AddComponentByID(registered->first);
+			component->Deserialize(componentData.value);
 		}
 	}
 }

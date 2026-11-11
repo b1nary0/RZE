@@ -35,10 +35,17 @@ namespace
 
 		~AssetFileCommandsFixture()
 		{
-			// Like closing the editor, but without the Recycle Bin. Tests resolve paths beside UnitTests.exe, so this is
-			// the tests' own trash, not the editor's.
-			std::error_code ignored;
-			std::filesystem::remove_all(AssetFiles::GetTrashFolder().GetAbsolutePath(), ignored);
+			// Closing the editor, with what goes to the Recycle Bin removed instead. Tests resolve paths beside
+			// UnitTests.exe, so this is the tests' own trash, not the editor's.
+			AssetFiles::EmptyTrash(&Discard);
+			RemoveEmptyFolders(AssetFiles::GetTrashFolder());
+		}
+
+		static bool Discard(const Filepath& path)
+		{
+			std::error_code error;
+			std::filesystem::remove_all(path.GetAbsolutePath(), error);
+			return !error;
 		}
 
 		bool Run(EditorCommand& command)

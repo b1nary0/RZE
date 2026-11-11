@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/ReflectionProbeObject.h>
 
 #include <Graphics/GraphicsDefines.h>

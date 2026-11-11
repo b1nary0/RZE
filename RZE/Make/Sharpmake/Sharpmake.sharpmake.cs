@@ -29,9 +29,9 @@ public class SharpmakeProjectBase : CSharpProject
         conf.Output = Configuration.OutputType.DotNetClassLibrary;
         conf.ProjectFileName = @"[project.Name]_[target.Platform]";
         conf.SolutionFolder = "Tools";
-        conf.ProjectPath = Path.Combine(Globals.RootDir, "_Project");
+        conf.ProjectPath = Path.Combine(Globals.RootDir, "_project");
 
-        conf.TargetPath = Path.Combine(Globals.RootDir, "_Build/Sharpmake/[target.Optimization]/");
+        conf.TargetPath = Path.Combine(Globals.RootDir, "_build/Sharpmake/[target.Optimization]/");
         //conf.ProjectPath = @"[project.SharpmakeCsPath]/.tmp/project/[target.Framework]";
         CSharpProjectExtensions.AddAspNetReferences(conf);
         conf.ReferencesByPath.Add(Path.Combine(Globals.RootDir, @"../Tools/Sharpmake/Sharpmake.dll"));

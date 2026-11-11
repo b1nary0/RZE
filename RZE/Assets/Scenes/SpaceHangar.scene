@@ -95,7 +95,7 @@
             "name": "Spaceship",
             "components": {
                 "RenderComponent": {
-                    "ResourcePath": "ProjectData\\Mesh\\spaceship.meshasset"
+                    "ResourcePath": "ProjectData\\Mesh\\Spaceship.meshasset"
                 },
                 "TransformComponent": {
                     "Position": [

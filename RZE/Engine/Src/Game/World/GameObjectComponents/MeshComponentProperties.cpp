@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Game/World/GameObjectComponents/MeshComponentProperties.h>
 
 #include <Game/World/GameObject/Properties/PropertyBuilder.h>

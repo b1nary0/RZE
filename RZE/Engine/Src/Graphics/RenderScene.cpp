@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/RenderScene.h>
 
 #include <Utils/LiveIDAllocator.h>

@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Asset/AssetImport/MaterialAssetWriter.h>
 
 #include <Utils/DebugUtils/Debug.h>
@@ -69,7 +68,13 @@ void MaterialAssetWriter::Write()
 		WriteString(byteStream, texturePath);
 	}
 
-	AssertExpr(byteStream.GetNumBytesWritten() == bufSize);
+	// A miscounted bufSize is a bug here, but a short asset mustn't replace a good one, so the old file is kept
+	AssertExpr(!byteStream.HasFailed() && byteStream.GetNumBytesWritten() == bufSize);
+	if (byteStream.HasFailed() || byteStream.GetNumBytesWritten() != bufSize)
+	{
+		RZE_LOG_ERROR_ARGS("MaterialAssetWriter : %s not written: its data didn't fill the %zu bytes counted for it.", m_outputPath.GetRelativePath().c_str(), bufSize);
+		return;
+	}
 
 	File outputFile(m_outputPath);
 	outputFile.Open(static_cast<File::EFileOpenMode::Value>(File::EFileOpenMode::Write | File::EFileOpenMode::Binary));

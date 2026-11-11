@@ -1,5 +1,8 @@
 #pragma once
 
+#include <condition_variable>
+#include <functional>
+#include <memory>
 #include <mutex>
 #include <thread>
 #include <vector>
@@ -9,11 +12,10 @@
 #include <Utils/PrimitiveDefs.h>
 #include <Utils/StatsWindow.h>
 
-struct ID3D11Texture2D;
-
 namespace Rendering
 {
-	class DX11Device;
+	class IGFXDevice;
+	class IImGuiRenderer;
 
 	// The render thread's frames, averaged over a StatsWindow, for display. A frame runs from one present to the next;
 	// the frame time itself is the main thread's (FrameStats).
@@ -31,12 +33,14 @@ namespace Rendering
 		RenderThread();
 
 	public:
-		void Initialize(void* windowHandle);
+		// The thread that calls Initialize controls this one: Shutdown and RunWhileIdle must be called from it
+		void Initialize(void* windowHandle, bool validate);
 		void Shutdown();
 
 		void PushCommand(RenderCommand* command);
 
-		// @todo note sure about the future of this, but just getting an idea down
+		// Hands the commands pushed since the last call to the render thread. Waits for it to finish the previous batch,
+		// then cycles MemArena, swaps the producer and consumer queues and wakes it. Called once a frame (Renderer).
 		void SignalProcess();
 
 		// Blocks until the swap chain can queue another frame, or timeoutMS passes (false). Safe from any thread.
@@ -45,19 +49,19 @@ namespace Rendering
 		// Zero until the first window of frames has passed. Safe from any thread.
 		RenderThreadStats GetStats() const;
 
-		// Blocks until the render thread has finished processing its queue, then runs func on the calling
-		// thread while the render thread is held idle. Use for the rare case where the calling thread
-		// needs exclusive access to the device context.
-		template <typename Func>
-		void RunWhileIdle(Func&& func)
-		{
-			std::unique_lock waitlock(m_updateMutex);
-			m_updateCondition.wait(waitlock, [this]() { return m_processSignal == false; });
-			func();
-		}
+		// Blocks until the render thread has finished processing its queue, then has the render thread run func, and
+		// returns once it has. For the rare work that needs the device between frames: it runs where the device is
+		// attached, with nothing else using it. Only from the controlling thread.
+		void RunWhileIdle(std::function<void()> func);
+
+		// The device, for making resources (its Create functions), which is safe from the main thread
+		IGFXDevice& GetDevice();
+		// ImGui's renderer, for RunWhileIdle work and NewFrame
+		IImGuiRenderer& GetImGuiRenderer();
 
 	private:
-		void Update();
+		// One pass of the render thread: a batch of commands or a RunWhileIdle task. False once Shutdown has signalled.
+		bool Update();
 
 		void InitializeImGui();
 
@@ -137,47 +141,40 @@ namespace Rendering
 		// Reading back
 		void Execute(RenderCommand_ReadTexel& command);
 		void Execute(RenderCommand_ReadTexture& command);
-		// Fills in the ReadTexture results whose copies the GPU has made, without waiting for the others
-		void FinishTextureReadbacks();
-		// Those still waiting, at shutdown: their results are never ready
-		void ReleaseTextureReadbacks();
+		void Execute(RenderCommand_ReadBackBuffer& command);
 
 		// Named regions for PIX and similar tools; no-ops when no profiler is attached
 		void BeginProfilerEvent(const char* name);
 		void EndProfilerEvent();
 
 	private:
-		// @note these are guaranteed to be contiguous as its backed by MemArena
+		// The commands themselves live in MemArena, which keeps a batch's memory until the render thread has run it.
 		// Commands run in the order they were pushed. Vectors rather than std::queue so they keep their
 		// capacity between frames: the consumer is cleared, not freed, after its commands run.
 		std::vector<RenderCommand*> m_producerQueue;
 		std::vector<RenderCommand*> m_consumerQueue;
 
 		void* m_windowHandle = nullptr;
-		std::unique_ptr<DX11Device> m_device = nullptr;
-		// The swap chain's frame latency HANDLE (DX11Device::GetFrameLatencyWaitableObject); fixed while the thread runs
-		void* m_frameLatencyWaitableObject = nullptr;
+		std::unique_ptr<IGFXDevice> m_device;
+		std::unique_ptr<IImGuiRenderer> m_imguiRenderer;
 
 		std::thread m_thread;
+		// The thread that called Initialize. Update relies on Shutdown and RunWhileIdle both running on it, so an idle
+		// task is never pending when the shutdown signal arrives.
+		std::thread::id m_controllingThreadID;
 		std::mutex m_updateMutex;
 
 		std::condition_variable m_updateCondition;
 		bool m_processSignal = false;
 		bool m_shuttingDown = false;
+		// RunWhileIdle's work, run by the render thread instead of a batch; empty when there's none
+		std::function<void()> m_idleTask;
 
-		// A ReadTexture copy the GPU may not have made yet, and where it goes
-		struct PendingTextureReadback
-		{
-			ID3D11Texture2D* Staging = nullptr;
-			std::shared_ptr<TextureReadback> Result;
-		};
-		std::vector<PendingTextureReadback> m_pendingTextureReadbacks;
-
-		// Whether a profiler (e.g. PIX) is listening for D3DPERF markers; refreshed for each batch of commands
+		// Whether a profiler (e.g. PIX) is listening for markers; refreshed for each batch of commands
 		bool m_emitProfilerMarkers = false;
 
 		// Whether the bound vertex and compute shaders were created. A shader that failed to compile is empty
-		// (DX11ShaderTypes), and draws and dispatches without one are skipped: drivers can hang on them.
+		// (DX11ShaderTypes, GLShaderTypes), and draws and dispatches without one are skipped: drivers can hang on them.
 		bool m_vertexShaderBound = false;
 		bool m_computeShaderBound = false;
 

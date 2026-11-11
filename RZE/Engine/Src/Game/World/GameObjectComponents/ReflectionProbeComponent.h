@@ -10,7 +10,7 @@ class RenderScene;
 // A reflection probe (ReflectionProbeObject): captures the scene around the object's position, and glossy surfaces in
 // its box, centred there and aligned to the world's axes, reflect it. Size the box to the room it's in, since the
 // reflections are projected onto its sides.
-class ReflectionProbeComponent : public GameObjectComponent<ReflectionProbeComponent>
+class ReflectionProbeComponent final : public GameObjectComponent<ReflectionProbeComponent>
 {
 public:
 	ReflectionProbeComponent() = default;

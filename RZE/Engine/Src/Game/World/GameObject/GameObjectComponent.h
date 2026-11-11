@@ -5,31 +5,26 @@
 
 #include <Utils/Functor.h>
 #include <Utils/Math/BoundingBox.h>
+#include <Utils/Platform/TypeNames.h>
 
 #include <RapidJSON/document.h>
 #include <RapidJSON/prettywriter.h>
 #include <RapidJSON/stringbuffer.h>
 
 #include <string>
+#include <type_traits>
 
 #define REGISTER_GAMEOBJECTCOMPONENT(ComponentType)\
 {\
 	GameObjectComponentTypeID<GameObjectComponentBase>::GetComponentTypeID<ComponentType>();	\
-	GameObjectComponentRegistry::RegisterComponentType(ComponentType::GetID(), #ComponentType);\
-	GameObjectComponentRegistry::AddComponentFactory(ComponentType::GetID(), Functor<GameObjectComponentBase*>([]() { return new ComponentType();}));\
+	GameObjectComponentRegistry::RegisterComponentType(ComponentType::StaticTypeID(), #ComponentType);\
+	GameObjectComponentRegistry::AddComponentFactory(ComponentType::StaticTypeID(), Functor<GameObjectComponentBase*>([]() { return new ComponentType();}));\
 	ComponentPropertyRegistry::Register<ComponentType>();\
 }
 
 class GameObject;
 class GameObjectComponentBase;
 class ResourceDependencyList;
-
-// @NOTE
-// This stuff doesn't support class hierarchies, and will only ever use the first registered component
-// in any hierarchy. Needs to be refactored to support this. As such, things like CameraComponent
-// are broken because I refactored EditorCameraComponent to inherit from CameraComponent; this
-// means we can't have both a CameraComponent and EditorCameraComponent reflected because the ID will
-// be the same, and the ID is the driving factor behind all recognition of unique classes.
 
 // #TODO Would ideally like to come back to this setup
 namespace GameObjectComponentRegistry
@@ -71,8 +66,7 @@ public:
 	template <class TComponentType>
 	static inline const char* const GetComponentName()
 	{
-		static std::string componentName = typeid(TComponentType).name();
-		componentName = componentName.substr(componentName.find_first_of(' ') + 1, componentName.size());
+		static const std::string componentName = TypeNames::Get(typeid(TComponentType));
 		return componentName.c_str();
 	}
 
@@ -87,7 +81,7 @@ GameObjectComponentID GameObjectComponentTypeID<TComponentBase>::s_nextComponent
 class GameObjectComponentBase
 {
 public:
-	GameObjectComponentBase();
+	explicit GameObjectComponentBase(GameObjectComponentID typeID);
 	virtual ~GameObjectComponentBase();
 
 	// The instance ID is what GameObjectComponentPtr tracks the component's lifetime by, so it must stay unique to one instance
@@ -95,7 +89,13 @@ public:
 	GameObjectComponentBase& operator=(const GameObjectComponentBase&) = delete;
 
 public:
+	// Initialize runs once the component has an owner, and acquires what the component needs for itself (e.g. a
+	// render target). Uninitialize releases it, once the component is out of the scene and before it's destroyed:
+	// GameObject calls it when the component is removed or the object is uninitialized, so a destructor has nothing
+	// left to do. OnAddToScene and OnRemoveFromScene, in between, put the component's render-side objects (render
+	// objects, lights, probes) in its scene and take them out, and can run any number of times.
 	virtual void Initialize() = 0;
+	virtual void Uninitialize() = 0;
 	virtual void OnAddToScene() = 0;
 	virtual void OnRemoveFromScene() = 0;
 
@@ -117,44 +117,37 @@ public:
 	const std::string& GetName() { return m_componentName; }
 
 	GameObjectComponentInstanceID GetInstanceID() const { return m_instanceID; }
-
-public:
-	GameObjectComponentID m_id; // #TODO For now
+	// This component's type, for code holding it as a GameObjectComponentBase. The same as its type's StaticTypeID().
+	GameObjectComponentID GetTypeID() const { return m_typeID; }
 
 protected:
 	std::string m_componentName;
 	GameObjectPtr m_owner;
 
 private:
+	const GameObjectComponentID m_typeID;
 	GameObjectComponentInstanceID m_instanceID;
 };
 
-// @NOTE:
-// Pretty sure this is where the "reflection" system is failing for inherited types like
-// EditorCameraComponent : CameraComponent : GameObjectComponent<CameraComponent>.
-// Basically, GameObjectComponent<EditorCameraComponent> never gets called during runtime to fetch
-// the id because ::GetID underneath is static to ::GetComponentTypeID<CameraComponent> even though
-// we've technically registered an ID for EditorCameraComponent. We just never fetch it properly.
-// No matter what, we call GameObjectComponent<EditorCameraComponent>'s version of ::GetComponentTypeID<>
-// because it's the first one that gets registered in that component hierarchy.
-// Feels like we need to disconnect the ID system from GameObjectComponent. Not exactly sure how atm
-// but we can't be driving the ID from functions templated to the type inheriting from GameObjectComponent
-// because it's totally reasonable to have a component B want to extend the behaviour of Component A
-// without having to re-declare itself as a GameObjectComponent.
+// The base of every component type: class MyComponent final : public GameObjectComponent<MyComponent>.
+// Component types must be final. The type ID comes from the type given here, so a class deriving from a component
+// would get its base's ID, and lookups, saving and the registry would take it for the base.
 template <typename TComponentType>
 class GameObjectComponent : public GameObjectComponentBase
 {
 public:
 	GameObjectComponent()
+		: GameObjectComponentBase(StaticTypeID())
 	{
-		m_id = GetID();
+		static_assert(std::is_final_v<TComponentType>, "Component types must be final: a subclass would share its base's type ID");
 		m_componentName = GetComponentName();
 	}
 
 	virtual ~GameObjectComponent() = default;
 
 public:
-	static GameObjectComponentID GetID()
+	// TComponentType's ID, from the type alone. An instance held as a GameObjectComponentBase answers GetTypeID().
+	static GameObjectComponentID StaticTypeID()
 	{
 		return GameObjectComponentTypeID<GameObjectComponentBase>::GetComponentTypeID<TComponentType>();
 	}
@@ -165,6 +158,7 @@ public:
 	}
 
 	void Initialize() override {}
+	void Uninitialize() override {}
 	void OnAddToScene() override {}
 	void OnRemoveFromScene() override {}
 

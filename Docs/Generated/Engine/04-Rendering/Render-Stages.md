@@ -9,7 +9,7 @@ A frame is drawn by a handful of **render stages**: small, independent passes su
 Rounded boxes are stages, and the parallelograms between them are the data contracts they pass along.
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     Shadow(["ShadowRenderStage"]) --> SMD[/"SceneLightingData<br/>lights + shadow maps"/]
     Prepass(["DepthPrepassStage"]) --> SDD[/"SceneDepthData<br/>depth"/]
@@ -26,26 +26,29 @@ flowchart TD
     SRD --> Forward
     Forward --> SCD[/"SceneColourData<br/>HDR colour + depth"/]
     SCD --> Post(["PostProcessRenderStage"])
-    Post --> DCD[/"DisplayColourData<br/>8-bit colour + depth"/]
-    DCD --> Debug(["DebugDrawRenderStage<br/>(modifies)"])
+    Post --> TCD[/"TonemappedColourData<br/>8-bit colour + depth"/]
+    TCD --> AA(["AntiAliasingStage"])
+    AA --> DCD[/"DisplayColourData<br/>8-bit colour + depth"/]
+    DCD --> View(["DebugViewStage<br/>(modifies)"])
+    View --> Debug(["DebugDrawRenderStage<br/>(modifies)"])
     Debug --> DCD2[/"DisplayColourData<br/>+ debug lines"/]
     DCD2 --> ImGui(["ImGuiRenderStage"])
     DCD2 --> Final(["FinalRenderTargetStage<br/>(Game only)"])
     Pick(["PickRenderStage<br/>(only on a click or drop)"])
 ```
 
-`ReflectionProbeStage` also reads `SceneLightingData`, and `PostProcessRenderStage` reads `AmbientOcclusionData` for its debug view; those edges are left out to keep the picture readable. `PickRenderStage` stands apart because it uses no contracts. It renders from the scene alone and hands its result straight back to the Editor (see [Picking](#pickrenderstage)).
+`ReflectionProbeStage` also reads `SceneLightingData`, and `DebugViewStage` reads `AmbientOcclusionData` for its debug view; those edges are left out to keep the picture readable. `PickRenderStage` stands apart because it uses no contracts. It renders from the scene alone and hands its result straight back to the Editor (see [Picking](#pickrenderstage)).
 
 The order the pipeline settles on is logged when it compiles, e.g. in the Editor:
 
 ```
-Render pipeline: ShadowRenderStage -> DepthPrepassStage -> AmbientOcclusionStage -> IrradianceProbeStage -> ReflectionProbeStage -> ForwardRenderStage -> PostProcessRenderStage -> PickRenderStage -> DebugDrawRenderStage -> ImGuiRenderStage
+Render pipeline: ShadowRenderStage -> DepthPrepassStage -> AmbientOcclusionStage -> IrradianceProbeStage -> ReflectionProbeStage -> ForwardRenderStage -> PostProcessRenderStage -> AntiAliasingStage -> DebugViewStage -> PickRenderStage -> DebugDrawRenderStage -> ImGuiRenderStage
 ```
 
 ## The pieces
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     RE["RenderEngine"] -->|owns| RP["RenderPipeline"]
     RE -->|owns| MV
@@ -114,13 +117,15 @@ Work that should happen once a frame per scene, whichever view draws it first, c
 | `IrradianceProbeStage` | reads `SceneLightingData`, writes `SceneIrradianceData` | all | Captures and relights the scene's grid of irradiance probes, within budgets. |
 | `ReflectionProbeStage` | reads `SceneLightingData`, `SceneIrradianceData`, writes `SceneReflectionData` | all | Captures, relights and prefilters the scene's reflection probes. |
 | `ForwardRenderStage` | reads `SceneLightingData`, `SceneDepthData`, `AmbientOcclusionData`, `SceneIrradianceData`, `SceneReflectionData`, writes `SceneColourData` | all | Draws every visible object, lit, into an HDR target, over the prepass's depth. |
-| `PostProcessRenderStage` | reads `SceneColourData`, `AmbientOcclusionData`, writes `DisplayColourData` | all | Eye adaptation, ACES tonemapping, sRGB encode to 8-bit, FXAA; or the ambient occlusion alone. |
+| `PostProcessRenderStage` | reads `SceneColourData`, writes `TonemappedColourData` | all | Eye adaptation, ACES tonemapping, sRGB encode to 8-bit. |
+| `AntiAliasingStage` | reads `TonemappedColourData`, writes `DisplayColourData` | all | Smooths jagged edges into the view's target: FXAA in one pass, or SMAA in three. |
+| `DebugViewStage` | reads `AmbientOcclusionData`, modifies `DisplayColourData` | all | With `RenderView::Debug` at `AmbientOcclusion`, overwrites the image with the ambient occlusion alone. |
 | `PickRenderStage` | nothing | main | On a click or drop, finds the object under one pixel and the depth there. |
 | `DebugDrawRenderStage` | modifies `DisplayColourData` | all | Draws debug lines on top, after tonemapping. Not in Retail builds. |
 | `ImGuiRenderStage` | Editor: reads `DisplayColourData`; Game: modifies it | main | Draws ImGui. Added by the app, not the engine. |
 | `FinalRenderTargetStage` | reads `DisplayColourData` | main | Game only: copies the finished image to the back buffer. |
 
-The engine adds Shadow, DepthPrepass, AmbientOcclusion, IrradianceProbe, ReflectionProbe, Forward, PostProcess, Pick and (outside Retail) DebugDraw in `RenderEngine::Initialize()`. The Editor adds `ImGuiRenderStage(withEditor = true)`; the Game adds `ImGuiRenderStage` and `FinalRenderTargetStage`.
+The engine adds Shadow, DepthPrepass, AmbientOcclusion, IrradianceProbe, ReflectionProbe, Forward, PostProcess, AntiAliasing, DebugView, Pick and (outside Retail) DebugDraw in `RenderEngine::Initialize()`. DebugView and DebugDraw both modify `DisplayColourData`, so they run in the order they're added: the debug view first, or it would cover the debug lines. The Editor adds `ImGuiRenderStage(withEditor = true)`; the Game adds `ImGuiRenderStage` and `FinalRenderTargetStage`.
 
 ### `ShadowRenderStage`
 
@@ -155,14 +160,14 @@ Draws the depth of everything that isn't blended before any shading, so ambient 
 
 - Clears the view's depth and draws opaque and cutout draws with `Vertex_NewRenderer`, the forward pass's vertex shader, so the depths match bit for bit. Opaque draws run **no pixel shader** (`Renderer::UnsetPixelShader`); cutouts run `Pixel_DepthPrepass.hlsl`, which only clips. Blended draws are left out: they don't write depth.
 - The same object and submesh culling as the forward pass. Publishes `SceneDepthData { Depth }`.
-- In Sponza (Release, uncapped) it made frames 27% faster, 0.84 to 0.61 ms, since hidden pixels are no longer lit; the extra draws cost the render thread about 0.004 ms.
+- In Sponza (Release, now Development; uncapped) it made frames 27% faster, 0.84 to 0.61 ms, since hidden pixels are no longer lit; the extra draws cost the render thread about 0.004 ms.
 
 ### `AmbientOcclusionStage`
 
 Ground truth ambient occlusion (GTAO), ported from Intel's XeGTAO, from the prepass's depth: how much creases and corners hide each pixel from the light around it. Three compute passes (`Common/GTAO.hlsli` holds what they share):
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     D["View's depth<br/>(SceneDepthData)"] --> P["Compute_GTAOPrefilterDepths<br/>view-space distance + 4 mips"]
     P --> M["Compute_GTAOMain<br/>horizons in a few directions<br/>per pixel, cosine-weighted"]
@@ -175,14 +180,14 @@ flowchart TD
 - **Differences from XeGTAO:** every texture is read with integer `Load`s at a pixel clamped to the viewport, not sampled by UV, since a view can be the top-left part of a bigger target; normals are made from depth; no bent normals; the noise is fixed per pixel (there's no TAA to average it over frames).
 - It needs the view's projection on its own (`RenderCamera::Projection`), to turn depth back into positions. Views with AO Off, `Uniform` lighting or no perspective projection get a **1x1 white texture** instead, and readers clamp the pixel to the texture's size, so they never need to check.
 - The working textures (depth mips, visibility, edges) are kept per view and remade when its target changes size.
-- Costs 0.29 ms a frame on Medium and 0.44 ms on High in Sponza (Release, uncapped, a 2050x1280 view).
+- Costs 0.29 ms a frame on Medium and 0.44 ms on High in Sponza (Release, now Development; uncapped, a 2050x1280 view).
 
 ### Irradiance and reflection probes
 
 Both kinds of probe capture **what surfaces are around them** rarely, and **relight** those captures often, so moving a light costs a compute pass, not draws.
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     subgraph Capture["Capture (draws): when the grid is fitted, or objects change nearby"]
         direction TB
@@ -216,7 +221,7 @@ A grid of probes over the scene, whose light the forward pass uses for ambient d
   - When objects change (`RenderScene::GetObjectsRevision`), the probes within 5 spacings of them (`HaveObjectsChangedWithin`) are queued to be captured again; moving Sponza's tank 2 m queues 1144 of 4416.
   - The budgets and the probe count are `GlobalIlluminationSettings` (`Graphics/GlobalIllumination.h`), from Engine.ini's `[Rendering]`, owned by `RenderEngine`.
 - **Publishes** `SceneIrradianceData`: the volume's layout (`GraphicsLayouts::IrradianceVolumeLayout`, `b5`), the SH textures (`t8` to `t10`) and the visibility atlas (`t11`); placeholders, and a probe count of 0, for views without global illumination.
-- Costs 0.25 ms a frame in Sponza (Release, uncapped).
+- Costs 0.25 ms a frame in Sponza (Release, now Development; uncapped).
 
 ### `ReflectionProbeStage`
 
@@ -248,58 +253,119 @@ It publishes `SceneReflectionData`: the lit probes' boxes (`GraphicsLayouts::Ref
   - Diffuse from the irradiance probes (`SampleProbeIrradiance`, `Common/IrradianceVolume.hlsli`): the 8 around the surface, weighted by distance, by which side of the surface they're on, and by DDGI's Chebyshev test against their visibility maps, skipping inactive ones. The hemisphere where none can be read. Occluded through Jimenez's multi-bounce fit, so bright surfaces don't go grey in creases.
   - Reflections from the reflection probes whose boxes the surface is in (`ReflectionEnvironment`, `Common/ReflectionProbes.hlsli`), faded in over their blend distance and projected onto their boxes, at the mip for the surface's gloss; the hemisphere for the rest. Occluded by Lagarde's specular occlusion. Outside probes, rough reflections are also dimmed (gloss squared), since nothing else occludes the sky there.
 - `RenderView::Debug`'s `IndirectDiffuse` makes it output the ambient diffuse alone, as it would light a white surface.
-- **Shadow lookups by type:** `SampleDirectionalShadow` is a 4×4 grid of filtered comparisons in the sun's map. `SamplePointShadow` turns the surface's direction from the light into the depth to compare with (its largest component is its distance along the face it falls in), and averages four filtered comparisons slightly around that direction. Cube faces join seamlessly in hardware, so those can cross between faces. Cube sampling flips Z (`ToCubeSampleDirection`, see [CubeMap](../06-Platform-And-Infrastructure/Utils-Library-Reference.md)).
+- **Shadow lookups by type:** `SampleDirectionalShadow` is a 4×4 grid of filtered comparisons in the sun's map. `SamplePointShadow` turns the surface's direction from the light into the depth to compare with (its largest component is its distance along the face it falls in), and averages four filtered comparisons slightly around that direction. Cube faces join seamlessly in hardware, so those can cross between faces. Cube sampling flips Z (`ToCubeSampleDirection`, see [CubeMap](Engine-Graphics-Layer.md#cube-maps-cubemaphcpp)).
 - With `Uniform` lighting, `ComputeLighting` skips the lights and their shadows and lights the surface from an even white environment (`UniformAmbient`), diffuse and reflections alike. Faces are still shaded from 1 facing the camera to `UniformEdgeShade` (0.45) edge-on, as if lit from the camera, since even light alone turns untextured meshes into silhouettes.
 
 ### `PostProcessRenderStage`
 
-Turns linear HDR colour into something a monitor can show, then smooths its jagged edges:
+Turns linear HDR colour into something a monitor can show:
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     S["Scene colour<br/>(HDR)"] --> L["Log luminance<br/>256x256, mips down to 1x1"]
     L --> A["Eye adaptation<br/>blend last frame's value<br/>toward the new average"]
     A --> T["Expose x ACES tonemap<br/>x sRGB encode"]
     S --> T
-    T --> Q{"view's AntiAliasing<br/>Off?"}
-    Q -->|yes, straight in| D["Display colour<br/>(8-bit)"]
-    Q -->|no| I["Tonemapped<br/>(8-bit, per view)"]
-    I --> F["FXAA"]
-    F --> D
+    T --> Q{"view's anti-aliasing<br/>Off?"}
+    Q -->|yes| D["the view's target"]
+    Q -->|no| I["Tonemapped texture<br/>(8-bit, per view)"]
+    D --> TCD[/"TonemappedColourData"/]
+    I --> TCD
 ```
 
-- **Debug view:** with `RenderView::Debug` at `AmbientOcclusion`, the finished image is overwritten by the ambient occlusion alone, in grey (`Pixel_DebugAmbientOcclusion.hlsl`).
 - **Eye adaptation** moves toward the scene's log-average luminance at about 1.5 s to settle, clamped to −3…+4 EV, then `RenderView::ExposureCompensation` is added on top. Its 1×1 history is ping-ponged between two textures kept in the view's persistent blackboard.
 - A view with `AutoExposure` off skips measuring and adapting, and the tonemap exposes at a fixed 1 (plus `ExposureCompensation`), so what's drawn sets the brightness. Mesh thumbnails use this.
-- The tonemap pass leaves the scene **depth** bound to `DisplayColourData`, so overlays drawn later (debug lines) can still depth-test against the scene. So does FXAA, and debug lines are drawn after it, so they aren't smoothed.
+- **Where the tonemap goes:** with the view's anti-aliasing `Off`, straight into the view's target, and `AntiAliasingStage` draws nothing. Otherwise into an 8-bit texture of the target's size (`TonemapTargetState`, kept in the view's persistent blackboard and remade when the target changes size), which anti-aliasing smooths into the target.
+- **Depth:** the tonemap binds no depth, and `TonemappedColourData` and then `DisplayColourData` carry the scene depth on, so overlays drawn later (debug lines) depth-test against the scene. Debug lines are drawn after anti-aliasing, so they aren't smoothed.
+- Each pass is one `DrawFullScreenPass(shader, { inputs })` (`Graphics/FullScreenPass.h`): it binds the inputs to `t0`, `t1`, ..., draws the quad into the bound target, and unbinds them so the next pass can write to them. Anti-aliasing, the debug view and `FinalRenderTargetStage` draw the same way.
 
-#### Anti-aliasing (FXAA)
+### `AntiAliasingStage`
 
-Unless `RenderView::AntiAliasing` is `Off`, the tonemap draws into an intermediate 8-bit texture (`AntiAliasState`, kept in the view's persistent blackboard and remade when the view's target changes size), and `Pixel_FXAA.hlsl` smooths it into the display target. It's a port of FXAA 3.11 Quality, run on the tonemapped, sRGB-encoded image so its contrast thresholds mean the same in shadow as in sunlight. For each pixel:
+Smooths jagged edges in the tonemapped image, into the view's target, by the view's `RenderView::AntiAliasing`: a **method** (`EAntiAliasingMethod`: `Off`, `FXAA` or `SMAA`) and a **quality** (`EAntiAliasingQuality`: `Low`, `Medium`, `High` or `Ultra`), in `Graphics/AntiAliasing.h`. The default is **SMAA High**. Both run on the tonemapped, sRGB-encoded image, so their contrast thresholds mean the same in shadow as in sunlight.
 
-1. **Is it an edge?** If the contrast between the pixel and its four neighbours is under `max(EdgeThresholdMin, brightest × EdgeThreshold)`, it passes through unchanged. Most pixels stop here, so texture detail stays sharp.
+```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
+flowchart TD
+    T[/"TonemappedColourData"/] --> M{"method"}
+    M -->|Off| P["nothing drawn:<br/>the tonemap is already in the target"]
+    M -->|FXAA| F["Pixel_FXAA<br/>one pass"]
+    M -->|SMAA| E["1. Edge detection<br/>into Edges (RG8)"]
+    E --> W["2. Blending weights<br/>into BlendWeights (RGBA8)<br/>reads the area and search textures"]
+    W --> B["3. Neighbourhood blending<br/>reads the tonemap and the weights"]
+    F --> D[/"DisplayColourData<br/>(the view's target)"/]
+    B --> D
+    P --> D
+```
+
+| | FXAA | SMAA |
+|---|---|---|
+| How | Finds edges from each pixel's neighbourhood and blends along them | Works out each edge's shape (its length, and how its ends turn) first, then blends across it by that |
+| Texture detail | Softened: texture contrast looks like an edge to it | Kept sharp |
+| Passes | 1 | 3, plus two clears |
+| Qualities | Low, Medium, High (Ultra is used as High) | Low, Medium, High, Ultra |
+| Sponza, uncapped Release (now Development), median frame time (Off: 1.401 ms) | Medium 1.455 ms (+3.9%), High 1.466 ms (+4.6%) | High 1.540 ms (+9.9%), Ultra 1.563 ms (+11.6%) |
+
+On Sponza, SMAA High changes about 34k pixels of the scene view against Off, and FXAA High about 203k: most of FXAA's are texture detail it softens. `GetHighestQuality(method)` gives each method's top quality (Ultra for SMAA, High otherwise), which is what the editor offers. A method keeps a quality it doesn't have: FXAA at Ultra draws as High, and switching to SMAA gets Ultra back.
+
+#### FXAA
+
+`Pixel_FXAA.hlsl` is a port of FXAA 3.11 Quality, one pass into the target. For each pixel:
+
+1. **Is it an edge?** If the contrast between the pixel and its four neighbours is under `max(EdgeThresholdMin, brightest × EdgeThreshold)`, it passes through unchanged. Most pixels stop here.
 2. **Which way does the edge run, and which side is it on?** Second differences over the 3×3 neighbourhood pick horizontal or vertical (they catch one-pixel-thin lines too); the neighbour across the edge with the bigger step picks the side.
 3. **How long is the stair-step?** It samples half a pixel across, exactly on the boundary, where bilinear filtering averages the two pixels, and walks both ways along the edge until that average changes. The search steps grow (Medium: 1, 1.5, 2, 4, then an unsampled 12), and an end not found by the last step is assumed to be that far.
 4. **How far to move the sample?** `0.5 − distance to the nearer end / step length`: about half a pixel at the ends of a step, none in the middle, and none toward an end on the other side of the step. A pixel that stands out from its whole neighbourhood (detail thinner than a pixel) is moved by up to `Subpixel` instead, if that's more.
 5. The pixel's colour is one bilinear sample moved that far across the edge: a blend with its neighbour.
 
-The levels are FXAA 3.11's quality presets (`GetAntiAliasingSettings`, `Graphics/AntiAliasing.h`), uploaded in `PostProcessParams`:
+The qualities are FXAA 3.11's presets (`GetFXAASettings`), uploaded in `AntiAliasingStage::FXAAParamsLayout` (`b0`):
 
-| Level | Preset | EdgeThreshold | EdgeThresholdMin | Subpixel | Search steps (reach) |
+| Quality | Preset | EdgeThreshold | EdgeThresholdMin | Subpixel | Search steps (reach) |
 |---|---|---|---|---|---|
 | Low | 10 | 0.250 | 0.0833 | 0.25 | 1.5, 3, 12 (16.5 px) |
-| Medium (default) | 12 | 0.166 | 0.0625 | 0.50 | 1, 1.5, 2, 4, 12 (20.5 px) |
-| High | 39 | 0.125 | 0.0312 | 0.75 | 1 ×5, 1.5, 2 ×4, 4, 8 (26.5 px) |
+| Medium | 12 | 0.166 | 0.0625 | 0.50 | 1, 1.5, 2, 4, 12 (20.5 px) |
+| High (and Ultra) | 39 | 0.125 | 0.0312 | 0.75 | 1 ×5, 1.5, 2 ×4, 4, 8 (26.5 px) |
 
-Higher levels treat fainter contrast as an edge, find the ends of long edges more accurately, and soften more sub-pixel sparkle, at the cost of more texture blur and more samples on edge pixels (5 for a pixel that isn't an edge; at most 14, 18 or 32 for one that is). FXAA works on single frames, so it softens shimmer on thin geometry but doesn't remove it.
+Higher qualities treat fainter contrast as an edge, find the ends of long edges more accurately, and soften more sub-pixel sparkle, at the cost of more texture blur and more samples on edge pixels (5 for a pixel that isn't an edge; at most 14, 18 or 32 for one that is). FXAA works on single frames, so it softens shimmer on thin geometry but doesn't remove it.
+
+#### SMAA
+
+SMAA 1x (Jimenez et al.), upstream `iryoku/smaa` at `71c806a8`. `Assets/Shaders/Common/SMAA/SMAA.hlsl` is upstream's file byte for byte, CRLF line endings and one Latin-1 byte included, so it stays diffable with upstream: don't edit or normalise it. `Common/SMAA/SMAA.hlsli` sets it up for the engine instead:
+
+- **Its includes start at `Assets/Shaders`** (`Common/FullScreenQuad.hlsli`, `Common/SMAA/SMAA.hlsl`), as every shader's do, though the files sit beside it: fxc never looks beside the including file ([Low-Level-Renderer-Module.md](Low-Level-Renderer-Module.md#shaders-hlsl-on-both-apis)).
+
+- **Its own porting macros** (`SMAA_CUSTOM_SL`): upstream's HLSL 4 setup declares samplers in Effects syntax, without registers. Ours sample through `s2` (linear, clamped) and `s3` (point, clamped).
+- **The preset from a cbuffer** (`SMAAParams`, `b0`, mirrored by `AntiAliasingStage::SMAAParamsLayout`): the target's metrics, the threshold, and the search steps and corner rounding, so one shader serves every quality and the loops' limits are read at run time. Only diagonal and corner detection are compile-time.
+- **`SMAATexcoord`**: a pixel's centre in the *target's* texture coordinates (`SV_Position × 1 / target size`), not the quad's UV, which spans the viewport (the target's top-left part).
+
+The passes, each a `DrawFullScreenPass` with SMAA's vertex-shader half run per pixel in the pixel shader (no extra vertex shader, and nothing more through the GL translator):
+
+1. **Edge detection** (`Pixel_SMAAEdgeDetection`): where the luma steps by more than `Threshold` to the left (r) or top (g) neighbour, into **Edges** (RG8). Pixels without an edge are discarded.
+2. **Blending weights** (`Pixel_SMAABlendingWeights`, or `Pixel_SMAABlendingWeightsNoDiagonals` without diagonal and corner detection): for each edge pixel, searches along the edge for its ends (up to `MaxSearchSteps` steps of 2 pixels), reads how they turn, and looks the shape up in the **area texture** for how much the pixel blends across it, into **BlendWeights** (RGBA8). The **search texture** speeds up finding the ends.
+3. **Neighbourhood blending** (`Pixel_SMAANeighborhoodBlending`): blends each pixel with its neighbours by those weights, into the view's target.
+
+- **Per view:** the Edges and BlendWeights textures are the target's size (`SMAAState`, in the view's persistent blackboard, remade when the target changes size). Both are **cleared every frame** first: edge detection discards pixels without an edge, and the later passes read a pixel past the viewport's right and bottom edges, so leftovers from an earlier frame or a larger viewport would otherwise read as edges.
+- **The lookup textures** are upstream's `AreaTex.h` (RG8, 160×560) and `SearchTex.h` (R8, 64×16), vendored in `Externals/Src/SMAA/` with SMAA's licence and uploaded once in `Initialize`. `static_assert`s check their sizes.
+
+| Quality | Threshold | Search steps | Diagonal search steps | Corner rounding |
+|---|---|---|---|---|
+| Low | 0.15 | 4 | — (off) | — (off) |
+| Medium | 0.1 | 8 | — (off) | — (off) |
+| High (default) | 0.1 | 16 | 8 | 25 |
+| Ultra | 0.05 | 32 | 16 | 25 |
+
+These are `SMAA.hlsl`'s own presets (`GetSMAASettings`, `SMAASettings`; a unit test checks them against it). High is the first with diagonals and corners: on Sponza it differs from Medium in about 11k pixels. Ultra's lower threshold catches fainter edges, and starts taking texture contrast for edges (102k changed pixels against High's 34k), so it isn't the default. SMAA 1x works on single frames like FXAA, so it leaves detail thinner than a pixel (e.g. a 1-pixel diagonal line) as it is, where FXAA's subpixel softening blurs it. SMAA's temporal and multisampled modes, which handle such detail, aren't implemented.
+
+### `DebugViewStage`
+
+With `RenderView::Debug` at `AmbientOcclusion`, overwrites the view's finished image with the ambient occlusion alone, in grey (`Pixel_DebugAmbientOcclusion.hlsl`), after anti-aliasing and before the debug lines. Otherwise it draws nothing. (`IndirectDiffuse` is the forward pass's own; see [`ForwardRenderStage`](#forwardrenderstage).)
 
 ### `PickRenderStage`
 
 Finds the object at one pixel of the main view, and how far away its surface is, for the Editor's click selection and for placing meshes dropped into the SceneView. It only does work on frames where `RenderView::Pick` holds a `RenderPickRequest { X, Y, Result, DepthResult }`; `RenderEngine::Render()` clears the request afterwards.
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 sequenceDiagram
     participant Ed as Editor (SceneViewPanel)
     participant View as main RenderView
@@ -319,7 +385,7 @@ sequenceDiagram
 - **64-bit IDs:** pick IDs are U64 because `GameObjectID` is, so the ID target is `R32G32_UINT` and `Pixel_PickID.hlsl` writes a `uint2`, low half then high.
 - **Depth:** `DepthResult` is optional. It gets the depth target's texel (D24S8), which `RenderPickRequest::DecodeDepth` turns into 0 at the near plane to 1 at the far plane. The depth target is cleared to 1, so 1 means nothing is drawn there. The Editor's `ScenePicker` unprojects it with the camera it asked with (`ViewProjection::Unproject`) to find where the surface is.
 - `Pixel_PickID.hlsl` writes each `RenderObject::GetPickID()`. Objects with ID 0 still draw, so they hide what's behind them. Cutout pixels are clipped as in the shadow pass, so clicks go through them.
-- The readback makes the render thread wait for the GPU, but only on a click frame. See [`ReadTexel`](Low-Level-Renderer-Module.md#reading-back-from-the-gpu-readtexel-and-readtexture).
+- The readback makes the render thread wait for the GPU, but only on a click frame. See [`ReadTexel`](Low-Level-Renderer-Module.md#reading-back-from-the-gpu-readtexel-readtexture-and-readbackbuffer).
 
 ### `DebugDrawRenderStage`
 
@@ -362,12 +428,14 @@ Keep per-view, across-frame state in `context.Persistent()`, and add new per-fra
 
 - `Engine\Src\Graphics\RenderStage.h`, `RenderStageBuilder.h`, `RenderPorts.h`, `RenderBlackboard.h`, `RenderContext.h`
 - `Engine\Src\Graphics\RenderPipeline.h/.cpp`, `RenderPipelineCompiler.h/.cpp`
-- `Engine\Src\Graphics\RenderData\` — `SceneLightingData.h`, `SceneDepthData.h`, `AmbientOcclusionData.h`, `SceneIrradianceData.h`, `SceneReflectionData.h`, `SceneColourData.h`, `DisplayColourData.h`
+- `Engine\Src\Graphics\RenderData\` — `SceneLightingData.h`, `SceneDepthData.h`, `AmbientOcclusionData.h`, `SceneIrradianceData.h`, `SceneReflectionData.h`, `SceneColourData.h`, `TonemappedColourData.h`, `DisplayColourData.h`
 - `Engine\Src\Graphics\AmbientOcclusion.h/.cpp` — `EAmbientOcclusion` levels and their GTAO settings
 - `Engine\Src\Graphics\ProbeCapture.h/.cpp`, `IrradianceProbeGrid.h/.cpp`, `GlobalIllumination.h` — probe capture, the irradiance grid, the probe budgets
 - `Engine\Src\Graphics\ReflectionProbeObject.h/.cpp` — a reflection probe in a `RenderScene`
 - `Engine\Src\Graphics\RenderStages\` — one `.h/.cpp` per stage
-- `Engine\Src\Graphics\GraphicsLayouts.h` — the CPU side of shader buffers the stages share, in `namespace GraphicsLayouts`: the light and shadow layouts and their limits, `ViewLightingLayout`, an object's matrices (`ObjectBufferLayout`, the vertex shaders' `ObjectBuffer`), a material's parameters (`MaterialBufferLayout`, the pixel shaders' `MaterialBuffer`), and the probes' (`IrradianceVolumeLayout`, `ReflectionProbeBufferLayout`, and `ProbeListLayout`, which both probe stages' compute passes take). A layout only one stage's shaders use stays in that stage (`PickRenderStage::PickBufferLayout`, `PostProcessRenderStage::ParamsLayout`, `AmbientOcclusionStage::ParamsLayout`); put new ones by the same rule.
-- `Engine\Src\Graphics\AntiAliasing.h/.cpp` — `EAntiAliasing` levels and their FXAA settings
-- `Assets\Shaders\` — `Pixel_ShadowCaster`, `Pixel_DepthPrepass`, `Pixel_NewRenderer*`, `Pixel_ProbeCapture`, `Pixel_LuminanceLog`, `Pixel_ExposureAdapt`, `Pixel_Tonemap`, `Pixel_FXAA`, `Pixel_DebugAmbientOcclusion`, `Pixel_PickID`, `Pixel_Line`; compute: `Compute_GTAO*`, `Compute_ProbeVisibility`, `Compute_ProbeRelight`, `Compute_ReflectionRelight`, `Compute_ReflectionPrefilter`
-- `Assets\Shaders\Common\` — `Lighting.hlsli` (surface shading), `LightResources.hlsli` (lights, shadows, sky), `PixelResources.hlsli` (the forward pass's bindings), `GTAO.hlsli`, `Probes.hlsli` (capture packing, face layouts, probe lists), `ProbeLighting.hlsli`, `IrradianceVolume.hlsli`, `ReflectionProbes.hlsli`
+- `Engine\Src\Graphics\GraphicsLayouts.h` — the CPU side of shader buffers the stages share, in `namespace GraphicsLayouts`: the light and shadow layouts and their limits, `ViewLightingLayout`, an object's matrices (`ObjectBufferLayout`, the vertex shaders' `ObjectBuffer`), a material's parameters (`MaterialBufferLayout`, the pixel shaders' `MaterialBuffer`), and the probes' (`IrradianceVolumeLayout`, `ReflectionProbeBufferLayout`, and `ProbeListLayout`, which both probe stages' compute passes take). A layout only one stage's shaders use stays in that stage (`PickRenderStage::PickBufferLayout`, `PostProcessRenderStage::ParamsLayout`, `AntiAliasingStage::FXAAParamsLayout` and `SMAAParamsLayout`, `AmbientOcclusionStage::ParamsLayout`); put new ones by the same rule.
+- `Engine\Src\Graphics\AntiAliasing.h/.cpp` — `EAntiAliasingMethod`, `EAntiAliasingQuality` and `AntiAliasingMode`, their names, and each quality's FXAA and SMAA settings
+- `Engine\Src\Graphics\FullScreenPass.h/.cpp` — `DrawFullScreenPass`
+- `Assets\Shaders\` — `Pixel_ShadowCaster`, `Pixel_DepthPrepass`, `Pixel_NewRenderer*`, `Pixel_ProbeCapture`, `Pixel_LuminanceLog`, `Pixel_ExposureAdapt`, `Pixel_Tonemap`, `Pixel_FXAA`, `Pixel_SMAAEdgeDetection`, `Pixel_SMAABlendingWeights(NoDiagonals)`, `Pixel_SMAANeighborhoodBlending`, `Pixel_DebugAmbientOcclusion`, `Pixel_PickID`, `Pixel_Line`; compute: `Compute_GTAO*`, `Compute_ProbeVisibility`, `Compute_ProbeRelight`, `Compute_ReflectionRelight`, `Compute_ReflectionPrefilter`
+- `Assets\Shaders\Common\` — `Lighting.hlsli` (surface shading), `LightResources.hlsli` (lights, shadows, sky), `PixelResources.hlsli` (the forward pass's bindings), `GTAO.hlsli`, `Probes.hlsli` (capture packing, face layouts, probe lists), `ProbeLighting.hlsli`, `IrradianceVolume.hlsli`, `ReflectionProbes.hlsli`, `FullScreenQuad.hlsli` (the full-screen pixel shaders' input), `SMAA/` (upstream `SMAA.hlsl`, our `SMAA.hlsli` and `SMAABlendingWeights.hlsli`)
+- `Externals\Src\SMAA\` — SMAA's area and search textures as C arrays (`AreaTex.h`, `SearchTex.h`), and its licence

@@ -3,7 +3,7 @@
 RZE never loads `.obj` / `.fbx` models at runtime. A separate tool, **SourceAssetBurner**, converts ("burns") them ahead of time into RZE's own binary formats, and the engine only ever reads those.
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     subgraph Offline["Offline: SourceAssetBurner.exe"]
         Src["RZE/Assets/3D/**/*.obj<br/>(source models)"] --> Assimp["Assimp 6.0.5<br/>read + triangulate,<br/>convert units"]
@@ -26,9 +26,13 @@ The offline and runtime halves share only the binary format, not code paths. Loa
 ## Running it
 
 ```powershell
-.\RZE\_build\debug\SourceAssetBurner.exe            # burn every .obj under RZE\Assets\3D
-.\RZE\_build\debug\SourceAssetBurner.exe <file>     # burn one source file
+.\RZE\_build\development\SourceAssetBurner.exe            # burn every .obj and .fbx under RZE\Assets\3D
+.\RZE\_build\development\SourceAssetBurner.exe <file>     # burn one source file
 ```
+
+It exits with 1 if any source fails to import, or if the one file given isn't there, so a build step (CI's Burn
+Assets) fails with it. A full burn ends with a summary line: `imported N sources`, or `N of M sources failed to
+import`. Retail builds compile logging out, so there it prints nothing, but the exit code is the same.
 
 It takes about a minute for everything (most of it New Sponza's FBX). **`ProjectData/` isn't tracked in git**, so burn once after cloning, and again after pulling any change to the importer, such as the coordinate fix below. Burns are **deterministic**: burning the same source twice gives byte-identical files.
 
@@ -64,7 +68,7 @@ Textures aren't converted: materials store paths back into `RZE\Assets\`, and `W
 The engine's conventions (`Utils/Math/Units.h`) are **1 unit = 1 metre, right-handed, +Y up, −Z forward**. The importer keeps models in that space:
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     S["Source model"] --> U{"Does the format<br/>declare a unit?"}
     U -->|"yes (e.g. FBX in cm)"| Scale["aiProcess_GlobalScale<br/>converts to metres"]

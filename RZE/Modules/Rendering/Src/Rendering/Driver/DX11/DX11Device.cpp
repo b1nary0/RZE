@@ -1,26 +1,128 @@
 #include <Rendering/Driver/DX11/DX11Device.h>
 
 #include <Rendering/Driver/DX11/DX11.h>
+#include <Rendering/Driver/DX11/DX11ConstantBuffer.h>
+#include <Rendering/Driver/DX11/DX11IndexBuffer.h>
+#include <Rendering/Driver/DX11/DX11ShaderTypes.h>
+#include <Rendering/Driver/DX11/DX11TextureBuffer2D.h>
+#include <Rendering/Driver/DX11/DX11VertexBuffer.h>
+#include <Rendering/TexelReadback.h>
+#include <Rendering/TextureReadback.h>
 
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Vector2D.h>
+#include <Utils/Math/Vector4D.h>
+#include <Utils/Platform/Windows/WideStrings.h>
+
+#include <SDL3/SDL.h>
+
+#include <cstring>
+#include <iterator>
+#include <vector>
+
+#include <d3d9.h>
 
 namespace Rendering
 {
+	namespace
+	{
+		D3D_PRIMITIVE_TOPOLOGY ConvertToDX11TopologyType(EPrimitiveTopology topologyType)
+		{
+			switch (topologyType)
+			{
+			case EPrimitiveTopology::TriangleList: return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+			case EPrimitiveTopology::TriangleStrip: return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+			case EPrimitiveTopology::LineList: return D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
+
+			default: return D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
+			}
+		}
+
+		// Copies a box of a texture's most detailed mip into a new staging texture, once the GPU has drawn it, for the
+		// caller to map and release. Reads are occasional (a click, a capture, a few texels a frame), so the staging
+		// copy is made for each one rather than kept around.
+		ID3D11Texture2D* CopyToStaging(DX11Device& device, ID3D11Texture2D& texture, const D3D11_BOX& box)
+		{
+			D3D11_TEXTURE2D_DESC stagingDesc;
+			texture.GetDesc(&stagingDesc);
+			// D3D only copies depth-stencil textures whole, and wants no box for that
+			const bool isWhole = box.left == 0 && box.top == 0 && box.right == stagingDesc.Width && box.bottom == stagingDesc.Height;
+			stagingDesc.Width = box.right - box.left;
+			stagingDesc.Height = box.bottom - box.top;
+			stagingDesc.MipLevels = 1;
+			stagingDesc.Usage = D3D11_USAGE_STAGING;
+			stagingDesc.BindFlags = 0;
+			stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+			stagingDesc.MiscFlags = 0;
+
+			ID3D11Texture2D* staging = nullptr;
+			HRESULT hr = device.GetHardwareDevice().CreateTexture2D(&stagingDesc, nullptr, &staging);
+			AssertExpr(hr == S_OK);
+
+			device.GetDeviceContext().CopySubresourceRegion(staging, 0, 0, 0, 0, &texture, 0, isWhole ? nullptr : &box);
+			return staging;
+		}
+
+		// CopyToStaging, then maps the copy, waiting for the GPU to finish drawing it, and calls read(mapped) before
+		// unmapping
+		template <typename ReadFunc>
+		void ReadBackRegion(DX11Device& device, ID3D11Texture2D& texture, const D3D11_BOX& box, ReadFunc&& read)
+		{
+			ID3D11Texture2D* staging = CopyToStaging(device, texture, box);
+			ID3D11DeviceContext& deviceContext = device.GetDeviceContext();
+
+			D3D11_MAPPED_SUBRESOURCE mapped;
+			const HRESULT hr = deviceContext.Map(staging, 0, D3D11_MAP_READ, 0, &mapped);
+			AssertExpr(hr == S_OK);
+			read(mapped);
+			deviceContext.Unmap(staging, 0);
+			staging->Release();
+		}
+
+		// Every resource the device is given came from its own Create functions
+		DX11TextureBuffer2D& AsDX11(ITextureBuffer2D& texture)
+		{
+			return static_cast<DX11TextureBuffer2D&>(texture);
+		}
+	}
+
+	U32 GetBytesPerTexel(DXGI_FORMAT format)
+	{
+		switch (format)
+		{
+		case DXGI_FORMAT_R8_UNORM:
+			return 1;
+		case DXGI_FORMAT_R16_FLOAT:
+		case DXGI_FORMAT_R8G8_UNORM:
+			return 2;
+		case DXGI_FORMAT_R8G8B8A8_UNORM:
+		case DXGI_FORMAT_R16G16_FLOAT:
+		case DXGI_FORMAT_R32_UINT:
+		case DXGI_FORMAT_R32_FLOAT:
+		// Depth-stencil targets that can also be read by shaders (DX11TextureBuffer2D)
+		case DXGI_FORMAT_R24G8_TYPELESS:
+			return 4;
+		case DXGI_FORMAT_R16G16B16A16_FLOAT:
+		case DXGI_FORMAT_R32G32_UINT:
+			return 8;
+
+		default:
+			AssertMsg(false, "A texture format with no known texel size");
+			return 0;
+		}
+	}
+
 	const int kInitialWidth = 1600;
 	const int kInitialHeight = 900;
 
-	void DX11Device::Initialize()
+	void DX11Device::Initialize(bool validate)
 	{
 		// @TODO Need to move a bunch of this code out into RenderEngine
 		// and then do these operations via Rendering::Renderer calls. Really the only thing
 		// left for the device to do essentially is to create the swapchain and create a device, i think.
 		HRESULT hr;
 
-		D3D11_CREATE_DEVICE_FLAG deviceType = D3D11_CREATE_DEVICE_SINGLETHREADED;
-#ifdef _DEBUG
-		deviceType = D3D11_CREATE_DEVICE_DEBUG;
-#endif
+		const D3D11_CREATE_DEVICE_FLAG deviceType = validate ? D3D11_CREATE_DEVICE_DEBUG : D3D11_CREATE_DEVICE_SINGLETHREADED;
 
 		hr = D3D11CreateDevice(
 			NULL,
@@ -34,6 +136,26 @@ namespace Rendering
 			NULL,
 			&mDeviceContext);
 		AssertExpr(hr == S_OK);
+
+		// The debug layer only writes its reports to a debugger's output; the info queue holds them for the log. INFO
+		// and MESSAGE, the layer's notes on objects made and destroyed, aren't kept.
+		if (validate)
+		{
+			if (SUCCEEDED(mDevice->QueryInterface(__uuidof(ID3D11InfoQueue), reinterpret_cast<void**>(&mInfoQueue))))
+			{
+				D3D11_MESSAGE_SEVERITY ignoredSeverities[] = { D3D11_MESSAGE_SEVERITY_INFO, D3D11_MESSAGE_SEVERITY_MESSAGE };
+				D3D11_INFO_QUEUE_FILTER filter;
+				ZeroMemory(&filter, sizeof(filter));
+				filter.DenyList.NumSeverities = static_cast<UINT>(std::size(ignoredSeverities));
+				filter.DenyList.pSeverityList = ignoredSeverities;
+				mInfoQueue->AddStorageFilterEntries(&filter);
+			}
+			else
+			{
+				mInfoQueue = nullptr;
+				RZE_LOG_WARNING("The D3D11 debug layer's info queue isn't available, so its reports won't be logged.");
+			}
+		}
 
 		CreateSwapChain();
 
@@ -140,6 +262,20 @@ namespace Rendering
 			mDevice->CreateDepthStencilState(&depthDesc, &mDepthOffState);
 		}
 
+		// Linear wrap sampler
+		{
+			D3D11_SAMPLER_DESC samplerDesc;
+			ZeroMemory(&samplerDesc, sizeof(samplerDesc));
+			samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+			samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+			samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+			samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+			samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+			samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+			mDevice->CreateSamplerState(&samplerDesc, &mLinearWrapSamplerState);
+		}
+
 		// Shadow comparison sampler
 		{
 			D3D11_SAMPLER_DESC samplerDesc;
@@ -172,6 +308,66 @@ namespace Rendering
 
 			mDevice->CreateSamplerState(&samplerDesc, &mLinearClampSamplerState);
 		}
+
+		// Point clamp sampler
+		{
+			D3D11_SAMPLER_DESC samplerDesc;
+			ZeroMemory(&samplerDesc, sizeof(samplerDesc));
+			samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+			samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+			samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+			samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+			samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+			samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+			mDevice->CreateSamplerState(&samplerDesc, &mPointClampSamplerState);
+		}
+
+		// What creating the swap chain and the states above reported
+		ReportDebugMessages();
+	}
+
+	void DX11Device::ReportDebugMessages()
+	{
+		if (mInfoQueue == nullptr)
+		{
+			return;
+		}
+
+		// Each message is a D3D11_MESSAGE followed by its text, so it's read into a buffer of the size the queue gives
+		std::vector<Byte> buffer;
+		const UINT64 count = mInfoQueue->GetNumStoredMessages();
+		for (UINT64 index = 0; index < count; ++index)
+		{
+			SIZE_T length = 0;
+			if (FAILED(mInfoQueue->GetMessage(index, nullptr, &length)) || length == 0)
+			{
+				continue;
+			}
+			buffer.resize(length);
+			D3D11_MESSAGE* message = reinterpret_cast<D3D11_MESSAGE*>(buffer.data());
+			if (FAILED(mInfoQueue->GetMessage(index, message, &length)))
+			{
+				continue;
+			}
+
+			switch (message->Severity)
+			{
+			case D3D11_MESSAGE_SEVERITY_CORRUPTION:
+			case D3D11_MESSAGE_SEVERITY_ERROR:
+				RZE_LOG_ERROR("D3D11 (" << static_cast<int>(message->ID) << "): " << message->pDescription);
+				break;
+			case D3D11_MESSAGE_SEVERITY_WARNING:
+				RZE_LOG_WARNING("D3D11 (" << static_cast<int>(message->ID) << "): " << message->pDescription);
+				break;
+			default:
+				// INFO and MESSAGE aren't stored (Initialize)
+				break;
+			}
+		}
+		// The queue can't hand messages over one by one, only be cleared, so one another thread stores between the count
+		// and here is lost. Not clearing would fill it: it holds 1024 by default, and a warning can come every frame.
+		mInfoQueue->ClearStoredMessages();
 	}
 
 	void DX11Device::CreateSwapChain()
@@ -260,16 +456,32 @@ namespace Rendering
 
 	void DX11Device::SetWindow(void* windowHandle)
 	{
-		mWindowHandle = windowHandle;
+		// The SDL window's HWND, which the swap chain presents to
+		mWindowHandle = SDL_GetPointerProperty(SDL_GetWindowProperties(static_cast<SDL_Window*>(windowHandle)), SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
 	}
 
 	void DX11Device::Shutdown()
 	{
+		// What's come in since the last present, then the queue goes with the device
+		ReportDebugMessages();
+		if (mInfoQueue != nullptr)
+		{
+			mInfoQueue->Release();
+			mInfoQueue = nullptr;
+		}
+
 		if (mFrameLatencyWaitableObject != nullptr)
 		{
 			CloseHandle(mFrameLatencyWaitableObject);
 			mFrameLatencyWaitableObject = nullptr;
 		}
+
+		// Never filled in: whoever asked sees them stay not ready
+		for (PendingTextureReadback& pending : mPendingTextureReadbacks)
+		{
+			pending.Staging->Release();
+		}
+		mPendingTextureReadbacks.clear();
 
 		// Before the swap chain, whose back buffer it holds
 		mRenderTargetView->Release();
@@ -290,13 +502,431 @@ namespace Rendering
 		mDepthReadOnlyState->Release();
 		mDepthReadOnlyLessEqualState->Release();
 		mDepthOffState->Release();
+		mLinearWrapSamplerState->Release();
 		mShadowSamplerState->Release();
 		mLinearClampSamplerState->Release();
+		mPointClampSamplerState->Release();
 	}
 
 	void DX11Device::SetSyncInterval(U32 interval)
 	{
 		mSyncInterval = interval;
+	}
+
+	bool DX11Device::WaitForPresentSlot(U32 timeoutMS)
+	{
+		if (mFrameLatencyWaitableObject == nullptr)
+		{
+			return true;
+		}
+
+		return WaitForSingleObjectEx(mFrameLatencyWaitableObject, timeoutMS, TRUE) == WAIT_OBJECT_0;
+	}
+
+	std::shared_ptr<IVertexBuffer> DX11Device::CreateVertexBuffer()
+	{
+		std::shared_ptr<DX11VertexBuffer> buffer = std::make_shared<DX11VertexBuffer>();
+		buffer->SetDevice(this);
+		return buffer;
+	}
+
+	std::shared_ptr<IIndexBuffer> DX11Device::CreateIndexBuffer()
+	{
+		std::shared_ptr<DX11IndexBuffer> buffer = std::make_shared<DX11IndexBuffer>();
+		buffer->SetDevice(this);
+		return buffer;
+	}
+
+	std::shared_ptr<IConstantBuffer> DX11Device::CreateConstantBuffer(U32 alignment)
+	{
+		std::shared_ptr<DX11ConstantBuffer> buffer = std::make_shared<DX11ConstantBuffer>(alignment);
+		buffer->SetDevice(this);
+		return buffer;
+	}
+
+	std::shared_ptr<ITextureBuffer2D> DX11Device::CreateTextureBuffer2D()
+	{
+		std::shared_ptr<DX11TextureBuffer2D> texture = std::make_shared<DX11TextureBuffer2D>();
+		texture->SetDevice(this);
+		return texture;
+	}
+
+	std::shared_ptr<IVertexShader> DX11Device::CreateVertexShader()
+	{
+		std::shared_ptr<DX11VertexShader> shader = std::make_shared<DX11VertexShader>();
+		shader->SetDevice(this);
+		return shader;
+	}
+
+	std::shared_ptr<IPixelShader> DX11Device::CreatePixelShader()
+	{
+		std::shared_ptr<DX11PixelShader> shader = std::make_shared<DX11PixelShader>();
+		shader->SetDevice(this);
+		return shader;
+	}
+
+	std::shared_ptr<IComputeShader> DX11Device::CreateComputeShader()
+	{
+		std::shared_ptr<DX11ComputeShader> shader = std::make_shared<DX11ComputeShader>();
+		shader->SetDevice(this);
+		return shader;
+	}
+
+	void DX11Device::BeginDrawSet()
+	{
+		// @TODO This is temporary until the API is written for SetRenderTarget() and ClearDepthStencilView()
+		// @note past josh wtf api are you talking about
+		ID3D11DeviceContext& deviceContext = GetDeviceContext();
+		deviceContext.RSSetState(mRasterState);
+		deviceContext.PSSetSamplers(0, 1, &mLinearWrapSamplerState);
+		deviceContext.CSSetSamplers(0, 1, &mLinearWrapSamplerState);
+		deviceContext.PSSetSamplers(1, 1, &mShadowSamplerState);
+		deviceContext.CSSetSamplers(1, 1, &mShadowSamplerState);
+		deviceContext.PSSetSamplers(2, 1, &mLinearClampSamplerState);
+		deviceContext.CSSetSamplers(2, 1, &mLinearClampSamplerState);
+		deviceContext.PSSetSamplers(3, 1, &mPointClampSamplerState);
+		deviceContext.CSSetSamplers(3, 1, &mPointClampSamplerState);
+	}
+
+	bool DX11Device::IsProfilerAttached()
+	{
+		return D3DPERF_GetStatus() != 0;
+	}
+
+	void DX11Device::BeginProfilerEvent(const char* name)
+	{
+		D3DPERF_BeginEvent(0xffffffff, Conversions::StringToWString(name).c_str());
+	}
+
+	void DX11Device::EndProfilerEvent()
+	{
+		D3DPERF_EndEvent();
+	}
+
+	void DX11Device::ClearDepthStencilBuffer(ITextureBuffer2D& depthTexture, bool everySlice, U32 slice)
+	{
+		DX11TextureBuffer2D* texturePtr = &AsDX11(depthTexture);
+
+		ID3D11DepthStencilView& depthView = everySlice ? texturePtr->GetDepthView() : texturePtr->GetDepthSliceView(slice);
+		ID3D11DeviceContext& deviceContext = GetDeviceContext();
+		deviceContext.ClearDepthStencilView(&depthView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	}
+
+	void DX11Device::ClearRenderTargets()
+	{
+		ID3D11RenderTargetView* nullrtv = nullptr;
+		ID3D11DeviceContext& deviceContext = GetDeviceContext();
+		deviceContext.OMSetRenderTargets(1, &nullrtv, nullptr);
+	}
+
+	void DX11Device::SetRenderTargetBackBuffer()
+	{
+		constexpr FLOAT s_backBufferClearColour[4] = { 0.25f, 0.45f, 0.65f, 1.0f };
+
+		ID3D11DeviceContext& deviceContext = GetDeviceContext();
+		deviceContext.ClearRenderTargetView(mRenderTargetView, s_backBufferClearColour);
+		deviceContext.ClearDepthStencilView(mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+		deviceContext.OMSetRenderTargets(1, &mRenderTargetView, mDepthStencilView);
+	}
+
+	void DX11Device::SetDepthTarget(ITextureBuffer2D& depthTexture, U32 slice)
+	{
+		DX11TextureBuffer2D* depthTexturePtr = &AsDX11(depthTexture);
+
+		ID3D11DeviceContext& deviceContext = GetDeviceContext();
+		deviceContext.OMSetRenderTargets(0, nullptr, &depthTexturePtr->GetDepthSliceView(slice));
+	}
+
+	void DX11Device::SetColourTarget(ITextureBuffer2D& colourTarget, ITextureBuffer2D* depthTexture)
+	{
+		DX11TextureBuffer2D* targetPtr = &AsDX11(colourTarget);
+
+		ID3D11DepthStencilView* dsv = nullptr;
+		if (depthTexture != nullptr)
+		{
+			dsv = &AsDX11(*depthTexture).GetDepthView();
+		}
+
+		ID3D11RenderTargetView* rtv = &targetPtr->GetTargetView();
+		ID3D11DeviceContext& deviceContext = GetDeviceContext();
+		deviceContext.OMSetRenderTargets(1, &rtv, dsv);
+	}
+
+	void DX11Device::GenerateMips(ITextureBuffer2D& texture, U32 firstSlice, U32 sliceCount)
+	{
+		DX11TextureBuffer2D* texturePtr = &AsDX11(texture);
+
+		ID3D11DeviceContext& deviceContext = GetDeviceContext();
+		if (sliceCount == 0)
+		{
+			deviceContext.GenerateMips(&texturePtr->GetResourceView());
+			return;
+		}
+
+		// GenerateMips fills what its view covers, so a view of those slices alone, every mip. Made for the call:
+		// it's cheap, and slices change from call to call.
+		D3D11_TEXTURE2D_DESC desc;
+		texturePtr->GetHWResource()->GetDesc(&desc);
+		AssertExpr(firstSlice + sliceCount <= desc.ArraySize);
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc;
+		ZeroMemory(&viewDesc, sizeof(viewDesc));
+		viewDesc.Format = desc.Format;
+		viewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+		viewDesc.Texture2DArray.MostDetailedMip = 0;
+		viewDesc.Texture2DArray.MipLevels = desc.MipLevels;
+		viewDesc.Texture2DArray.FirstArraySlice = firstSlice;
+		viewDesc.Texture2DArray.ArraySize = sliceCount;
+
+		ID3D11ShaderResourceView* view = nullptr;
+		const HRESULT hr = GetHardwareDevice().CreateShaderResourceView(texturePtr->GetHWResource(), &viewDesc, &view);
+		AssertExpr(hr == S_OK);
+		deviceContext.GenerateMips(view);
+		view->Release();
+	}
+
+	void DX11Device::CopyTexture(ITextureBuffer2D& source, ITextureBuffer2D& destination)
+	{
+		DX11TextureBuffer2D* sourcePtr = &AsDX11(source);
+		DX11TextureBuffer2D* destinationPtr = &AsDX11(destination);
+
+		ID3D11DeviceContext& deviceContext = GetDeviceContext();
+		deviceContext.CopyResource(destinationPtr->GetHWResource(), sourcePtr->GetHWResource());
+	}
+
+	void DX11Device::CopyTextureRegion(ITextureBuffer2D& source, U32 sourceX, U32 sourceY, U32 width, U32 height, ITextureBuffer2D& destination, U32 destinationX, U32 destinationY)
+	{
+		DX11TextureBuffer2D* sourcePtr = &AsDX11(source);
+		DX11TextureBuffer2D* destinationPtr = &AsDX11(destination);
+
+		const D3D11_BOX box = { sourceX, sourceY, 0, sourceX + width, sourceY + height, 1 };
+		ID3D11DeviceContext& deviceContext = GetDeviceContext();
+		deviceContext.CopySubresourceRegion(destinationPtr->GetHWResource(), 0, destinationX, destinationY, 0, sourcePtr->GetHWResource(), 0, &box);
+	}
+
+	void DX11Device::CopyTextureSlice(ITextureBuffer2D& source, U32 sourceSlice, ITextureBuffer2D& destination, U32 destinationSlice)
+	{
+		DX11TextureBuffer2D* sourcePtr = &AsDX11(source);
+		DX11TextureBuffer2D* destinationPtr = &AsDX11(destination);
+
+		D3D11_TEXTURE2D_DESC sourceDesc;
+		sourcePtr->GetHWResource()->GetDesc(&sourceDesc);
+		D3D11_TEXTURE2D_DESC destinationDesc;
+		destinationPtr->GetHWResource()->GetDesc(&destinationDesc);
+		AssertExpr(sourceSlice < sourceDesc.ArraySize && destinationSlice < destinationDesc.ArraySize);
+
+		// Whole subresources, with no box, as depth textures need
+		ID3D11DeviceContext& deviceContext = GetDeviceContext();
+		deviceContext.CopySubresourceRegion(destinationPtr->GetHWResource(), D3D11CalcSubresource(0, destinationSlice, destinationDesc.MipLevels), 0, 0, 0,
+			sourcePtr->GetHWResource(), D3D11CalcSubresource(0, sourceSlice, sourceDesc.MipLevels), nullptr);
+	}
+
+	void DX11Device::ClearRenderTarget(ITextureBuffer2D& renderTarget, const Vector4D& colour)
+	{
+		DX11TextureBuffer2D* texturePtr = &AsDX11(renderTarget);
+
+		ID3D11DeviceContext& deviceContext = GetDeviceContext();
+		FLOAT rgba[4] = { colour.X(), colour.Y(), colour.Z(), colour.W() };
+		deviceContext.ClearRenderTargetView(&texturePtr->GetTargetView(), rgba);
+	}
+
+	void DX11Device::SetViewport(const ViewportParams& params)
+	{
+		D3D11_VIEWPORT viewport;
+		viewport.Width = params.Width;
+		viewport.Height = params.Height;
+		viewport.MinDepth = params.MinDepth;
+		viewport.MaxDepth = params.MaxDepth;
+		viewport.TopLeftX = params.TopLeftX;
+		viewport.TopLeftY = params.TopLeftY;
+
+		ID3D11DeviceContext& deviceContext = GetDeviceContext();
+		deviceContext.RSSetViewports(1, &viewport);
+	}
+
+	void DX11Device::SetPrimitiveTopology(EPrimitiveTopology topology)
+	{
+		D3D_PRIMITIVE_TOPOLOGY d3dTopology = ConvertToDX11TopologyType(topology);
+		ID3D11DeviceContext& deviceContext = GetDeviceContext();
+		deviceContext.IASetPrimitiveTopology(d3dTopology);
+	}
+
+	void DX11Device::SetRasterizerState(ERasterizerState state)
+	{
+		ID3D11DeviceContext& deviceContext = GetDeviceContext();
+		deviceContext.RSSetState(GetRasterizerState(state));
+	}
+
+	void DX11Device::SetBlendState(EBlendState state)
+	{
+		ID3D11DeviceContext& deviceContext = GetDeviceContext();
+		deviceContext.OMSetBlendState(GetBlendState(state), nullptr, 0xffffffff);
+	}
+
+	void DX11Device::SetDepthState(EDepthState state)
+	{
+		ID3D11DeviceContext& deviceContext = GetDeviceContext();
+		deviceContext.OMSetDepthStencilState(GetDepthState(state), 0);
+	}
+
+	void DX11Device::UnsetPixelShader()
+	{
+		ID3D11DeviceContext& deviceContext = GetDeviceContext();
+		deviceContext.PSSetShader(nullptr, nullptr, 0);
+	}
+
+	void DX11Device::UnsetTextureResource(U32 textureSlot)
+	{
+		ID3D11ShaderResourceView* nullSRV = nullptr;
+		ID3D11DeviceContext& deviceContext = GetDeviceContext();
+
+		deviceContext.PSSetShaderResources(textureSlot, 1, &nullSRV);
+	}
+
+	void DX11Device::UnsetTextureResourceCS(U32 textureSlot)
+	{
+		ID3D11ShaderResourceView* nullSRV = nullptr;
+		ID3D11DeviceContext& deviceContext = GetDeviceContext();
+
+		deviceContext.CSSetShaderResources(textureSlot, 1, &nullSRV);
+	}
+
+	void DX11Device::SetUnorderedAccess(ITextureBuffer2D& texture, U32 slot, U32 mip)
+	{
+		DX11TextureBuffer2D* texturePtr = &AsDX11(texture);
+
+		ID3D11UnorderedAccessView* uav = &texturePtr->GetUnorderedAccessView(mip);
+		ID3D11DeviceContext& deviceContext = GetDeviceContext();
+		deviceContext.CSSetUnorderedAccessViews(slot, 1, &uav, nullptr);
+	}
+
+	void DX11Device::UnsetUnorderedAccess(U32 slot)
+	{
+		ID3D11UnorderedAccessView* nullUAV = nullptr;
+		ID3D11DeviceContext& deviceContext = GetDeviceContext();
+		deviceContext.CSSetUnorderedAccessViews(slot, 1, &nullUAV, nullptr);
+	}
+
+	void DX11Device::Draw(U32 vertexCount)
+	{
+		ID3D11DeviceContext& deviceContext = GetDeviceContext();
+		deviceContext.Draw(vertexCount, 0);
+	}
+
+	void DX11Device::DrawIndexed(U32 indexCount)
+	{
+		ID3D11DeviceContext& deviceContext = GetDeviceContext();
+		deviceContext.DrawIndexed(indexCount, 0, 0);
+	}
+
+	void DX11Device::DrawIndexedInstanced(U32 indexCount, U32 instanceCount, U32 startInstance)
+	{
+		ID3D11DeviceContext& deviceContext = GetDeviceContext();
+		deviceContext.DrawIndexedInstanced(indexCount, instanceCount, 0, 0, startInstance);
+	}
+
+	void DX11Device::Dispatch(U32 groupsX, U32 groupsY, U32 groupsZ)
+	{
+		ID3D11DeviceContext& deviceContext = GetDeviceContext();
+		deviceContext.Dispatch(groupsX, groupsY, groupsZ);
+	}
+
+	void DX11Device::ReadTexel(ITextureBuffer2D& texture, U32 x, U32 y, TexelReadback& result)
+	{
+		DX11TextureBuffer2D* texturePtr = &AsDX11(texture);
+
+		D3D11_TEXTURE2D_DESC desc;
+		texturePtr->GetHWResource()->GetDesc(&desc);
+		const U32 bytesPerTexel = GetBytesPerTexel(desc.Format);
+		AssertExpr(bytesPerTexel <= sizeof(result.Value));
+
+		const D3D11_BOX texel = { x, y, 0, x + 1, y + 1, 1 };
+		ReadBackRegion(*this, *texturePtr->GetHWResource(), texel, [&result, bytesPerTexel](const D3D11_MAPPED_SUBRESOURCE& mapped)
+			{
+				result.Value = 0;
+				memcpy(&result.Value, mapped.pData, bytesPerTexel);
+			});
+
+		result.IsReady.store(true, std::memory_order_release);
+	}
+
+	void DX11Device::ReadTexture(ITextureBuffer2D& texture, const std::shared_ptr<TextureReadback>& result)
+	{
+		DX11TextureBuffer2D* texturePtr = &AsDX11(texture);
+
+		D3D11_TEXTURE2D_DESC desc;
+		texturePtr->GetHWResource()->GetDesc(&desc);
+
+		result->Width = desc.Width;
+		result->Height = desc.Height;
+		result->BytesPerTexel = GetBytesPerTexel(desc.Format);
+
+		// Mapped once the GPU has made the copy (FinishReadbacks), so the render thread doesn't wait for it
+		const D3D11_BOX whole = { 0, 0, 0, desc.Width, desc.Height, 1 };
+		mPendingTextureReadbacks.push_back({ CopyToStaging(*this, *texturePtr->GetHWResource(), whole), result });
+	}
+
+	void DX11Device::FinishReadbacks()
+	{
+		ID3D11DeviceContext& deviceContext = GetDeviceContext();
+		for (size_t index = 0; index < mPendingTextureReadbacks.size();)
+		{
+			PendingTextureReadback& pending = mPendingTextureReadbacks[index];
+			D3D11_MAPPED_SUBRESOURCE mapped;
+			const HRESULT hr = deviceContext.Map(pending.Staging, 0, D3D11_MAP_READ, D3D11_MAP_FLAG_DO_NOT_WAIT, &mapped);
+			if (hr == DXGI_ERROR_WAS_STILL_DRAWING)
+			{
+				++index;
+				continue;
+			}
+			AssertExpr(hr == S_OK);
+
+			TextureReadback& result = *pending.Result;
+			const size_t rowSize = static_cast<size_t>(result.Width) * result.BytesPerTexel;
+			result.Data.resize(rowSize * result.Height);
+			// Mapped rows can be padded past the texture's width
+			const U8* source = static_cast<const U8*>(mapped.pData);
+			for (U32 row = 0; row < result.Height; ++row)
+			{
+				memcpy(&result.Data[row * rowSize], source + static_cast<size_t>(row) * mapped.RowPitch, rowSize);
+			}
+			deviceContext.Unmap(pending.Staging, 0);
+			pending.Staging->Release();
+			result.IsReady.store(true, std::memory_order_release);
+
+			mPendingTextureReadbacks.erase(mPendingTextureReadbacks.begin() + static_cast<std::ptrdiff_t>(index));
+		}
+	}
+
+	void DX11Device::ReadBackBuffer(TextureReadback& result)
+	{
+		// Buffer 0 is the one being drawn, until Present (FLIP_DISCARD) hands it to the window
+		ID3D11Texture2D* backBuffer = nullptr;
+		HRESULT hr = mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&backBuffer));
+		AssertExpr(hr == S_OK);
+
+		D3D11_TEXTURE2D_DESC desc;
+		backBuffer->GetDesc(&desc);
+		result.Width = desc.Width;
+		result.Height = desc.Height;
+		// R8G8B8A8_UNORM, as the swap chain is made
+		result.BytesPerTexel = GetBytesPerTexel(desc.Format);
+
+		const size_t rowSize = static_cast<size_t>(result.Width) * result.BytesPerTexel;
+		result.Data.resize(rowSize * result.Height);
+
+		const D3D11_BOX whole = { 0, 0, 0, desc.Width, desc.Height, 1 };
+		ReadBackRegion(*this, *backBuffer, whole, [&result, rowSize](const D3D11_MAPPED_SUBRESOURCE& mapped)
+			{
+				const U8* source = static_cast<const U8*>(mapped.pData);
+				for (U32 row = 0; row < result.Height; ++row)
+				{
+					memcpy(&result.Data[row * rowSize], source + static_cast<size_t>(row) * mapped.RowPitch, rowSize);
+				}
+			});
+		backBuffer->Release();
+
+		result.IsReady.store(true, std::memory_order_release);
 	}
 
 // 	void DX11Device::SendTextureToBackBuffer(DX11TextureBuffer2D* texture)
@@ -375,6 +1005,8 @@ namespace Rendering
 		// Tearing is only allowed for an unsynced present
 		const UINT flags = mSyncInterval == 0 && mIsTearingSupported ? DXGI_PRESENT_ALLOW_TEARING : 0;
 		const HRESULT hr = mSwapChain->Present(mSyncInterval, flags);
+		// Everything the frame's calls reported
+		ReportDebugMessages();
 
 		if ((hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) && !mHasReportedDeviceLoss)
 		{

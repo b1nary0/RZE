@@ -1,10 +1,11 @@
-#include <StdAfx.h>
 #include <Graphics/RenderEngine.h>
 
 #include <Graphics/RenderPipeline.h>
 #include <Graphics/RenderStage.h>
 #include <Graphics/RenderStages/AmbientOcclusionStage.h>
+#include <Graphics/RenderStages/AntiAliasingStage.h>
 #include <Graphics/RenderStages/DebugDrawRenderStage.h>
+#include <Graphics/RenderStages/DebugViewStage.h>
 #include <Graphics/RenderStages/DepthPrepassStage.h>
 #include <Graphics/RenderStages/ForwardRenderStage.h>
 #include <Graphics/RenderStages/IrradianceProbeStage.h>
@@ -46,9 +47,9 @@ RenderEngine::~RenderEngine()
 {
 }
 
-void RenderEngine::Initialize(void* windowHandle)
+void RenderEngine::Initialize(void* windowHandle, bool validateGraphics)
 {
-	Rendering::Renderer::Initialize(windowHandle);
+	Rendering::Renderer::Initialize(windowHandle, validateGraphics);
 	
 	AddRenderStage<ShadowRenderStage>();
 	AddRenderStage<DepthPrepassStage>();
@@ -57,9 +58,12 @@ void RenderEngine::Initialize(void* windowHandle)
 	AddRenderStage<ReflectionProbeStage>(&m_globalIlluminationSettings);
 	AddRenderStage<ForwardRenderStage>();
 	AddRenderStage<PostProcessRenderStage>();
+	AddRenderStage<AntiAliasingStage>();
+	// Before the debug lines, which it would otherwise cover; both modify DisplayColourData, in the order they're added
+	AddRenderStage<DebugViewStage>();
 	AddRenderStage<PickRenderStage>();
 
-	// Available in Debug and Release; only Retail strips it
+	// Available in Debug and Development; only Retail strips it
 #ifndef RZE_RETAIL
 	AddRenderStage<DebugDrawRenderStage>();
 #endif

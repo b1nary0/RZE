@@ -25,7 +25,10 @@ struct ReflectionProbe
 cbuffer ReflectionProbes : register(b7)
 {
 	uint ReflectionProbeCount;
-	uint3 _ReflectionProbesPad;
+	// Three scalars rather than a uint3: GLSL can't place a vector at this offset, and the layout is the same
+	uint _ReflectionProbesPad0;
+	uint _ReflectionProbesPad1;
+	uint _ReflectionProbesPad2;
 	ReflectionProbe ReflectionProbeList[MAX_REFLECTION_PROBES];
 };
 

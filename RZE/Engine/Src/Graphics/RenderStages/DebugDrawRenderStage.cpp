@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/RenderStages/DebugDrawRenderStage.h>
 
 #include <Rendering/Renderer.h>

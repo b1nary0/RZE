@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/RenderPipelineCompiler.h>
 
 #include <unordered_map>

@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/MeshGeometry.h>
 
 #include <Graphics/IndexBuffer.h>

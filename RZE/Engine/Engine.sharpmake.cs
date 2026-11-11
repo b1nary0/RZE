@@ -19,24 +19,34 @@ public class Engine : BaseProject
         conf.AddPublicDependency<Externals>(target);
         conf.AddPublicDependency<Rendering>(target);
 
-        conf.PrecompHeader = "StdAfx.h";
-        conf.PrecompSource = "StdAfx.cpp";
+        UsePrecompiledHeader(conf, target, "EnginePCH");
 
         conf.IncludePaths.Add("../../Engine/Src");
 
-        conf.LibraryPaths.Add(Globals.LibDir);
-        conf.LibraryPaths.Add(Globals.ThirdPartyLibDir);
+        conf.LibraryPaths.Add(Globals.BuildDir(target));
 
-        conf.LibraryFiles.Add("OptickCore");
-        // DwmSetWindowAttribute
-        conf.LibraryFiles.Add("dwmapi");
+        if (target.Platform == Platform.win64)
+        {
+            conf.LibraryPaths.Add(Globals.ThirdPartyLibDir);
 
-        var copyDirBuildStep = new Configuration.BuildStepCopy(
-            Globals.ThirdPartyDllDir,
-            Globals.LibDir);
+            conf.LibraryFiles.Add("OptickCore");
+            // DwmSetWindowAttribute
+            conf.LibraryFiles.Add("dwmapi");
+            // SetWindowSubclass (Windowing/Windows/WindowNativeWindows.cpp)
+            conf.LibraryFiles.Add("comctl32");
 
-        copyDirBuildStep.IsFileCopy = true;
-        copyDirBuildStep.CopyPattern = "*.dll";
-        conf.EventPostBuildExe.Add(copyDirBuildStep);
+            var copyDirBuildStep = new Configuration.BuildStepCopy(
+                Globals.ThirdPartyDllDir,
+                Globals.BuildDir(target));
+
+            copyDirBuildStep.IsFileCopy = true;
+            copyDirBuildStep.CopyPattern = "*.dll";
+            conf.EventPostBuildExe.Add(copyDirBuildStep);
+        }
+        else
+        {
+            // Built from its source in ThirdParty (OptickCore.sharpmake.cs)
+            conf.AddPublicDependency<OptickCore>(target);
+        }
     }
 }

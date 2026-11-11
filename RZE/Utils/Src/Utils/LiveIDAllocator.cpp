@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Utils/LiveIDAllocator.h>
 
 #include <Utils/DebugUtils/Debug.h>

@@ -21,12 +21,10 @@ namespace Editor
 
 	public:
 		bool IsVisible() const { return m_isVisible; }
+		void SetVisible(bool isVisible) { m_isVisible = isVisible; }
 
 		// The size of the squares drawn last frame, in metres
 		float GetSquareSize() const { return m_squareSize; }
-
-		// The visibility toggle and current square size, for the SceneView menu bar
-		void DisplayControls();
 
 		// Queues this frame's grid lines. baseSquareSize is the snap size, in metres.
 		void Draw(const Vector3D& cameraPosition, float baseSquareSize);

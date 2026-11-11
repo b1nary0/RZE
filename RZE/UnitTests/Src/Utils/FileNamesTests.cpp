@@ -1,5 +1,7 @@
 #include <doctest/doctest.h>
 
+#include <TestPaths.h>
+
 #include <Utils/Platform/FileNames.h>
 
 #include <TestFolder.h>
@@ -37,13 +39,13 @@ TEST_CASE("FileNames::ResolveSave adds the extension unless the name already end
 {
 	const Filepath scenes("Assets/Scenes");
 
-	CHECK(FileNames::ResolveSave(scenes, "Level 2", ".scene").Path.GetRelativePath() == R"(Assets\Scenes\Level 2.scene)");
-	CHECK(FileNames::ResolveSave(scenes, "Level 2.scene", ".scene").Path.GetRelativePath() == R"(Assets\Scenes\Level 2.scene)");
-	CHECK(FileNames::ResolveSave(scenes, "Level 2.SCENE", ".scene").Path.GetRelativePath() == R"(Assets\Scenes\Level 2.SCENE)");
+	CHECK(FileNames::ResolveSave(scenes, "Level 2", ".scene").Path.GetRelativePath() == NativePath("Assets/Scenes/Level 2.scene"));
+	CHECK(FileNames::ResolveSave(scenes, "Level 2.scene", ".scene").Path.GetRelativePath() == NativePath("Assets/Scenes/Level 2.scene"));
+	CHECK(FileNames::ResolveSave(scenes, "Level 2.SCENE", ".scene").Path.GetRelativePath() == NativePath("Assets/Scenes/Level 2.SCENE"));
 	// Another extension is part of the name
-	CHECK(FileNames::ResolveSave(scenes, "notes.txt", ".scene").Path.GetRelativePath() == R"(Assets\Scenes\notes.txt.scene)");
+	CHECK(FileNames::ResolveSave(scenes, "notes.txt", ".scene").Path.GetRelativePath() == NativePath("Assets/Scenes/notes.txt.scene"));
 	// Spaces around the name go
-	CHECK(FileNames::ResolveSave(scenes, "  Level 2 ", ".scene").Path.GetRelativePath() == R"(Assets\Scenes\Level 2.scene)");
+	CHECK(FileNames::ResolveSave(scenes, "  Level 2 ", ".scene").Path.GetRelativePath() == NativePath("Assets/Scenes/Level 2.scene"));
 	CHECK(FileNames::ResolveSave(scenes, "Level 2", ".scene").Error.empty());
 }
 
@@ -78,10 +80,10 @@ TEST_CASE("FileNames::ResolveRename keeps a file's extension, and takes a folder
 	folder.AddFolder("Vehicles");
 	const std::string root = folder.Get().GetRelativePath();
 
-	CHECK(FileNames::ResolveRename(mesh, false, "Panzer").Path.GetRelativePath() == root + R"(\Panzer.meshasset)");
-	CHECK(FileNames::ResolveRename(mesh, false, "Panzer.meshasset").Path.GetRelativePath() == root + R"(\Panzer.meshasset)");
-	CHECK(FileNames::ResolveRename(mesh, false, "  Panzer ").Path.GetRelativePath() == root + R"(\Panzer.meshasset)");
-	CHECK(FileNames::ResolveRename(folder.GetFile("Vehicles"), true, "Cars.v2").Path.GetRelativePath() == root + R"(\Cars.v2)");
+	CHECK(FileNames::ResolveRename(mesh, false, "Panzer").Path.GetRelativePath() == root + NativePath("/Panzer.meshasset"));
+	CHECK(FileNames::ResolveRename(mesh, false, "Panzer.meshasset").Path.GetRelativePath() == root + NativePath("/Panzer.meshasset"));
+	CHECK(FileNames::ResolveRename(mesh, false, "  Panzer ").Path.GetRelativePath() == root + NativePath("/Panzer.meshasset"));
+	CHECK(FileNames::ResolveRename(folder.GetFile("Vehicles"), true, "Cars.v2").Path.GetRelativePath() == root + NativePath("/Cars.v2"));
 }
 
 TEST_CASE("FileNames::ResolveRename refuses a name something else has, but not a change of case")
@@ -106,12 +108,37 @@ TEST_CASE("FileNames::MakeUnique numbers a name that's taken, before its extensi
 	const ScopedTestFolder folder("UnitTestsTemp_FileNames");
 	const std::string root = folder.Get().GetRelativePath();
 
-	CHECK(FileNames::MakeUnique(folder.Get(), "New Folder").GetRelativePath() == root + R"(\New Folder)");
+	CHECK(FileNames::MakeUnique(folder.Get(), "New Folder").GetRelativePath() == root + NativePath("/New Folder"));
 
 	folder.AddFolder("New Folder");
 	folder.AddFolder("New Folder 2");
-	CHECK(FileNames::MakeUnique(folder.Get(), "New Folder").GetRelativePath() == root + R"(\New Folder 3)");
+	CHECK(FileNames::MakeUnique(folder.Get(), "New Folder").GetRelativePath() == root + NativePath("/New Folder 3"));
 
 	folder.AddFile("Level.scene");
-	CHECK(FileNames::MakeUnique(folder.Get(), "Level.scene").GetRelativePath() == root + R"(\Level 2.scene)");
+	CHECK(FileNames::MakeUnique(folder.Get(), "Level.scene").GetRelativePath() == root + NativePath("/Level 2.scene"));
+}
+
+TEST_CASE("FileNames: a name that differs only in case is taken, on every platform")
+{
+	const ScopedTestFolder folder("UnitTestsTemp_FileNames");
+	const std::string root = folder.Get().GetRelativePath();
+	const Filepath tank = folder.AddFile("Tank.meshasset");
+
+	// Windows would see them as the same file
+	CHECK(FileNames::IsTaken(folder.GetFile("tank.MESHASSET")));
+	CHECK(FileNames::MakeUnique(folder.Get(), "tank.meshasset").GetRelativePath() == root + NativePath("/tank 2.meshasset"));
+
+	// But not when it's the file itself
+	CHECK_FALSE(FileNames::IsTaken(folder.GetFile("TANK.meshasset"), tank));
+	CHECK_FALSE(FileNames::IsTaken(folder.GetFile("Plane.meshasset")));
+}
+
+TEST_CASE("FileNames::FindIgnoringCase finds a file named in another case, as Windows would open it")
+{
+	const ScopedTestFolder folder("UnitTestsTemp_FileNames");
+	const Filepath controls = folder.AddFile("Controls.tga");
+
+	CHECK(FileNames::FindIgnoringCase(folder.GetFile("controls.TGA")) == controls);
+	CHECK(FileNames::FindIgnoringCase(controls) == controls);
+	CHECK_FALSE(FileNames::FindIgnoringCase(folder.GetFile("Missing.tga")).IsValid());
 }

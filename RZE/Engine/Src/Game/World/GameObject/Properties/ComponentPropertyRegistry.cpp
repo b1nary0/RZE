@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Game/World/GameObject/Properties/ComponentPropertyRegistry.h>
 
 #include <Game/World/GameObject/GameObjectComponent.h>
@@ -63,13 +62,13 @@ namespace ComponentPropertyRegistry
 
 	void* GetDescribedObject(GameObjectComponentBase& component)
 	{
-		const ComponentDescription* const description = GetDescription(component.m_id);
+		const ComponentDescription* const description = GetDescription(component.GetTypeID());
 		return description != nullptr ? description->ToObject(component) : nullptr;
 	}
 
 	ResolvedProperty Resolve(GameObjectComponentBase& component, const PropertyPath& path)
 	{
-		const ComponentDescription* const description = GetDescription(component.m_id);
+		const ComponentDescription* const description = GetDescription(component.GetTypeID());
 		if (description == nullptr || path.IsEmpty())
 		{
 			return ResolvedProperty();
@@ -137,7 +136,7 @@ namespace ComponentPropertyRegistry
 	PathValues GetElementStateValues(GameObjectComponentBase& component)
 	{
 		PathValues values;
-		const ComponentDescription* const description = GetDescription(component.m_id);
+		const ComponentDescription* const description = GetDescription(component.GetTypeID());
 		if (description != nullptr)
 		{
 			AddElementStateValues(*description->Type, description->ToObject(component), nullptr, std::string(), values);

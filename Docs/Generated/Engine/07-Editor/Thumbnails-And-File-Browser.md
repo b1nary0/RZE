@@ -3,7 +3,7 @@
 The Editor opens, saves and picks files in its own **file browser**: a modal grid of large tiles, each showing the file's thumbnail. The **Content Browser** panel shows the same tiles all the time, for browsing the project, loading scenes, renaming, deleting and making folders (all undoable), and dragging files into the scene or onto the Object Inspector's asset fields. Both draw their tiles with one widget, `FileTileGrid`. Scene and mesh thumbnails are rendered by the Editor itself, **in the background**, in a scene of their own, so the scene you're editing is never touched and nothing waits on them.
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     subgraph Ask["What asks for a thumbnail"]
         direction TB
@@ -167,7 +167,7 @@ The folder is read again on going there, on a search edit and on Refresh. Change
 - A scene's or mesh's **thumbnail** is renamed and deleted with it.
 - The **open scene**, and folders holding it, can't be renamed or deleted; the greyed-out items say why.
 
-Each is a command (`Commands\AssetFileCommands.h/.cpp`: `RenameAssetCommand`, `DeleteAssetCommand`, `CreateFolderCommand`), so it's an [undo](Editor-Framework.md#undo-and-redo) step like a scene edit ("Undo Rename File"). The records check the files before acting, e.g. that the old name is still free, and say in the Log why when they can't. Undoing a delete restores the file and its thumbnails from the trash. A deleted file goes on to the Recycle Bin once the history drops its step, and the trash is emptied to the Recycle Bin when the editor starts and closes (`AssetFiles::EmptyTrash`). The commands publish `AssetFileChangedEvent`, which the Content Browser uses to re-read the folder, follow a renamed or removed folder in its history, keep the selection on what changed, and start renaming a new folder.
+Each is a command (`Commands\AssetFileCommands.h/.cpp`: `RenameAssetCommand`, `DeleteAssetCommand`, `CreateFolderCommand`), so it's an [undo](Editor-Framework.md#undo-and-redo) step like a scene edit ("Undo Rename File"). The records check the files before acting, e.g. that the old name is still free, and say in the Log why when they can't. Undoing a delete restores the file and its thumbnails from the trash. A deleted file goes on to the Recycle Bin (the Trash on Linux) once the history drops its step, and the editor's trash is emptied there when the editor starts and closes (`AssetFiles::EmptyTrash`). It goes from its own folder, so the system records that folder and restoring it puts it back in the project: each numbered entry in the trash records the path in an `Original` file, and `AssetFiles::Recycle` and `EmptyTrash` move the file back there just before sending it on. If something else has its name by then, or its folder has gone, it's sent from the trash, which the system then records instead. The commands publish `AssetFileChangedEvent`, which the Content Browser uses to re-read the folder, follow a renamed or removed folder in its history, keep the selection on what changed, and start renaming a new folder.
 
 | Input | Does |
 |---|---|
@@ -176,12 +176,12 @@ Each is a command (`Commands\AssetFileCommands.h/.cpp`: `RenameAssetCommand`, `D
 | Mouse back / forward buttons (4 / 5), toolbar arrows | Back / Forward through the folders visited |
 | Arrow keys | Move the selection |
 | F2, Delete | Rename, delete the selected file or folder |
-| Right-click a file or folder | **Load Scene** (scenes), **Show in Explorer**, **Copy Path** (the relative path), **Refresh Thumbnail** (scenes and meshes), **Rename**, **Delete** |
+| Right-click a file or folder | **Load Scene** (scenes), **Show in Explorer** (**Show in File Manager** on Linux), **Copy Path** (the relative path), **Refresh Thumbnail** (scenes and meshes), **Rename**, **Delete** |
 | Right-click empty space | **New Folder**, **Show in Explorer** for the folder, **Refresh** |
 | Drag a mesh onto the SceneView | Loads it in the background, then adds an object showing it where it's dropped; see [Editor-Panels.md](Editor-Panels.md#dropping-meshes) |
 | Drag a file onto an asset field in the Object Inspector | Sets it, if the field takes that kind of file; see [Object-Inspector-And-Properties.md](Object-Inspector-And-Properties.md#asset-fields) |
 
-The keys work while the panel is focused and no text field is active; the mouse buttons while it's hovered. Show in Explorer goes through `Shell::ShowInFileBrowser` (`Utils\Platform\Shell.h`), which keeps the Win32 call out of the Editor: it opens Explorer with the file selected, or the folder open. The mouse's side buttons reach ImGui through the engine's input as `EMouseButton::MouseButton_Back` / `MouseButton_Forward`.
+The keys work while the panel is focused and no text field is active; the mouse buttons while it's hovered. Show in Explorer goes through `Shell::ShowInFileBrowser` (`Utils\Platform\Shell.h`), which keeps the OS calls out of the Editor: it opens the file manager with the file selected, or the folder open. On Windows that's Explorer; on Linux it's the desktop's file manager through D-Bus (`org.freedesktop.FileManager1`), or `xdg-open` on the folder if there's none, on a background thread so the UI never waits for it to start. The menu and the Delete tooltip name them as the desktop does, with `Shell::GetFileBrowserName()` and `GetRecycleBinName()`: "Explorer" and "Recycle Bin" on Windows, "File Manager" and "Trash" on Linux, where `MoveToRecycleBin` follows the freedesktop.org Trash spec itself, so every desktop's file manager shows what it trashed ([Utils-Library-Reference.md](../06-Platform-And-Infrastructure/Utils-Library-Reference.md)). The mouse's side buttons reach ImGui through the engine's input as `EMouseButton::MouseButton_Back` / `MouseButton_Forward`.
 
 ## Thumbnails
 
@@ -222,7 +222,7 @@ The keys work while the panel is focused and no text field is active; the mouse 
 `ThumbnailRenderJob` is an `AsyncOperation` flagged **`Background`**, of kind `Rendering`, named "Rendering thumbnails". It doesn't block, it shows in the [status bar](Status-Bar-And-Settings.md#the-status-bar) where it can be cancelled, and its loads use the background job lane. It's a **`CaptureBatchOperation`** (`Engine\Src\Game\CaptureBatchOperation.h/.cpp`): an engine base class that captures a batch of items off-screen, taking each through the same steps, while the subclass says where items come from and how each is set up and captured.
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 stateDiagram-v2
     [*] --> WaitingForItem: TakeNextItem, BeginItem
     WaitingForItem --> Settling: IsItemReady
@@ -250,7 +250,7 @@ For each item:
 - **Cancelling** (from the status bar) clears the queue. When a run ends, it unloads its headless scene, so nothing stays loaded between runs.
 - **Shutdown:** `EditorApp::ShutDown` calls `ThumbnailRenderer::ShutDown()`, which cancels the run and unloads the scene while the renderer is still up.
 
-**Cost:** rendering every scene and mesh (7 + 12) from SpaceHangar, Release, took 4.7 s, against 6.6 s for the earlier blocking batch it replaced. The worst frame dropped from 962 ms to 167 ms, and frame time with nothing rendering was unchanged.
+**Cost:** rendering every scene and mesh (7 + 12) from SpaceHangar, Release (now Development), took 4.7 s, against 6.6 s for the earlier blocking batch it replaced. The worst frame dropped from 962 ms to 167 ms, and frame time with nothing rendering was unchanged.
 
 ## Key files
 
@@ -258,8 +258,8 @@ For each item:
 - `Editor\Src\UI\Widgets\FileTileGrid.h/.cpp` — the shared tile grid and breadcrumb
 - `Editor\Src\UI\Panels\ContentBrowserPanel.h/.cpp`
 - `Editor\Src\Commands\AssetFileCommands.h/.cpp`, `Editor\Src\Services\AssetFiles.h/.cpp` — rename, delete, new folder, the trash
-- `Editor\Src\Services\ProjectWatcher.h/.cpp`, `Utils\Src\Utils\Platform\FolderWatcher.h/.cpp` — changes on disk
-- `Utils\Src\Utils\Platform\Shell.h/.cpp` — `ShowInFileBrowser`, `MoveToRecycleBin`
+- `Editor\Src\Services\ProjectWatcher.h/.cpp`, `Utils\Src\Utils\Platform\FolderWatcher.h` (change notifications on Windows, inotify on Linux) — changes on disk
+- `Utils\Src\Utils\Platform\Shell.h`, `Windows\ShellWindows.cpp`, `Linux\ShellLinux.cpp` — `ShowInFileBrowser`, `MoveToRecycleBin`, `GetFileBrowserName`, `GetRecycleBinName`
 - `Editor\Src\Services\FolderNavigator.h/.cpp` — the folder a browser shows, its search and history
 - `Editor\Src\Services\FolderListing.h/.cpp` — `ListFolder`; `Utils\Src\Utils\Platform\FileNames.h/.cpp`, `Folders.h/.cpp` — naming rules, subfolders
 - `Editor\Src\Services\Thumbnails.h/.cpp` — folders, `FindFor`, `IsUpToDate`, `Survey`

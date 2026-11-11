@@ -1,8 +1,8 @@
-#include <StdAfx.h>
 #include <Utils/Memory/ByteStream.h>
 
 #include <Utils/DebugUtils/Debug.h>
 
+#include <cstring>
 #include <fstream>
 
 ByteStream::ByteStream(const std::string& name)
@@ -15,17 +15,13 @@ ByteStream::ByteStream(const std::string& name, size_t streamLength)
 	, mStreamLength(streamLength)
 {
 	mBytes = new Byte[streamLength];
-	memset(mBytes, NULL, streamLength);
+	memset(mBytes, 0, streamLength);
 }
 
 ByteStream::~ByteStream()
 {
 	if (mBytes != nullptr)
 	{
-		// #TODO
-		// implement logging verbosity and then re-enable this.
-		//RZE_LOG_ARGS("ByteStream [%s] destroying with live buffer", mName.c_str());
-
 		delete[] mBytes;
 		mBytes = nullptr;
 	}
@@ -41,6 +37,7 @@ bool ByteStream::ReadFromFile(const Filepath& filePath)
 
 	mStreamLength = 0;
 	mCurPos = 0;
+	mHasFailed = false;
 
 	std::ifstream input(filePath.GetAbsolutePath().c_str(), std::fstream::binary);
 	if (!input.is_open())
@@ -70,24 +67,37 @@ bool ByteStream::ReadFromFile(const Filepath& filePath)
 
 Byte* ByteStream::PeekBytes()
 {
-	AssertMsg(mCurPos < mStreamLength, "Attempting to peek past the stream length");
-	return &mBytes[mCurPos];
+	return mCurPos < mStreamLength ? &mBytes[mCurPos] : nullptr;
 }
 
 Byte* ByteStream::PeekBytesAdvance(size_t sizeBytes)
 {
-	AssertMsg(mCurPos + sizeBytes <= mStreamLength, 
-		"Attempting to advance stream cursor past stream length");
+	if (sizeBytes > GetRemainingLength())
+	{
+		mHasFailed = true;
+		return nullptr;
+	}
 
-	Byte* bytes = PeekBytes();
+	Byte* const bytes = PeekBytes();
 	mCurPos += sizeBytes;
 	return bytes;
 }
 
-bool ByteStream::ReadBytes(Byte* buf, size_t sizeBytes)
+bool ByteStream::ReadBytes(void* buf, size_t sizeBytes)
 {
-	AssertMsg(mCurPos + sizeBytes <= mStreamLength,
-		"Attempting to read past stream length");
+	// Nothing to copy, and the buffer may not exist (memcpy needs a pointer even for 0 bytes)
+	if (sizeBytes == 0)
+	{
+		return !mHasFailed;
+	}
+
+	if (sizeBytes > GetRemainingLength())
+	{
+		// Zeroed, so a reader that carries on before checking HasFailed reads zeros rather than garbage
+		memset(buf, 0, sizeBytes);
+		mHasFailed = true;
+		return false;
+	}
 
 	memcpy(buf, &mBytes[mCurPos], sizeBytes);
 	mCurPos += sizeBytes;
@@ -97,12 +107,19 @@ bool ByteStream::ReadBytes(Byte* buf, size_t sizeBytes)
 
 bool ByteStream::WriteBytes(const void* buf, size_t sizeBytes)
 {
-	AssertMsg(mCurPos + sizeBytes <= mStreamLength,
-		"Attempting to write past stream length");
+	if (sizeBytes == 0)
+	{
+		return !mHasFailed;
+	}
+
+	if (sizeBytes > GetRemainingLength())
+	{
+		mHasFailed = true;
+		return false;
+	}
 
 	memcpy(&mBytes[mCurPos], buf, sizeBytes);
 	mCurPos += sizeBytes;
 
 	return true;
 }
-

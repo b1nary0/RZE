@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/ProbeCapture.h>
 
 #include <Graphics/CubeMap.h>
@@ -14,6 +13,7 @@
 #include <Rendering/Renderer.h>
 
 #include <Utils/Math/BoundingBox.h>
+#include <Utils/Math/Matrix4x4.h>
 
 #include <algorithm>
 #include <array>

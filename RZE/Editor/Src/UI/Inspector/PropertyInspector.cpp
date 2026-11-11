@@ -14,8 +14,8 @@
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/StringUtils.h>
 
-#include <ImGui/imgui.h>
-#include <ImGui/imgui_internal.h> // ImGuiItemFlags_MixedValue
+#include <imgui/imgui.h>
+#include <imgui/imgui_internal.h> // ImGuiItemFlags_MixedValue
 
 #include <algorithm>
 #include <cctype>
@@ -159,7 +159,7 @@ namespace Editor
 		}
 
 		const GameObjectComponentPtr<GameObjectComponentBase>& component = components.front();
-		const ComponentPropertyRegistry::ComponentDescription* const description = ComponentPropertyRegistry::GetDescription(component->m_id);
+		const ComponentPropertyRegistry::ComponentDescription* const description = ComponentPropertyRegistry::GetDescription(component->GetTypeID());
 		if (description == nullptr || description->Type->Properties.empty())
 		{
 			return false;
@@ -235,7 +235,7 @@ namespace Editor
 					ImGui::TableSetColumnIndex(1);
 					ImGui::SetNextItemWidth(-FLT_MIN);
 					char buffer[128];
-					strncpy_s(buffer, filterText.c_str(), _TRUNCATE);
+					StringUtils::CopyTruncated(buffer, filterText);
 					if (ImGui::InputTextWithHint("##filter", "Filter", buffer, sizeof(buffer)))
 					{
 						filterText = buffer;

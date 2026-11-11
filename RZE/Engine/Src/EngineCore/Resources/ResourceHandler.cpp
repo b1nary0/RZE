@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <EngineCore/Resources/ResourceHandler.h>
 
 #include <EngineCore/Threading/MainThreadDispatcher.h>
@@ -19,26 +18,33 @@ void ResourceHandler::Init()
 void ResourceHandler::ShutDown()
 {
 	U32 liveResourceCount = 0;
-	for (auto& resourcePair : mResourceTable)
+	const auto destroy = [&liveResourceCount](ResourceSource& resourceSource)
 	{
-		ResourceSource& resourceSource = resourcePair.second;
 		if (resourceSource.IsValid())
 		{
 			++liveResourceCount;
-			RZE_LOG_DEBUG_ARGS("Resource [%s] still referenced at shutdown.", resourceSource.GetResourcePath().GetRelativePath().c_str());
+			RZE_LOG_DEBUG_ARGS("Resource [%s] still referenced at shutdown.", resourceSource.GetDisplayName().c_str());
 		}
 
 		// We should always have a resource if it is in the resource table.
 		AssertNotNull(resourceSource.GetResource());
 		resourceSource.GetResource()->Release();
 		resourceSource.InternalDestroy();
+	};
+	for (auto& resourcePair : mResourceTable)
+	{
+		destroy(resourcePair.second);
+	}
+	for (auto& unnamedPair : m_unnamedResources)
+	{
+		destroy(*unnamedPair.second);
 	}
 
 	// Just an informative log to notify that we had some referenced resources at the time
 	// ShutDown() was called. This is fine.
 	RZE_LOG_ARGS("ResourceHandler::ShutDown() encountered %u live resources.", liveResourceCount);
 
-	// Entries are intentionally left in the table: live ResourceHandles still point at them and will
+	// Entries, path and unnamed, are intentionally left in place: live ResourceHandles still point at them and will
 	// decrement their ref counts as they are destroyed. The resources themselves are gone (mResource == nullptr),
 	// so those releases are no-ops. The table is freed in ~ResourceHandler, after all handles are gone.
 }
@@ -70,14 +76,9 @@ bool ResourceHandler::IsAsyncLoadInProgress(const std::string& resourceKey) cons
 	return m_asyncLoads.find(resourceKey) != m_asyncLoads.end();
 }
 
-ResourceHandle ResourceHandler::GetEmptyResourceHandle()
-{
-	return ResourceHandle("", nullptr, this);
-}
-
 std::string ResourceHandler::CreateResourceKey(const Filepath& resourcePath)
 {
-	return Conversions::CreateResourceKeyFromPath(resourcePath.GetRelativePath());
+	return resourcePath.GetRelativePath();
 }
 
 bool ResourceHandler::HasResource(const Filepath& resourcePath) const
@@ -99,7 +100,7 @@ ResourceHandle ResourceHandler::GetHandle(const Filepath& resourcePath)
 		return ResourceHandle::EmptyHandle();
 	}
 
-	return ResourceHandle(resourceKey, &iter->second, this);
+	return ResourceHandle(&iter->second, this);
 }
 
 ResourceHandle ResourceHandler::RegisterLoadedResource(const Filepath& resourcePath, IResource* resource)
@@ -116,7 +117,7 @@ ResourceHandle ResourceHandler::RegisterLoadedResource(const Filepath& resourceP
 		resource->Release();
 		delete resource;
 
-		return ResourceHandle(resourceKey, &iter->second, this);
+		return ResourceHandle(&iter->second, this);
 	}
 
 	ResourceSource resourceSource(resource);
@@ -127,96 +128,105 @@ ResourceHandle ResourceHandler::RegisterLoadedResource(const Filepath& resourceP
 	ResourceSource& storedSource = mResourceTable[resourceKey];
 	storedSource = resourceSource;
 
-	return ResourceHandle(resourceKey, &storedSource, this);
+	return ResourceHandle(&storedSource, this);
 }
 
 void ResourceHandler::ReleaseResource(ResourceHandle& resourceHandle)
 {
-	auto iter = mResourceTable.find(resourceHandle.GetID());
-	if (iter != mResourceTable.end())
+	ResourceSource* const resourceSource = resourceHandle.mResourceSource;
+	AssertNotNull(resourceSource);
+
+	resourceSource->DecreaseRefCount();
+	// After ShutDown the entry stays but its resource is gone, so there's nothing left to release
+	if (resourceSource->IsReferenced() || resourceSource->GetResource() == nullptr)
 	{
-		ResourceSource& resourceSource = (*iter).second;
-		resourceSource.DecreaseRefCount();
-
-		if (!resourceSource.IsReferenced() && resourceSource.GetResource())
-		{
-			RZE_LOG_DEBUG_ARGS("Releasing resource [%s]", resourceHandle.GetID().c_str());
-
-			// Out of the table and the handle first: releasing it can release the resources it holds (e.g. a mesh's
-			// textures), which changes the table
-			IResource* const resource = resourceSource.GetResource();
-			mResourceTable.erase(iter);
-
-			resourceHandle.mHandler = nullptr;
-			resourceHandle.mResourceSource = nullptr;
-			resourceHandle.mResourceID = "NO_RESOURCE";
-
-			resource->Release();
-			delete resource;
-		}
-	}
-	else
-	{
-		RZE_LOG_WARNING_ARGS("Attempting to release resource with key [%s] but it does not currently exist.", resourceHandle.GetID().c_str());
-	}
-}
-
-ResourceHandle ResourceHandler::Make(const std::string& resourceID, IResource* resource)
-{
-	std::string resourceKey = resourceID;
-
-	auto iter = mResourceTable.find(resourceKey);
-	if (iter == mResourceTable.end())
-	{
-		RZE_LOG_DEBUG_ARGS("Making resource [%s]", resourceKey.c_str());
-		if (resource)
-		{
-			ResourceSource resourceSource(resource);
-			resourceSource.m_resourcePath = Filepath(resourceID);
-
-			mResourceTable[resourceKey] = resourceSource;
-			return ResourceHandle(resourceKey, &mResourceTable[resourceKey], this);
-		}
-		else
-		{
-			return ResourceHandle::EmptyHandle();
-		}
+		return;
 	}
 
-	ResourceSource& resourceSource = (*iter).second;
-	return ResourceHandle(resourceKey, &resourceSource, this);
+	RZE_LOG_DEBUG_ARGS("Releasing resource [%s]", resourceSource->GetDisplayName().c_str());
+
+	// Out of the table and the handle first: releasing it can release the resources it holds (e.g. a mesh's textures),
+	// which changes the table
+	IResource* const resource = resourceSource->GetResource();
+	resourceHandle.mHandler = nullptr;
+	resourceHandle.mResourceSource = nullptr;
+	EraseEntry(*resourceSource);
+
+	resource->Release();
+	delete resource;
 }
 
-const std::unordered_map<std::string, ResourceHandler::ResourceSource>& ResourceHandler::GetResourceTableInternal() const
+void ResourceHandler::EraseEntry(const ResourceSource& resourceSource)
 {
-	return mResourceTable;
+	if (resourceSource.IsUnnamed())
+	{
+		if (m_unnamedResources.erase(&resourceSource) == 0)
+		{
+			AssertMsg(false, "An unnamed resource's entry isn't in the handler");
+		}
+		return;
+	}
+
+	// Every path entry is stored under its own path's key (RegisterLoadedResource), so the entry finds itself
+	auto iter = mResourceTable.find(CreateResourceKey(resourceSource.GetResourcePath()));
+	if (iter == mResourceTable.end() || &iter->second != &resourceSource)
+	{
+		AssertMsg(false, "A resource's entry isn't stored under its own path");
+		RZE_LOG_WARNING_ARGS("Resource [%s] isn't stored under its own path; leaving its entry.", resourceSource.GetDisplayName().c_str());
+		return;
+	}
+	mResourceTable.erase(iter);
 }
 
-ResourceHandle::ResourceHandle()
-	: mResourceID("NO_RESOURCE")
-	, mResourceSource(nullptr)
-	, mHandler(nullptr)
+ResourceHandle ResourceHandler::AddUnnamedResource(std::unique_ptr<IResource>&& resource, const std::string& displayName)
 {
+	AssertExpr(Threading::MainThreadDispatcher::Get().IsMainThread());
+
+	if (resource == nullptr)
+	{
+		return ResourceHandle::EmptyHandle();
+	}
+
+	std::unique_ptr<ResourceSource> resourceSource = std::make_unique<ResourceSource>(resource.release());
+	resourceSource->m_isUnnamed = true;
+	resourceSource->m_displayName = displayName;
+
+	ResourceSource* const storedSource = resourceSource.get();
+	m_unnamedResources.emplace(storedSource, std::move(resourceSource));
+
+	RZE_LOG_DEBUG_ARGS("Adding unnamed resource [%s]", displayName.c_str());
+	return ResourceHandle(storedSource, this);
 }
 
-ResourceHandle::ResourceHandle(const std::string& resourceID, ResourceHandler::ResourceSource* resourceSource, ResourceHandler* handler)
+size_t ResourceHandler::GetResourceCount() const
+{
+	return mResourceTable.size() + m_unnamedResources.size();
+}
+
+void ResourceHandler::ForEachResource(const std::function<void(const std::string& displayName, int referenceCount, bool isUnnamed)>& visit) const
+{
+	for (const auto& resourcePair : mResourceTable)
+	{
+		visit(resourcePair.second.GetDisplayName(), resourcePair.second.GetRefCount(), false);
+	}
+	for (const auto& unnamedPair : m_unnamedResources)
+	{
+		visit(unnamedPair.second->GetDisplayName(), unnamedPair.second->GetRefCount(), true);
+	}
+}
+
+ResourceHandle::ResourceHandle(ResourceHandler::ResourceSource* resourceSource, ResourceHandler* handler)
 {
 	mHandler = handler;
-	mResourceID = resourceID;
 	mResourceSource = resourceSource;
 
-	// #TODO(Josh::Quick fix for ::EmptyHandle but really this shouldn't happen. Revisit.)
-	if (resourceSource != nullptr)
-	{
-		mResourceSource->IncreaseRefCount();
-	}
+	// Only the handler makes these, for an entry in its table. Empty handles come from the default constructor.
+	AssertNotNull(mResourceSource);
+	mResourceSource->IncreaseRefCount();
 }
 
 ResourceHandle::ResourceHandle(ResourceHandle&& rhs)
 {
-	mResourceID = rhs.mResourceID;
-	rhs.mResourceID = "NO_RESOURCE";
-
 	mResourceSource = rhs.mResourceSource;
 	rhs.mResourceSource = nullptr;
 
@@ -237,20 +247,13 @@ void ResourceHandle::ReleaseHeldResource()
 		mHandler->ReleaseResource(*this);
 	}
 
-	mResourceID = "NO_RESOURCE";
 	mResourceSource = nullptr;
 	mHandler = nullptr;
 }
 
 bool ResourceHandle::IsValid() const
 {
-	return !mResourceID.empty()
-		&& (mResourceSource != nullptr && mResourceSource->IsValid());
-}
-
-const std::string& ResourceHandle::GetID() const
-{
-	return mResourceID;
+	return mResourceSource != nullptr && mResourceSource->IsValid();
 }
 
 const Filepath& ResourceHandle::GetResourcePath() const
@@ -271,9 +274,6 @@ void ResourceHandle::operator=(ResourceHandle&& rhs)
 	}
 
 	ReleaseHeldResource();
-
-	mResourceID = rhs.mResourceID;
-	rhs.mResourceID = "NO_RESOURCE";
 
 	mResourceSource = rhs.mResourceSource;
 	rhs.mResourceSource = nullptr;
@@ -297,16 +297,10 @@ ResourceHandle& ResourceHandle::operator=(const ResourceHandle& rhs)
 
 	ReleaseHeldResource();
 
-	mResourceID = rhs.mResourceID;
 	mResourceSource = rhs.mResourceSource;
 	mHandler = rhs.mHandler;
 
 	return *this;
-}
-
-bool ResourceHandle::operator==(const ResourceHandle& rhs)
-{
-	return rhs.mResourceID == mResourceID;
 }
 
 int ResourceHandler::ResourceSource::GetRefCount() const

@@ -4,7 +4,7 @@
 
 #include <DebugUtils/DebugServices.h>
 
-#include <ImGui/imgui.h>
+#include <imgui/imgui.h>
 
 namespace Editor
 {

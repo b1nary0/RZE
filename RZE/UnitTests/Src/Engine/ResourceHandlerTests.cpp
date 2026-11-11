@@ -5,6 +5,10 @@
 #include <Utils/Interfaces/Resource.h>
 #include <Utils/Platform/Filepath.h>
 
+#include <memory>
+#include <string>
+#include <utility>
+
 namespace
 {
 	struct ResourceCounts
@@ -169,5 +173,144 @@ TEST_CASE("Only one loader at a time can load a resource asynchronously")
 	CHECK(handler.TryBeginAsyncLoad(key, &secondLoader));
 
 	handler.EndAsyncLoad(key, &secondLoader);
+	handler.ShutDown();
+}
+
+TEST_CASE("Paths that differ only by extension, a separator or a dot are different resources")
+{
+	// Each pair shared a key when keys dropped the extension and every dot, and turned separators and spaces into dots
+	const std::pair<Filepath, Filepath> pairs[] = {
+		{ Filepath("Assets/UnitTests/Background.jpg"), Filepath("Assets/UnitTests/Background.png") },
+		{ Filepath("Assets/UnitTests/b c.png"), Filepath("Assets/UnitTests/b/c.png") },
+		{ Filepath("Assets/UnitTests/v1.2/Rock.png"), Filepath("Assets/UnitTests/v12/Rock.png") },
+	};
+
+	for (const std::pair<Filepath, Filepath>& pathPair : pairs)
+	{
+		const Filepath& firstPath = pathPair.first;
+		const Filepath& secondPath = pathPair.second;
+		CAPTURE(firstPath.GetRelativePath());
+		ResourceHandler handler;
+		ResourceCounts firstCounts;
+		ResourceCounts secondCounts;
+		{
+			ResourceHandle first = handler.LoadResource<CountedResource>(firstPath, &firstCounts);
+			{
+				ResourceHandle second = handler.LoadResource<CountedResource>(secondPath, &secondCounts);
+				REQUIRE(first.IsValid());
+				REQUIRE(second.IsValid());
+				CHECK(handler.GetResource<CountedResource>(first) != handler.GetResource<CountedResource>(second));
+				CHECK(first.GetResourcePath().GetRelativePath() == firstPath.GetRelativePath());
+				CHECK(second.GetResourcePath().GetRelativePath() == secondPath.GetRelativePath());
+			}
+
+			// Releasing one leaves the other
+			CHECK(secondCounts.Deleted == 1);
+			CHECK(firstCounts.Deleted == 0);
+			CHECK(handler.HasResource(firstPath));
+			CHECK_FALSE(handler.HasResource(secondPath));
+		}
+		CHECK(firstCounts.Deleted == 1);
+		handler.ShutDown();
+	}
+}
+
+TEST_CASE("An empty path is a key like any other")
+{
+	ResourceHandler handler;
+	CHECK_FALSE(handler.HasResource(Filepath()));
+	CHECK_FALSE(handler.GetHandle(Filepath()).IsValid());
+	handler.ShutDown();
+}
+
+TEST_CASE("Copied and moved handles each hold one reference, and the last one releases the resource")
+{
+	ResourceHandler handler;
+	ResourceCounts counts;
+
+	ResourceHandle loaded = handler.LoadResource<CountedResource>(k_path, &counts);
+	ResourceHandle copied;
+	copied = loaded;
+	ResourceHandle moveConstructed(std::move(loaded));
+	CHECK_FALSE(loaded.IsValid());
+	CHECK(copied.IsValid());
+	CHECK(moveConstructed.IsValid());
+
+	copied = ResourceHandle::EmptyHandle();
+	CHECK(counts.Deleted == 0);
+
+	ResourceHandle moveAssigned;
+	moveAssigned = std::move(moveConstructed);
+	CHECK_FALSE(moveConstructed.IsValid());
+	CHECK(counts.Deleted == 0);
+
+	moveAssigned = ResourceHandle::EmptyHandle();
+	CHECK(counts.Released == 1);
+	CHECK(counts.Deleted == 1);
+	CHECK_FALSE(handler.HasResource(k_path));
+	handler.ShutDown();
+}
+
+TEST_CASE("Unnamed resources are separate whatever their names, and nothing finds them by name")
+{
+	ResourceHandler handler;
+	ResourceCounts firstCounts;
+	ResourceCounts secondCounts;
+	ResourceCounts pathCounts;
+	{
+		ResourceHandle first = handler.AddUnnamedResource(std::make_unique<CountedResource>(&firstCounts), "Frame");
+		ResourceHandle second = handler.AddUnnamedResource(std::make_unique<CountedResource>(&secondCounts), "Frame");
+		REQUIRE(first.IsValid());
+		REQUIRE(second.IsValid());
+		CHECK(handler.GetResource<CountedResource>(first) != handler.GetResource<CountedResource>(second));
+		CHECK(first.GetResourcePath().GetRelativePath().empty());
+
+		// Its name is no key: a lookup by it finds nothing, and a file of that name is a resource of its own
+		CHECK_FALSE(handler.HasResource(Filepath("Frame")));
+		CHECK_FALSE(handler.GetHandle(Filepath("Frame")).IsValid());
+		ResourceHandle fromPath = handler.LoadResource<CountedResource>(Filepath("Frame"), &pathCounts);
+		CHECK(handler.GetResource<CountedResource>(fromPath) != handler.GetResource<CountedResource>(first));
+
+		CHECK(handler.GetResourceCount() == 3);
+		int unnamedCount = 0;
+		handler.ForEachResource([&unnamedCount](const std::string& displayName, int referenceCount, bool isUnnamed)
+			{
+				CHECK(displayName == "Frame");
+				CHECK(referenceCount == 1);
+				unnamedCount += isUnnamed ? 1 : 0;
+			});
+		CHECK(unnamedCount == 2);
+	}
+
+	// Each went with its last handle
+	CHECK(firstCounts.Released == 1);
+	CHECK(firstCounts.Deleted == 1);
+	CHECK(secondCounts.Deleted == 1);
+	CHECK(pathCounts.Deleted == 1);
+	CHECK(handler.GetResourceCount() == 0);
+	handler.ShutDown();
+}
+
+TEST_CASE("Shutting down destroys an unnamed resource that's still held, once")
+{
+	ResourceHandler handler;
+	ResourceCounts counts;
+	{
+		ResourceHandle held = handler.AddUnnamedResource(std::make_unique<CountedResource>(&counts), "Held");
+		handler.ShutDown();
+		CHECK(counts.Released == 1);
+		CHECK(counts.Deleted == 1);
+	}
+
+	// Letting go of the handle after ShutDown doesn't release it again
+	CHECK(counts.Released == 1);
+	CHECK(counts.Deleted == 1);
+}
+
+TEST_CASE("Adding no unnamed resource gives an empty handle")
+{
+	ResourceHandler handler;
+	CHECK_FALSE(handler.AddUnnamedResource(nullptr, "Nothing").IsValid());
+	CHECK(handler.GetResourceCount() == 0);
 	handler.ShutDown();
 }

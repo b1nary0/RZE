@@ -1,6 +1,6 @@
-#include <StdAfx.h>
 #include <Graphics/RenderStages/FinalRenderTargetStage.h>
 
+#include <Graphics/FullScreenPass.h>
 #include <Graphics/RenderEngine.h>
 
 #include <Rendering/Renderer.h>
@@ -37,13 +37,7 @@ void FinalRenderTargetStage::Render(RenderContext& context)
 	Rendering::Renderer::SetPrimitiveTopology(Rendering::EPrimitiveTopology::TriangleStrip);
 
 	Rendering::Renderer::SetVertexShader(m_vertexShader->GetPlatformObject());
-	Rendering::Renderer::SetPixelShader(m_pixelShader->GetPlatformObject());
-	
-	Rendering::Renderer::SetTextureResource(displayColour.Colour, 0);
-	
-	Rendering::Renderer::DrawFullScreenQuad();
-
-	Rendering::Renderer::UnsetTextureResource(0);
+	DrawFullScreenPass(m_pixelShader, { displayColour.Colour });
 
 	Rendering::Renderer::End();
 }

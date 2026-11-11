@@ -4,6 +4,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <functional>
 #include <string>
 
 // A scratch folder next to the test executable (Filepaths are relative to it), empty when the test starts and removed
@@ -53,3 +54,12 @@ public:
 private:
 	Filepath m_folder;
 };
+
+// Removes folder, then each folder above it, while they're empty, up to the test executable's folder (not that one).
+// A folder that isn't there is passed over. For tests that write where the editor keeps its own files (the trash,
+// thumbnails), whose folders would otherwise outlive them beside the executable.
+void RemoveEmptyFolders(const Filepath& folder);
+
+// For readers of binary files: writes file cut short to every length, from empty to one byte short, to truncatedFile in
+// turn, and calls check with each length once that's written
+void ForEachTruncation(const Filepath& file, const Filepath& truncatedFile, const std::function<void(size_t length)>& check);

@@ -1,9 +1,12 @@
 #pragma once
 
+#include <cstdio>
 #include <sstream>
 #include <assert.h>
 
+#include <Utils/DebugUtils/DebugConfig.h>
 #include <Utils/Platform/File.h>
+#include <Utils/Platform/Platform.h>
 
 #include <Utils/Platform/Timers/HiResTimer.h>
 
@@ -34,24 +37,31 @@ namespace Debug
 	void Log(ELogLevel level, const std::string_view str);
 
 	// Opens a console window for a windowed app and points stdout and stderr at it. Does nothing if the process
-	// already has a console. Returns false if one couldn't be opened.
+	// already has a console, which on Linux it always does. Returns false if one couldn't be opened.
 	bool OpenConsole();
 
-	// Shows the CRT assert dialog (regardless of console/windows subsystem).
-	// Returns true if the caller should break into the debugger.
+	// Logs a failed assert and reports it the platform's way: on Windows, an Abort/Retry/Ignore dialog (the CRT's in
+	// Debug, a message box with the same buttons in Development), whatever the subsystem; on Linux, which has no dialog,
+	// a break only if a debugger is attached. Returns true if the caller should break into the debugger.
 	bool ReportAssertFailure(const char* file, int line, const char* expr, const char* msg);
+
+	// Called with the report for each failed assert in place of the platform's report (e.g. the dialog), from the
+	// thread that asserted; returns whether to break into the debugger. In Windows Debug builds it also sees the debug
+	// CRT's own error reports. For tests, which fail rather than wait on a dialog. Not in Retail, like asserts.
+	using AssertFailureHook = bool(*)(const char* report);
+	void SetAssertFailureHook(AssertFailureHook hook);
 }
 
-#ifdef _DEBUG
+#ifdef RZE_ASSERTS_ENABLED
 
-// __debugbreak lives in the macro so the debugger stops at the failing line.
+// The break lives in the macro so the debugger stops at the failing line.
 #define RZE_ASSERT_IMPL(Cond, ExprStr, Msg)										\
 	do {																		\
 		if (!(Cond))															\
 		{																		\
 			if (Debug::ReportAssertFailure(__FILE__, __LINE__, ExprStr, Msg))	\
 			{																	\
-				__debugbreak();													\
+				RZE_DEBUG_BREAK();												\
 			}																	\
 		}																		\
 	} while (0)
@@ -62,11 +72,6 @@ namespace Debug
 #define AssertNotNull(Value) RZE_ASSERT_IMPL((Value) != nullptr, #Value " != nullptr", nullptr)
 #define AssertExpr(Expr) RZE_ASSERT_IMPL(Expr, #Expr, nullptr)
 #define AssertMsg(Expr, Msg) RZE_ASSERT_IMPL(Expr, #Expr, Msg)
-
-#define START_TIMED_BLOCK(Name)	\
-	ScopedHiResTimer timer(Name);\
-
-#define IMGUI_ENABLED
 
 #else
 
@@ -79,9 +84,29 @@ namespace Debug
 
 #endif
 
-// Logging is available in Debug and Release; only Retail strips it.
-#ifndef RZE_RETAIL
-#define RZE_LOGGING_ENABLED
+// Turns the optimizer off for the functions defined between RZE_DISABLE_OPTIMIZATION and RZE_ENABLE_OPTIMIZATION, so a
+// debugger shows their locals and steps through them line by line in Development, while the rest stays optimized. For
+// debugging on your machine only: write each on a line of its own at file scope, without a semicolon, in a .cpp, around
+// the definitions to debug. Retail fails to compile while one is left in.
+#ifdef RZE_OPTIMIZATION_SWITCH_ENABLED
+#define RZE_DISABLE_OPTIMIZATION RZE_PRAGMA_OPTIMIZE_OFF
+#define RZE_ENABLE_OPTIMIZATION RZE_PRAGMA_OPTIMIZE_ON
+#else
+#define RZE_DISABLE_OPTIMIZATION \
+	static_assert(false, "RZE_DISABLE_OPTIMIZATION is still in this file: remove it and RZE_ENABLE_OPTIMIZATION");
+#define RZE_ENABLE_OPTIMIZATION
+#endif
+
+// Logs how long the rest of the enclosing scope takes, at Debug level, e.g. START_TIMED_BLOCK("Load scene"). It only
+// logs, so it's on wherever logging is.
+#ifdef RZE_LOGGING_ENABLED
+// Two steps, so __LINE__ becomes its number before it's pasted: one block per line, any number per scope
+#define RZE_TIMED_BLOCK_NAME_IMPL(Line) timedBlock##Line
+#define RZE_TIMED_BLOCK_NAME(Line) RZE_TIMED_BLOCK_NAME_IMPL(Line)
+#define START_TIMED_BLOCK(Name) ScopedHiResTimer RZE_TIMED_BLOCK_NAME(__LINE__)(Name)
+#else
+// The name goes to a dead branch, as with the RZE_LOG macros below, so a variable only it reads doesn't warn as unused
+#define START_TIMED_BLOCK(Name) do { if (false) { Debug::DiscardLogArgs(Name); } } while (0)
 #endif
 
 // Each level has a stream form, RZE_LOG_<LEVEL>(Msg), e.g. RZE_LOG_WARNING("Loaded " << count << " meshes"), and a printf
@@ -104,7 +129,7 @@ namespace Debug
 	ss << "\n";												\
 															\
 	char buf[1024];											\
-	sprintf_s(buf, 1024, ss.str().c_str(), __VA_ARGS__);	\
+	snprintf(buf, 1024, ss.str().c_str(), __VA_ARGS__);		\
 	Debug::Log(Level, buf);									\
 }
 

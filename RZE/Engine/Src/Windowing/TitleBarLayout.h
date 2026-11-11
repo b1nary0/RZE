@@ -18,7 +18,7 @@ enum class ETitleBarHit
 	ResizeTopRight
 };
 
-// A title bar the application draws itself in place of the OS's (Win32Window::SetCustomTitleBar): where it is and which
+// A title bar the application draws itself in place of the OS's (Window::SetCustomTitleBar): where it is and which
 // parts of it take clicks, so the window can tell the OS which parts move the window. In client pixels.
 struct TitleBarLayout
 {

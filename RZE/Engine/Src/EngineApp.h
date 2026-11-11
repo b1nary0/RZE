@@ -2,13 +2,15 @@
 
 #include <RZE.h>
 
-#include <Windowing/Win32Window.h>
+#include <EngineCore/Input/InputCore.h>
+
+#include <Windowing/Window.h>
 
 #include <memory>
 
 class EventHandler;
 class Filepath;
-class Win32Window;
+class Window;
 
 namespace Rendering
 {
@@ -48,6 +50,8 @@ public:
 
 	// The image a splash screen shows while the engine starts up. Invalid, the default, for no splash screen.
 	virtual Filepath GetSplashScreenImage() const;
+	// The title the splash screen and the window start with. Empty, the default, for the engine config's WindowTitle.
+	virtual std::string GetWindowTitle() const;
 	// Whether start-up is done and the window can be shown, e.g. once the start scene has loaded. Until it is, the
 	// engine ticks async operations with no frames, under the splash screen if there is one. True by default.
 	virtual bool IsReadyToShow() const;
@@ -55,8 +59,9 @@ public:
 	virtual void CreateRenderTarget(const Vector2D& dimensions) = 0;
 	virtual void OnWindowResize(const Vector2D& newSize) = 0;
 
-	// Returning TRUE will fire callbacks registered with RZE. Returning FALSE steals input from the engine.
-	virtual bool ProcessInput(const InputHandler& handler);
+	// Once a frame, before the bindings fire: which devices' input goes to the bindings and the state the app reads.
+	// The default takes both.
+	virtual InputGate ProcessInput(const InputHandler& handler);
 
 	virtual void ParseArguments(char** arguments, int count);
 
@@ -72,18 +77,18 @@ public:
 protected:
 	virtual void Initialize();
 
-	Win32Window& InternalGetWindow();
+	Window& InternalGetWindow();
 
 	void SetRunning(bool bRunning);
 	void ShowWindow();
 
-	Win32Window* const GetWindow() const;
+	Window* const GetWindow() const;
 
 	std::unique_ptr<Rendering::RenderTargetTexture> m_renderTarget;
 
 private:
-	void SetWindow(Win32Window* const window);
+	void SetWindow(Window* const window);
 	
-	Win32Window* mWindow;
+	Window* mWindow;
 	bool bIsRunning;
 };

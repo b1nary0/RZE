@@ -6,6 +6,7 @@
 #include <Rendering/RenderCommand.h>
 
 #include <Rendering/RenderThread.h>
+#include <Rendering/Driver/GraphicsAPI.h>
 
 #include <Utils/PrimitiveDefs.h>
 #include <Utils/Platform/Filepath.h>
@@ -18,7 +19,6 @@ class Vector4D;
 
 namespace Rendering
 {
-	class DX11Device;
 	class IVertexBuffer;
 
 	class UIFrameData;
@@ -35,8 +35,12 @@ namespace Rendering
 		Renderer() = delete;
 
 	public:
-		static void Initialize(void* mWindowHandle);
+		// mWindowHandle is the window's SDL_Window. validate: the device checks every call (IGFXDevice::Initialize).
+		static void Initialize(void* mWindowHandle, bool validate);
 		static void Shutdown();
+
+		// What this build draws with, e.g. for the window, which SDL makes differently for OpenGL. Known before Initialize.
+		static EGraphicsAPI GetGraphicsAPI();
 
 		// API for an entire frame (global state, etc)
 		static void BeginFrame(const char* frameName);
@@ -63,6 +67,9 @@ namespace Rendering
 		static RenderThreadStats GetRenderThreadStats();
 		// Draw calls recorded since the last call, then starts over. The UI's aren't counted. Main thread only.
 		static U32 TakeDrawCallCount();
+
+		// Each UI frame, on the main thread, before ImGui::NewFrame: ImGui's renderer side of the new frame
+		static void ImGuiNewFrame();
 
 		static void ImGuiRender();
 		// Keeps texture alive while the UI being drawn now is rendered, which goes on until a newer UI replaces it. ImGui
@@ -131,6 +138,9 @@ namespace Rendering
 		// frame or more later. Nothing waits for the GPU, but each read makes its own staging copy, so keep it to small
 		// textures or occasional reads.
 		static void ReadTexture(const TextureBuffer2DHandle& texture, std::shared_ptr<TextureReadback> result);
+		// Copies this frame back to the CPU as it will be presented, UI and all: RGBA8, rows top first. Read just
+		// before DevicePresent puts it on the window, so whatever this frame draws is in it. Main thread.
+		static void ReadBackBuffer(const std::shared_ptr<TextureReadback>& result);
 
 		static void ClearRenderTarget(const RenderTargetHandle& renderTarget, const Vector4D& colour);
 
@@ -168,8 +178,8 @@ namespace Rendering
 
 	public:
 		// Compute shaders have their own constant buffer, texture and sampler slots, apart from the pixel shader's.
-		// Samplers match the pixel shader's: s0 comes with each texture, s1 is the shadow comparison sampler and s2 is
-		// linear with clamped edges.
+		// Samplers match the pixel shader's: s0 comes with each texture, s1 is the shadow comparison sampler, s2 is
+		// linear with clamped edges and s3 is point (nearest texel) with clamped edges.
 		// D3D11 won't bind one texture both to be read (a texture slot) and to be written (a render target or an
 		// unordered access slot): binding it one way silently unbinds it the other. Unset it from one before the other.
 		static void SetComputeShader(const ComputeShaderHandle& computeShader);
@@ -196,6 +206,8 @@ namespace Rendering
 		static std::vector<TextureBuffer2DHandle> m_uiTextures;
 		// Draw calls recorded since TakeDrawCallCount()
 		static U32 m_drawCallCount;
+		// ReadBackBuffer's requests, which DevicePresent records before it presents
+		static std::vector<std::shared_ptr<TextureReadback>> m_backBufferReadbacks;
 	};
 
 	template<typename TType>

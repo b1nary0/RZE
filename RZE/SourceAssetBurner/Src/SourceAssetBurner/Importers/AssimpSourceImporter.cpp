@@ -11,11 +11,13 @@
 #include <Utils/Memory/ByteStream.h>
 
 #include <Utils/DebugUtils/Debug.h>
+#include <Utils/Platform/Platform.h>
 #include <Utils/Math/BoundingBox.h>
 #include <Utils/Math/Math.h>
 #include <Utils/PrimitiveDefs.h>
 
 #include <Utils/Platform/File.h>
+#include <Utils/Platform/FileNames.h>
 
 #include <algorithm>
 #include <cctype>
@@ -36,7 +38,7 @@ namespace
 	{
 		const std::string& assetPath = filePath.GetRelativePath();
 
-		size_t pos = assetPath.find_last_of('\\');
+		size_t pos = assetPath.find_last_of(Platform::k_pathSeparator);
 		std::string assetName = assetPath.substr(pos + 1, assetPath.size());
 		assetName = assetName.substr(0, assetName.find_last_of('.'));
 
@@ -232,6 +234,16 @@ std::string AssimpSourceImporter::ResolveTextureFile(const aiScene& scene, const
 		if (candidatePath.Exists())
 		{
 			return candidatePath.GetRelativePath();
+		}
+	}
+
+	// Then as Windows would find them, ignoring the file name's case: models are often authored there
+	for (const std::string& candidate : candidates)
+	{
+		const Filepath found = FileNames::FindIgnoringCase(Filepath(candidate));
+		if (found.IsValid())
+		{
+			return found.GetRelativePath();
 		}
 	}
 

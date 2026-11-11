@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/RenderStages/IrradianceProbeStage.h>
 
 #include <Graphics/GlobalIllumination.h>
@@ -69,7 +68,7 @@ namespace
 	// A scene's probes, what they've captured and their light, kept in its ScenePersistent() blackboard
 	struct IrradianceProbeState : RenderStageData<IrradianceProbeState>
 	{
-		static constexpr const char* k_name = "IrradianceProbeState";
+		[[maybe_unused]] static constexpr const char* k_name = "IrradianceProbeState";
 
 		// The grid, and which probes to capture and relight
 		IrradianceProbeScheduler Scheduler;

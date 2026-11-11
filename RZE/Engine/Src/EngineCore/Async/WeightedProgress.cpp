@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <EngineCore/Async/WeightedProgress.h>
 
 #include <algorithm>

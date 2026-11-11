@@ -17,6 +17,7 @@ public:
 
     virtual bool OnCloseRequested();               // window close button / Alt+F4; true (default) exits
     virtual Filepath GetSplashScreenImage() const; // shown while starting up; invalid (default) for none
+    virtual std::string GetWindowTitle() const;    // the splash screen's and window's first title; empty (default) for Engine.ini's
     virtual bool IsReadyToShow() const;            // false keeps the window off screen while start-up loads
     virtual void CreateRenderTarget(...) = 0;      // pure virtual
     virtual void OnWindowResize(...) = 0;          // pure virtual
@@ -35,23 +36,25 @@ The four per-frame hooks split each frame into a UI part (`PreUIUpdate`, `Update
 
 `OnCloseRequested()` is called when the user asks to close the window (its close button, Alt+F4). Returning true, the default, exits. The Editor returns false while the scene has unsaved changes and asks about them first, exiting itself afterwards with `RZE().PostExit()`.
 
-`GetSplashScreenImage()` and `IsReadyToShow()` shape start-up ([Engine-Startup-And-Frame-Loop.md](Engine-Startup-And-Frame-Loop.md#startup-sequence)). The engine takes the application at the start of `RZE_Engine::Run`, before anything is initialized, so it can ask for the splash screen's image. An invalid path, the default, means no splash screen; the Editor returns `logo.png`, and the Game has none. `IsReadyToShow()` keeps the window off screen while the engine ticks start-up's async operations with no frames. The default is true; the Editor's is false until its start scene has loaded.
+`GetSplashScreenImage()`, `GetWindowTitle()` and `IsReadyToShow()` shape start-up ([Engine-Startup-And-Frame-Loop.md](Engine-Startup-And-Frame-Loop.md#startup-sequence)). The engine takes the application at the start of `RZE_Engine::Run`, before anything is initialized, so it can ask for the splash screen's image. An invalid path, the default, means no splash screen; the Editor returns `logo.png`, and the Game has none. `GetWindowTitle()` is the title the splash screen and the window start with: the Editor's is "RZEStudio", while the Game returns nothing and so takes Engine.ini's `WindowTitle`. The two share Engine.ini, so the application is what tells them apart. `IsReadyToShow()` keeps the window off screen while the engine ticks start-up's async operations with no frames. The default is true; the Editor's is false until its start scene has loaded.
 
-`RZE_Application` owns the `Win32Window*` (assigned by the engine after construction) and a `RenderTargetTexture* m_renderTarget` that each subclass is responsible for creating via `CreateRenderTarget()`.
+`RZE_Application` owns the `Window*` (assigned by the engine after construction) and a `RenderTargetTexture* m_renderTarget` that each subclass is responsible for creating via `CreateRenderTarget()`.
 
 ## Editor vs Game: what differs
 
 | Concern | `GameApp` (`Game\Src\GameApp.h/.cpp`) | `Editor::EditorApp` (`Editor\Src\EditorApp.h/.cpp`) |
 |---|---|---|
 | Render target destination | Adds `FinalRenderTargetStage` — blits the offscreen RTT to the actual back buffer/swap chain | Never adds it — stays in an off-screen RTT, displayed inside an ImGui `SceneViewPanel` window instead |
-| ImGui | Only in Debug builds (`#ifdef IMGUI_ENABLED`, defined in `Debug.h`) — shows the ImGui demo window as leftover dev debug | Always on — the entire UI (dockspace, panels, menu bar) is ImGui |
+| ImGui | In Debug and Development, not Retail (`#ifdef IMGUI_ENABLED`, defined in `DebugConfig.h`) — shows the ImGui demo window as leftover dev debug | Always on — the entire UI (dockspace, panels, menu bar) is ImGui |
 | Scene loading | Deserializes `-scene` CLI arg or falls back to `Assets/Scenes/RenderTest.scene`, synchronously in `Initialize()` | Loads `-scene` CLI arg or falls back to `Assets/Scenes/RenderTest.scene` (same fallback, called a "hack" in a code comment), asynchronously through `SceneDocument::Load` in `Start()` |
 | Start-up | No splash screen. The window shows once `Start()` is done | A splash screen with the logo and what start-up is doing. The window shows once the start scene has loaded (`IsReadyToShow`) |
 | Extra components registered | None beyond the base set | `EditorCameraComponent` (free-fly viewport camera, see [07-Editor](../07-Editor/Editor-Camera-And-Build-Launch.md)) |
 | Player/runtime behavior | `Start()` takes the scene's main camera and attaches a `PlayerControllerComponent` to it at runtime (not scene-serialized) | No player controller; navigation is via the editor camera instead |
 | Closing the window | Exits | Asks about unsaved changes first (`OnCloseRequested`) |
 | Extra UI | None (ships without editor tooling) | Full dockspace of self-registering panels (Scene, SceneView, Object Inspector, Log, Resource Monitor), sharing an `EditorContext`; see [Editor-Framework.md](../07-Editor/Editor-Framework.md) |
-| Dev conveniences | F1/F2/F3 resize window to 720p/900p/1080p presets; Escape quits | "Build Game..." / "Launch Game..." menu items that shell out to `BuildGame.bat` / the built game exe via a background job |
+| Dev conveniences | F1/F2/F3 resize window to 720p/900p/1080p presets; Escape quits | "Build Game..." / "Launch Game..." menu items that run `BuildGame.bat` (Windows) or `BuildGame.sh` (Linux) and the built game via a background job |
+
+**A third shell, on the Editor's: `EditorHarness`.** `EditorHarness::HarnessApp` (`EditorHarness/Src/`) subclasses `Editor::EditorApp`, so it *is* the Editor, plus commands from an automation driver on stdin, which it runs in `PreUIUpdate` after the Editor's own. It reads the Editor's state through `EditorApp::GetContext()`, a protected accessor kept for an app built on the Editor. See [EditorHarness-And-Drivers.md](../07-Editor/EditorHarness-And-Drivers.md).
 
 ## Why this split matters
 
@@ -59,6 +62,7 @@ Because both apps sit on the exact same `Engine` and `Modules/Rendering` stack, 
 
 ## Key files
 
-- `Engine\Src\EngineApp.h` / `EngineApp.cpp`
-- `Game\Src\GameApp.h` / `GameApp.cpp`, `Game\Src\Main.cpp`
-- `Editor\Src\EditorApp.h` / `EditorApp.cpp`, `Editor\Src\EditorMain.cpp`
+- `Engine/Src/EngineApp.h` / `EngineApp.cpp`
+- `Game/Src/GameApp.h` / `GameApp.cpp`, `Game/Src/Main.cpp`
+- `Editor/Src/EditorApp.h` / `EditorApp.cpp`, `Editor/Src/EditorMain.cpp`
+- `EditorHarness/Src/HarnessApp.h` / `HarnessApp.cpp`, `HarnessMain.cpp`

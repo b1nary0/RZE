@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Utils/Math/Frustum.h>
 
 #include <Utils/Math/BoundingBox.h>

@@ -24,7 +24,7 @@ class RZE_Application;
 
 class RenderEngine;
 class SplashScreen;
-class Win32Window;
+class Window;
 
 class RZE_Engine
 {
@@ -41,8 +41,6 @@ public:
 
 	// #TODO(Josh) Need to figure out this weird connection of accessing engine from application, and application from engine.
 	RZE_Application&			GetApplication();
-	// #TODO
-	// All of these gets might be best to hide behind a cpp. Or static engine in CPP memory with accessor in h.
 	ResourceHandler&			GetResourceHandler();
 	InputHandler&				GetInputHandler();
 	RenderEngine&				GetRenderEngine();
@@ -105,6 +103,8 @@ private:
 	void LoadEngineConfig();
 	// Engine.ini's LaunchMonitor, or -launchMonitor's
 	int GetLaunchMonitor();
+	// The application's window title, or else the engine config's
+	std::string GetWindowTitle();
 	// Shows what start-up is doing on the splash screen
 	void SetStartupStatus(const std::string& status);
 	// With progress from 0 to 1
@@ -115,12 +115,13 @@ private:
 	void InitializeApplication();
 
 private:
-	// Never deleted. ImGui's context is destroyed after the application's ShutDown, and saves imgui.ini through what the
-	// application gave it (the editor's ini path and settings handlers), so deleting it would have to come after that.
+	// Not owned: the application whose Run() started the engine (a local in each main). It outlives Run, so it's still
+	// there when ImGui's context is destroyed after the application's ShutDown, and saves imgui.ini through what the
+	// application gave it (the editor's ini path and settings handlers).
 	RZE_Application* m_application;
 	GameScene* m_activeScene;
 
-	Win32Window* m_window;
+	Window* m_window;
 	// From once Engine.ini is loaded until start-up is done, if the application has a splash screen
 	// (RZE_Application::GetSplashScreenImage)
 	std::unique_ptr<SplashScreen> m_splashScreen;

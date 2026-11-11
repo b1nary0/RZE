@@ -35,14 +35,6 @@ namespace Editor
 		bool IsEnabled() const { return m_isEnabled; }
 		void ToggleEnabled() { m_isEnabled = !m_isEnabled; }
 
-		// The snap toggle and radio buttons for the snap size and rotation step, for the SceneView menu bar. Those that
-		// operation (ImGuizmo::OPERATION) doesn't use are greyed out.
-		void DisplayControls(EditorSettings& settings, int operation);
-
-		// One radio button per EditorSettings option, on the line of what's before them (e.g. a label)
-		static void DrawSnapSizeOptions(EditorSettings& settings);
-		static void DrawRotationStepOptions(EditorSettings& settings);
-
 		// Decides whether this frame snaps (the toggle, inverted while isInverted) and returns the snap
 		// array to hand ImGuizmo::Manipulate, or null when ImGuizmo shouldn't snap.
 		// operation and mode are ImGuizmo::OPERATION and ImGuizmo::MODE.

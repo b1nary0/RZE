@@ -6,15 +6,19 @@ using Sharpmake;
 [module: Sharpmake.Include("Make/Sharpmake/CommonTarget.sharpmake.cs")]
 [module: Sharpmake.Include("Make/Sharpmake/BaseProject.sharpmake.cs")]
 [module: Sharpmake.Include("Make/Sharpmake/Sharpmake.sharpmake.cs")]
+[module: Sharpmake.Include("Make/Sharpmake/ParallelMakefile.sharpmake.cs")]
 [module: Sharpmake.Include("Engine/Engine.sharpmake.cs")]
 // Libraries
 [module: Sharpmake.Include("Utils/Utils.sharpmake.cs")]
 [module: Sharpmake.Include("SourceAssetBurner/SourceAssetBurner.sharpmake.cs")]
 [module: Sharpmake.Include("Externals/Externals.sharpmake.cs")]
 [module: Sharpmake.Include("Modules/Rendering/Rendering.sharpmake.cs")]
+[module: Sharpmake.Include("ThirdParty/OptickCore.sharpmake.cs")]
 // Applications
 [module: Sharpmake.Include("Editor/Editor.sharpmake.cs")]
 [module: Sharpmake.Include("Game/Game.sharpmake.cs")]
+// Test harnesses, for automation drivers (.claude/skills/run-rze)
+[module: Sharpmake.Include("EditorHarness/EditorHarness.sharpmake.cs")]
 // Tests
 [module: Sharpmake.Include("UnitTests/UnitTests.sharpmake.cs")]
 
@@ -39,7 +43,16 @@ public class RZE : Solution
         Globals.RootDir = Path.GetFullPath("./");
 
         conf.AddProject<Engine>(target);
-        conf.AddProject<SharpmakeProjectBase>(target);
+        // The Sharpmake scripts as a C# project, for editing them in Visual Studio
+        if (target.Platform == Platform.win64)
+        {
+            conf.AddProject<SharpmakeProjectBase>(target);
+        }
+        // Windows links the prebuilt OptickCore in ThirdParty; elsewhere it's built from its source there
+        if (target.Platform != Platform.win64)
+        {
+            conf.AddProject<OptickCore>(target);
+        }
         conf.AddProject<Rendering>(target);
         conf.AddProject<Utils>(target);
         conf.AddProject<SourceAssetBurner>(target);
@@ -47,6 +60,7 @@ public class RZE : Solution
         conf.AddProject<EditorLib>(target);
         conf.AddProject<Editor>(target);
         conf.AddProject<Game>(target);
+        conf.AddProject<EditorHarness>(target);
         conf.AddProject<UnitTests>(target);
     }
 }
@@ -55,7 +69,8 @@ public class Globals
 {
     public static string RootDir = "./";
     public static string IncludeDir { get { return RootDir + "ThirdParty/Include/"; } }
-    public static string LibDir { get { return Path.Combine(RootDir, "_Build/[target.Name]/"); } }
+    // Where every project's output goes: _build/debug, _build/development, _build/retail
+    public static string BuildDir(CommonTarget target) { return Path.Combine(RootDir, "_build", target.Name.ToLowerInvariant()) + "/"; }
     public static string ThirdPartyLibDir { get { return Path.Combine(RootDir, "ThirdParty/Lib/x64/"); } }
     public static string ThirdPartyDllDir { get { return Path.Combine(RootDir, "ThirdParty/Dll/x64/"); } }
 }
@@ -66,7 +81,8 @@ public static class Main
     [Sharpmake.Main]
     public static void SharpmakeMain(Sharpmake.Arguments arguments)
     {
-        KitsRootPaths.SetUseKitsRootForDevEnv(DevEnv.vs2017, KitsRootEnum.KitsRoot10, Options.Vc.General.WindowsTargetPlatformVersion.v10_0_18362_0);
+        KitsRootPaths.SetUseKitsRootForDevEnv(DevEnv.vs2026, KitsRootEnum.KitsRoot10, Options.Vc.General.WindowsTargetPlatformVersion.v10_0_26100_0);
+        ParallelMakefile.Register();
         arguments.Generate<RZE>();
     }
 }

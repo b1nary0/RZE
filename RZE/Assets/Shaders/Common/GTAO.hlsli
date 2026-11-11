@@ -34,7 +34,10 @@ cbuffer GTAOParams : register(b0)
 	float  SliceCount;
 	float  StepsPerSlice;
 	float  FinalApply;                  // 1 on the last denoise pass, which writes the finished value
-	float3 _Pad;
+	// Three scalars rather than a float3: GLSL can't place a vector at this offset, and the layout is the same
+	float  _Pad0;
+	float  _Pad1;
+	float  _Pad2;
 };
 
 #define GTAO_PI                 3.1415926535897932384626433832795

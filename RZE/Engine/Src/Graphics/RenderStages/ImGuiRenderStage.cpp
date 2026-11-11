@@ -1,14 +1,12 @@
-#include <StdAfx.h>
 #include <Graphics/RenderStages/ImGuiRenderStage.h>
 
 #include <Rendering/Renderer.h>
 
-#include <imGUI/imgui_impl_dx11.h>
 
 void ImGuiRenderStage::Initialize()
 {
-	// @TODO really not a huge fan of this... come back to this later
-	//Rendering::Renderer::InitializeImGui();
+	// Nothing to set up: the render thread creates ImGui's context and renderer (RenderThread::InitializeImGui), and
+	// ImGuiPlatform its window side
 }
 
 void ImGuiRenderStage::Setup(RenderStageBuilder& builder)

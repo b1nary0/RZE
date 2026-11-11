@@ -17,6 +17,7 @@ public class UnitTests : BaseProject
     {
         base.ConfigureAll(conf, target);
         conf.Output = Configuration.OutputType.Exe;
+        UsePrecompiledHeader(conf, target, "UnitTestsPCH");
         conf.IncludePaths.Add(Path.Combine(Globals.RootDir, "Utils"));
         conf.IncludePaths.Add(Path.Combine(Globals.RootDir, "Editor", "Src"));
         conf.AddPublicDependency<EditorLib>(target);

@@ -3,7 +3,7 @@
 The Object Inspector shows and edits the selected GameObjects' components. It doesn't know about any component type: each component type **describes its properties** in the Engine, with no ImGui, and the Editor draws whatever is described. A component can also describe the elements of a list it owns (a mesh's material slots), so they're edited the same way.
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     subgraph Engine["Engine (no ImGui)"]
         direction TB

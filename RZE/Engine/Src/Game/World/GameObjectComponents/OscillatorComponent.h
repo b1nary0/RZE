@@ -9,7 +9,7 @@
 // turning it off puts the object back where the swing started from. Runs in the editor too.
 //
 // Saving the scene while it swings saves the object where it is in its swing, at most Offset from where it started.
-class OscillatorComponent : public GameObjectComponent<OscillatorComponent>
+class OscillatorComponent final : public GameObjectComponent<OscillatorComponent>
 {
 public:
 	OscillatorComponent() = default;

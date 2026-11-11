@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Game/GameScene.h>
 
 #include <Asset/AssetPaths.h>
@@ -194,13 +193,19 @@ void GameScene::Unload()
 {
 	ProcessObjectRemoveDeferrals();
 
-	for (auto& gameObject : m_objectRegistry)
+	// Every object leaves the scene before any is uninitialized, as with RemoveGameObject and the deferral after it:
+	// a component leaving can still reach other objects' components (e.g. RenderComponent marks its parents' bounds
+	// changed)
+	for (std::unique_ptr<GameObject>& gameObject : m_objectRegistry)
 	{
 		// Some may already be out of the scene, set aside by a tool
 		if (gameObject->IsInScene())
 		{
 			gameObject->OnRemoveFromScene();
 		}
+	}
+	for (std::unique_ptr<GameObject>& gameObject : m_objectRegistry)
+	{
 		gameObject->Uninitialize();
 	}
 
@@ -215,10 +220,22 @@ void GameScene::AddGameObject(std::unique_ptr<GameObject>&& gameObject)
 
 	// Objects are identified by GUID, not name, so names can repeat. GameScene only creates objects with free GUIDs
 	// (ChooseGUID, GenerateFreeGUID), so a taken one means this object is already in the scene.
-	const bool isGUIDFree = m_objectsByGUID.emplace(gameObject->GetGUID(), gameObject.get()).second;
+	const auto [existing, isGUIDFree] = m_objectsByGUID.emplace(gameObject->GetGUID(), gameObject.get());
 	AssertMsg(isGUIDFree, "GameObject already exists in scene");
 	if (!isGUIDFree)
 	{
+		if (existing->second == gameObject.get())
+		{
+			// Added twice (through the GameObjectPtr overload): the registry owns it already, so this second owner
+			// lets go of it rather than destroying it
+			static_cast<void>(gameObject.release());
+		}
+		else
+		{
+			// Another object with its GUID: refused, so destroyed here. It was never in the scene, but may have
+			// components.
+			gameObject->Uninitialize();
+		}
 		return;
 	}
 
@@ -256,8 +273,8 @@ void GameScene::ProcessObjectRemoveDeferrals()
 	{
 		if (toRemove.count(gameObject.get()) != 0)
 		{
-			// @TODO This shouldnt be here but we'll end up with "leaking" objects when
-			// we remove from the scene but dont call Uninitialize (which stray resources will be stale and bad)
+			// The scene owns its objects, so it uninitializes them before destroying them (GameObject::Uninitialize).
+			// RemoveGameObject took them out of the scene already.
 			gameObject->Uninitialize();
 			m_objectsByGUID.erase(gameObject->GetGUID());
 		}
@@ -480,17 +497,4 @@ void GameScene::Update()
 			gameObject->Update();
 		}
 	}
-}
-
-void GameScene::ShutDown()
-{
-	ProcessObjectRemoveDeferrals();
-
-	for (auto& gameObject : m_objectRegistry)
-	{
-		gameObject->Uninitialize();
-	}
-	m_objectRegistry.clear();
-	m_objectsByGUID.clear();
-	m_mainCamera = nullptr;
 }

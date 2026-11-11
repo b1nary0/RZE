@@ -4,7 +4,7 @@
 #include <Rendering/Driver/DX11/DX11Device.h>
 #include <Rendering/Driver/DX11/DX11TypeConversion.h>
 
-#include <Utils/Conversions.h>
+#include <Utils/Platform/Windows/WideStrings.h>
 #include <Utils/DebugUtils/Debug.h>
 
 #include "Rendering/Driver/ShaderTypes.h"
@@ -78,8 +78,8 @@ namespace Rendering
 		hr = m_graphicsDevice->GetHardwareDevice().CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, &m_hwShader);
 		AssertExpr(hr == S_OK);
 
-		// Shaders that make their own vertices (from SV_VertexID) take no vertex buffer, so no layout: D3D won't make an
-		// empty one, and draws without one are what they want
+		// A shader without vertex inputs (a full-screen pass reading SV_VertexID) has no layout: binding none is valid
+		// for it, and creating one with 0 elements makes the debug layer warn
 		if (inputLayout.GetDataCount() == 0)
 		{
 			vsBlob->Release();
@@ -109,15 +109,16 @@ namespace Rendering
 
 	void DX11VertexShader::Release()
 	{
-		if (m_hwInputLayout != nullptr)
-		{
-			m_hwInputLayout->Release();
-			m_hwInputLayout = nullptr;
-		}
 		if (m_hwShader != nullptr)
 		{
 			m_hwShader->Release();
 			m_hwShader = nullptr;
+		}
+
+		if (m_hwInputLayout != nullptr)
+		{
+			m_hwInputLayout->Release();
+			m_hwInputLayout = nullptr;
 		}
 	}
 

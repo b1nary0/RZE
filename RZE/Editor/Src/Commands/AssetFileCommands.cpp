@@ -5,7 +5,7 @@
 #include <UI/Framework/EditorContext.h>
 
 #include <Utils/DebugUtils/Debug.h>
-#include <Utils/StringUtils.h>
+#include <Utils/Platform/FileNames.h>
 
 #include <filesystem>
 
@@ -46,7 +46,7 @@ namespace
 			whyNot = "It isn't there any more";
 		}
 		// Changing only the case is fine: on Windows that's the same name
-		else if (to.Exists() && !StringUtils::EqualsIgnoringCase(from.GetRelativePath(), to.GetRelativePath()))
+		else if (FileNames::IsTaken(to, from))
 		{
 			whyNot = "Something else is called " + to.GetFileName() + " now";
 		}

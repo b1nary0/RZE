@@ -26,11 +26,6 @@ public:
 	void SetXY(float newX, float newY);
 
 	const glm::vec2& GetInternalVec() const;
-
-	inline std::string ToString() const
-	{
-		return std::move(StringUtils::FormatString("[X] %f [Y] %f", X(), Y()));
-	}
 	
 	//
 	// Operators

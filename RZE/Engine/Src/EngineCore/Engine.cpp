@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <EngineCore/Engine.h>
 
 #include <EngineCore/Threading/MainThreadDispatcher.h>
@@ -9,18 +8,17 @@
 #include <Graphics/RenderEngine.h>
 
 #include <Windowing/Display.h>
+#include <Windowing/ImGuiPlatform.h>
 #include <Windowing/SplashScreen.h>
-#include <Windowing/Win32Window.h>
+#include <Windowing/Window.h>
 
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Memory/MemoryUtils.h>
 #include <Utils/Platform/CmdLine.h>
 
-#include <imGUI/imgui_impl_dx11.h>
-#include <imGUI/imgui_impl_win32.h>
-#include <imGUI/ImGuizmo.h>
+#include <imgui/ImGuizmo.h>
 
-#include "Windowing/Win32Window.h"
+#include <Rendering/Renderer.h>
 
 namespace
 {
@@ -36,6 +34,30 @@ namespace
 	// windows that size themselves to their contents are hidden on the frame they first appear, and tabs take their
 	// widths from the frame before.
 	constexpr int k_firstFrameCount = 3;
+
+	// Whether the renderer's device validates its calls (DebugConfig.h): Debug's default, or -gfxvalidation (on) and
+	// -gfxvalidation 0 (off)
+	bool ShouldValidateGraphics()
+	{
+#ifdef RZE_GFX_VALIDATION_AVAILABLE
+#ifdef RZE_GFX_VALIDATION_BY_DEFAULT
+		bool validate = true;
+#else
+		bool validate = false;
+#endif
+		std::string_view value;
+		if (CmdLine::Arguments::Get("-gfxvalidation", value))
+		{
+			// With no value, on. GetInt leaves it alone then, and logs a value that isn't a number.
+			int enabled = 1;
+			CmdLine::Arguments::GetInt("-gfxvalidation", enabled);
+			validate = enabled != 0;
+		}
+		return validate;
+#else
+		return false;
+#endif
+	}
 
 	LogChannel GetLogChannel(Debug::ELogLevel level)
 	{
@@ -71,11 +93,11 @@ namespace
 }
 
 RZE_Engine::RZE_Engine()
-	: m_window(nullptr)
-	, m_application(nullptr)
+	: m_application(nullptr)
+	, m_window(nullptr)
 	, m_renderEngine(nullptr)
-	, m_shouldExit(false)
 	, m_isInitialized(false)
+	, m_shouldExit(false)
 {
 }
 
@@ -177,7 +199,7 @@ void RZE_Engine::Init()
 		const Filepath splashScreenImage = m_application->GetSplashScreenImage();
 		if (splashScreenImage.IsValid())
 		{
-			m_splashScreen = std::make_unique<SplashScreen>(splashScreenImage, engineConfig->GetWindowSettings().GetTitle(), GetLaunchMonitor());
+			m_splashScreen = std::make_unique<SplashScreen>(splashScreenImage, GetWindowTitle(), GetLaunchMonitor());
 		}
 
 		SetStartupStatus("Creating the window");
@@ -316,14 +338,7 @@ void RZE_Engine::PreUpdate()
 	CompileEvents();
 	m_eventHandler.ProcessEvents();
 
-	if (m_application->ProcessInput(m_inputHandler))
-	{
-		m_inputHandler.RaiseEvents();
-	}
-	else
-	{
-		m_inputHandler.Reset();
-	} 
+	m_inputHandler.RaiseEvents(m_application->ProcessInput(m_inputHandler));
 }
 
 int RZE_Engine::GetLaunchMonitor()
@@ -350,18 +365,25 @@ void RZE_Engine::SetStartupStatus(const std::string& status, float progress)
 	}
 }
 
+std::string RZE_Engine::GetWindowTitle()
+{
+	const std::string applicationTitle = m_application->GetWindowTitle();
+	return !applicationTitle.empty() ? applicationTitle : GetResourceHandler().GetResource<EngineConfig>(m_engineConfig)->GetWindowSettings().GetTitle();
+}
+
 void RZE_Engine::CreateAndInitializeWindow()
 {
 	const WindowSettings& windowSettings = GetResourceHandler().GetResource<EngineConfig>(m_engineConfig)->GetWindowSettings();
 
-	Win32Window::WindowCreationParams params;
-	params.windowTitle = windowSettings.GetTitle();
+	Window::WindowCreationParams params;
+	params.windowTitle = GetWindowTitle();
 	params.width = static_cast<int>(windowSettings.GetDimensions().X());
 	params.height = static_cast<int>(windowSettings.GetDimensions().Y());
 
 	params.monitorIndex = GetLaunchMonitor();
+	params.graphicsAPI = Rendering::Renderer::GetGraphicsAPI();
 
-	m_window = new Win32Window(params);
+	m_window = new Window(params);
 	AssertNotNull(m_window);
 
 	m_window->RegisterEvents(m_eventHandler);
@@ -374,7 +396,14 @@ void RZE_Engine::CreateAndInitializeRenderer()
 	RZE_LOG("Initializing Renderer");
 
 	m_renderEngine = std::make_unique<RenderEngine>();
-	m_renderEngine->Initialize(m_window->GetOSWindowHandleData().windowHandle);
+	const bool validateGraphics = ShouldValidateGraphics();
+	if (validateGraphics)
+	{
+		RZE_LOG("Graphics validation is on: the graphics API checks every call, which costs CPU time");
+	}
+	m_renderEngine->Initialize(m_window->GetNativeHandle(), validateGraphics);
+	// The render engine made ImGui's context
+	ImGuiPlatform::Initialize(*m_window);
 	const EngineConfig* const engineConfig = GetResourceHandler().GetResource<EngineConfig>(m_engineConfig);
 	m_renderEngine->GetMainView().AntiAliasing = engineConfig->GetAntiAliasing();
 	m_renderEngine->GetMainView().AmbientOcclusion = engineConfig->GetAmbientOcclusion();
@@ -428,7 +457,7 @@ void RZE_Engine::InitializeFramePacing()
 		settings.UIFrameRate = static_cast<double>(uiFrameRate);
 	}
 
-	m_framePacer.SetRefreshRate(Display::GetRefreshRate(m_window->GetOSWindowHandleData().windowHandle));
+	m_framePacer.SetRefreshRate(Display::GetRefreshRate(m_window->GetNativeHandle()));
 	SetFrameSettings(settings);
 }
 
@@ -524,7 +553,7 @@ void RZE_Engine::RegisterWindowEvents()
 			m_framePacer.RequestUIFrame();
 
 			// Also sent after a move, which may have taken the window to a monitor with another refresh rate
-			m_framePacer.SetRefreshRate(Display::GetRefreshRate(m_window->GetOSWindowHandleData().windowHandle));
+			m_framePacer.SetRefreshRate(Display::GetRefreshRate(m_window->GetNativeHandle()));
 		}
 	});
 	m_eventHandler.RegisterForEvent(EEventType::Window, windowCallback);
@@ -551,8 +580,8 @@ double RZE_Engine::UpdateUI()
 	{
 		OPTICK_EVENT("ImGui NewFrame Work");
 
-		ImGui_ImplDX11_NewFrame();
-		ImGui_ImplWin32_NewFrame();
+		Rendering::Renderer::ImGuiNewFrame();
+		ImGuiPlatform::NewFrame();
 		ImGui::NewFrame();
 		ImGuizmo::BeginFrame();
 	}
@@ -582,13 +611,22 @@ void RZE_Engine::BeginShutDown()
 	// First, so no async work is touching the scene, resources or renderer while they shut down.
 	m_asyncOperationManager.ShutDown();
 
-	m_activeScene->ShutDown();
+	// Takes every object out of the scene, as between scenes, so the render scene's objects, lights and probes, and the
+	// resources they hold, are gone while the renderer and ResourceHandler they release into are still up
+	m_activeScene->Unload();
 	m_application->ShutDown();
 
-	//@todo this is a quick fix for the cyclical dependency between Rendering::MemArena and ResourceHandler releasing leftover reasources.
-	m_renderEngine->GetMainScene().ClearObjects();
+	// Anything left here was put in by something other than a component, or a component didn't take it out
+	RenderScene& mainScene = m_renderEngine->GetMainScene();
+	AssertMsg(mainScene.GetRenderObjects().empty() && mainScene.GetLightObjects().empty() && mainScene.GetReflectionProbes().empty(),
+		"The main render scene still holds objects after the scene unloaded");
+	// The safety net where asserts compile out: render objects left until the scene is deleted, after the renderer,
+	// would release their resources into a ResourceHandler that's shut down
+	mainScene.ClearObjects();
 	m_renderEngine->ReleaseRenderStages();
 
+	// While ImGui's context is still there: the render engine's shutdown destroys it
+	ImGuiPlatform::Shutdown();
 	m_renderEngine->Shutdown();
 
 	Threading::JobScheduler::Get().ShutDown();

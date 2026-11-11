@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Game/World/GameObjectComponents/RenderComponent.h>
 
 #include <Asset/AssetPaths.h>
@@ -56,7 +55,8 @@ namespace
 			{
 				ChangeOverrides(materialSlot, [&getOverride, &value](MaterialOverrides& overrides) { getOverride(overrides) = value; });
 			})
-			.Overridable<MaterialSlot>(
+			// template: Value's result depends on TValue, so Overridable has to be named as a template
+			.template Overridable<MaterialSlot>(
 				[getOverride](const MaterialSlot& materialSlot) { return getOverride(materialSlot.GetOverrides()).has_value(); },
 				[getOverride](MaterialSlot& materialSlot)
 				{
@@ -305,7 +305,6 @@ void RenderComponent::CreateRenderObject()
 
 	if (m_renderObject == nullptr)
 	{
-		// #TODO We should probably make RenderComponent a TransformComponent since a mesh without a transform is useless.
 		GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
 		AssertMsg(transformComponent != nullptr, "No TransformComponent found. Mesh creation is useless without a location in 3D space.");
 
@@ -354,7 +353,7 @@ void RenderComponent::Update()
 		GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
 		AssertMsg(transformComponent != nullptr, "No TransformComponent found. Mesh creation is useless without a location in 3D space.");
 
-		// @TODO Look into ways to avoid this
+		// Cheap when nothing moved: the world matrix is cached, and SetTransform ignores an unchanged one
 		m_renderObject->SetTransform(transformComponent->GetWorldMatrix());
 
 		if (m_drawMeshBounds || m_drawSubMeshBounds)
@@ -388,7 +387,7 @@ void RenderComponent::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>
 	writer.StartObject();
 	{
 		writer.Key("ResourcePath");
-		writer.String(GetMeshPath().GetRelativePath().c_str());
+		writer.String(GetMeshPath().GetSerializedPath().c_str());
 
 		writer.Key("Mobility");
 		writer.String(k_mobilityNames[static_cast<int>(m_mobility)]);

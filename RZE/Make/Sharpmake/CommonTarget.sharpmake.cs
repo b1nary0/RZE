@@ -67,7 +67,20 @@ public class CommonTarget : Sharpmake.ITarget
                 {
                     var baseTarget = new CommonTarget(
                         Platform.win64,
-                        DevEnv.vs2017,
+                        DevEnv.vs2026,
+                        Optimization.Debug | Optimization.Release | Optimization.Retail,
+                        DotNetFramework.v4_8,
+                        dotNetOS: 0);
+                    baseTarget.SubPlatform = SubPlatformType.x64;
+
+                    return new[] { baseTarget };
+                }
+            case Platform.linux:
+                {
+                    // GNU Makefiles (RZE.make, plus one .make per project), built with clang (BaseProject.ConfigureLinux)
+                    var baseTarget = new CommonTarget(
+                        Platform.linux,
+                        DevEnv.make,
                         Optimization.Debug | Optimization.Release | Optimization.Retail,
                         DotNetFramework.v4_8,
                         dotNetOS: 0);
@@ -82,13 +95,27 @@ public class CommonTarget : Sharpmake.ITarget
         }
     }
 
+    // What a configuration is called: in the solution, as make's config= (lowercased), and as its _build folder.
+    // Sharpmake's Optimization values are fixed, so Release is named here: Development, an optimized build that keeps
+    // the debugging aids (asserts, logging, symbols). Retail is the build that ships.
+    public static string ConfigurationName(Optimization optimization)
+    {
+        switch (optimization)
+        {
+            case Optimization.Release:
+                return "Development";
+            default:
+                return optimization.ToString();
+        }
+    }
+
     public override string Name
     {
         get
         {
             var nameParts = new List<string>
             {
-                Optimization.ToString(),
+                ConfigurationName(Optimization),
             };
             return string.Join("_", nameParts);
         }

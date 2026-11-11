@@ -13,7 +13,7 @@ TEST_CASE("A registered component's properties are described in DescribeProperti
 {
 	RegisterTestComponents();
 
-	const std::vector<PropertyDescriptor>* const properties = ComponentPropertyRegistry::GetProperties(TestComponent::GetID());
+	const std::vector<PropertyDescriptor>* const properties = ComponentPropertyRegistry::GetProperties(TestComponent::StaticTypeID());
 	REQUIRE(properties != nullptr);
 	REQUIRE(properties->size() == TestComponent::Count);
 
@@ -28,8 +28,8 @@ TEST_CASE("A component type without DescribeProperties has no description")
 {
 	RegisterTestComponents();
 
-	CHECK(ComponentPropertyRegistry::GetDescription(UndescribedTestComponent::GetID()) == nullptr);
-	CHECK(ComponentPropertyRegistry::GetProperties(UndescribedTestComponent::GetID()) == nullptr);
+	CHECK(ComponentPropertyRegistry::GetDescription(UndescribedTestComponent::StaticTypeID()) == nullptr);
+	CHECK(ComponentPropertyRegistry::GetProperties(UndescribedTestComponent::StaticTypeID()) == nullptr);
 
 	UndescribedTestComponent component;
 	CHECK(ComponentPropertyRegistry::GetDescribedObject(component) == nullptr);
@@ -38,7 +38,7 @@ TEST_CASE("A component type without DescribeProperties has no description")
 TEST_CASE("Properties read and write the component through its getters and setters")
 {
 	RegisterTestComponents();
-	const std::vector<PropertyDescriptor>& properties = *ComponentPropertyRegistry::GetProperties(TestComponent::GetID());
+	const std::vector<PropertyDescriptor>& properties = *ComponentPropertyRegistry::GetProperties(TestComponent::StaticTypeID());
 
 	TestComponent component;
 	void* const object = ComponentPropertyRegistry::GetDescribedObject(component);
@@ -55,7 +55,7 @@ TEST_CASE("Properties read and write the component through its getters and sette
 TEST_CASE("Metadata set in DescribeProperties is kept")
 {
 	RegisterTestComponents();
-	const std::vector<PropertyDescriptor>& properties = *ComponentPropertyRegistry::GetProperties(TestComponent::GetID());
+	const std::vector<PropertyDescriptor>& properties = *ComponentPropertyRegistry::GetProperties(TestComponent::StaticTypeID());
 
 	const PropertyDescriptor& speed = properties[TestComponent::Speed];
 	CHECK(speed.HasRange());
@@ -72,7 +72,7 @@ TEST_CASE("Metadata set in DescribeProperties is kept")
 TEST_CASE("Only properties with a setter that aren't ReadOnly are editable")
 {
 	RegisterTestComponents();
-	const std::vector<PropertyDescriptor>& properties = *ComponentPropertyRegistry::GetProperties(TestComponent::GetID());
+	const std::vector<PropertyDescriptor>& properties = *ComponentPropertyRegistry::GetProperties(TestComponent::StaticTypeID());
 
 	CHECK(properties[TestComponent::Speed].IsEditable());
 
@@ -90,7 +90,7 @@ TEST_CASE("Only properties with a setter that aren't ReadOnly are editable")
 TEST_CASE("An editable Array's elements are described by the component and keyed")
 {
 	RegisterTestComponents();
-	const std::vector<PropertyDescriptor>& properties = *ComponentPropertyRegistry::GetProperties(TestComponent::GetID());
+	const std::vector<PropertyDescriptor>& properties = *ComponentPropertyRegistry::GetProperties(TestComponent::StaticTypeID());
 	const PropertyDescriptor& parts = properties[TestComponent::Parts];
 	REQUIRE(parts.Type == EPropertyType::Array);
 	CHECK(parts.HasEditableElements());
@@ -166,7 +166,7 @@ TEST_CASE("Paths are equal when they lead through the same properties and elemen
 TEST_CASE("An overridable value reports and resets its override")
 {
 	RegisterTestComponents();
-	const std::vector<PropertyDescriptor>& properties = *ComponentPropertyRegistry::GetProperties(TestComponent::GetID());
+	const std::vector<PropertyDescriptor>& properties = *ComponentPropertyRegistry::GetProperties(TestComponent::StaticTypeID());
 	const PropertyDescriptor& mass = properties[TestComponent::Parts].ElementType->Properties[TestComponent::PartMass];
 	REQUIRE(mass.IsOverridable());
 	CHECK(mass.IsEditable());
@@ -191,7 +191,7 @@ TEST_CASE("An overridable value reports and resets its override")
 TEST_CASE("A value can be disabled for a reason, depending on the object")
 {
 	RegisterTestComponents();
-	const std::vector<PropertyDescriptor>& properties = *ComponentPropertyRegistry::GetProperties(TestComponent::GetID());
+	const std::vector<PropertyDescriptor>& properties = *ComponentPropertyRegistry::GetProperties(TestComponent::StaticTypeID());
 	const PropertyDescriptor& mass = properties[TestComponent::Parts].ElementType->Properties[TestComponent::PartMass];
 	REQUIRE(mass.IsEnabled);
 
@@ -208,7 +208,7 @@ TEST_CASE("A value can be disabled for a reason, depending on the object")
 TEST_CASE("An enum is its option's index, with the options' names")
 {
 	RegisterTestComponents();
-	const std::vector<PropertyDescriptor>& properties = *ComponentPropertyRegistry::GetProperties(TestComponent::GetID());
+	const std::vector<PropertyDescriptor>& properties = *ComponentPropertyRegistry::GetProperties(TestComponent::StaticTypeID());
 	const PropertyDescriptor& shape = properties[TestComponent::Parts].ElementType->Properties[TestComponent::PartShape];
 	REQUIRE(shape.Type == EPropertyType::Enum);
 	REQUIRE(shape.EnumNames.size() == 3);
@@ -224,7 +224,7 @@ TEST_CASE("An enum is its option's index, with the options' names")
 TEST_CASE("A preview is made from the object each time it's asked for, and has no value to edit or copy")
 {
 	RegisterTestComponents();
-	const PropertyDescriptor& preview = (*ComponentPropertyRegistry::GetProperties(TestComponent::GetID()))[TestComponent::Preview];
+	const PropertyDescriptor& preview = (*ComponentPropertyRegistry::GetProperties(TestComponent::StaticTypeID()))[TestComponent::Preview];
 	CHECK(preview.Name == "Preview");
 	CHECK(preview.Type == EPropertyType::Preview);
 	CHECK_FALSE(preview.Get);

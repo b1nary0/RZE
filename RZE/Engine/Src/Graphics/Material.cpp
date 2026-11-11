@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/Material.h>
 
 #include <Graphics/Shader.h>
@@ -9,6 +8,8 @@
 #include <Rendering/Renderer.h>
 
 #include <Utils/Memory/MemoryUtils.h>
+
+#include <utility>
 
 MaterialInstance::MaterialInstance(const std::string& name)
 	: m_name(name)
@@ -34,8 +35,6 @@ namespace
 		case MaterialInstance::EShader::NormalMapped:
 			return LoadPixelShader("Pixel_NewRenderer");
 		case MaterialInstance::EShader::Untextured:
-			// @TODO Understand why (at least) Material_47 on sponza object has NO textures - how is this even worth it? If we don't have texures to display what
-			// purpose do we have?
 			return LoadPixelShader("Pixel_Default_NewRenderer");
 		default:
 			return LoadPixelShader("Pixel_NewRenderer_DiffuseOnly");
@@ -126,9 +125,9 @@ const Texture2D* MaterialInstance::GetTextureResource(U8 textureSlot) const
 	return m_textures[textureSlot].Get();
 }
 
-void MaterialInstance::SetShaderTechnique(const ResourceHandle& shaderTechnique)
+void MaterialInstance::SetPixelShader(TypedResourceHandle<PixelShader>&& pixelShader)
 {
-	m_pixelShader = TypedResourceHandle<PixelShader>(shaderTechnique);
+	m_pixelShader = std::move(pixelShader);
 }
 
 void MaterialInstance::CommitPropertyChanges()

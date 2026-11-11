@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/SceneChangeLog.h>
 
 #include <algorithm>

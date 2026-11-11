@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/TextureFile.h>
 
 #include <EngineCore/Async/AsyncOperation.h>
@@ -10,7 +9,6 @@
 #include <Utils/Platform/File.h>
 #include <Utils/Platform/Filepath.h>
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <STB/stb_image_write.h>
 
 namespace

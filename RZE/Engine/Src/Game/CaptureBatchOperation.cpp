@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Game/CaptureBatchOperation.h>
 
 #include <EngineCore/Async/AsyncFrameBudget.h>

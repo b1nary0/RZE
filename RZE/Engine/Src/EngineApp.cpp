@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <EngineApp.h>
 
 #include <EngineCore/Engine.h>
@@ -11,7 +10,7 @@
 #include <Game/World/GameObjectComponents/RenderComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
-#include <Windowing/Win32Window.h>
+#include <Windowing/Window.h>
 
 #include <Rendering/Graphics/RenderTarget.h>
 
@@ -72,14 +71,19 @@ Filepath RZE_Application::GetSplashScreenImage() const
 	return Filepath();
 }
 
+std::string RZE_Application::GetWindowTitle() const
+{
+	return std::string();
+}
+
 bool RZE_Application::IsReadyToShow() const
 {
 	return true;
 }
 
-bool RZE_Application::ProcessInput(const InputHandler& handler)
+InputGate RZE_Application::ProcessInput(const InputHandler& handler)
 {
-	return true;
+	return InputGate{};
 }
 
 void RZE_Application::RegisterInputEvents(InputHandler& inputHandler)
@@ -107,10 +111,10 @@ void RZE_Application::RegisterEngineComponents()
 	REGISTER_GAMEOBJECTCOMPONENT(GifChatComponent);
 
 	// Lets async scene loading preload these components' resources on worker threads.
-	GameObjectComponentRegistry::SetResourceDependencyGatherer(RenderComponent::GetID(), &RenderComponent::GatherResourceDependencies);
+	GameObjectComponentRegistry::SetResourceDependencyGatherer(RenderComponent::StaticTypeID(), &RenderComponent::GatherResourceDependencies);
 }
 
-Win32Window& RZE_Application::InternalGetWindow()
+Window& RZE_Application::InternalGetWindow()
 {
 	AssertNotNull(mWindow);
 	return *mWindow;
@@ -127,13 +131,13 @@ void RZE_Application::ShowWindow()
 	mWindow->Show();
 }
 
-void RZE_Application::SetWindow(Win32Window* const window)
+void RZE_Application::SetWindow(Window* const window)
 {
 	AssertNotNull(window);
 	mWindow = window;
 }
 
-Win32Window* const RZE_Application::GetWindow() const
+Window* const RZE_Application::GetWindow() const
 {
 	return mWindow;
 }

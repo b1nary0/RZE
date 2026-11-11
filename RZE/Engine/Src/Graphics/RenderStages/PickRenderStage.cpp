@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/RenderStages/PickRenderStage.h>
 
 #include <Graphics/IndexBuffer.h>

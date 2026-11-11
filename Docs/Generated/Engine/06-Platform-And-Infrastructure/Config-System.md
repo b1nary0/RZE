@@ -13,7 +13,11 @@
 - `WindowSettings` — `WindowTitle`, `WindowWidth`, `WindowHeight`, `LaunchMonitor`
 - `FrameSettings` (`FrameSettings.h`) — `[FrameSettings]`: `EnableVsync`, `MaxFrameRate`, `UnfocusedFrameRate`, `UIFrameRate`. A missing key keeps the struct's default. See [Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#frame-pacing).
 - `AsyncOperationFilter` (`EngineCore\Async\AsyncOperationFilter.h`, `GetBackgroundTaskFilter()`) — `[BackgroundTasks]`: which running operations progress displays show (the Editor's status bar). `ShowSubSteps`, `ShowBlocking`, and a key per kind: `ShowResourceLoads`, `ShowSceneLoads`, `ShowRendering`, `ShowSaving`, `ShowOther`. A missing key keeps the default, which shows it. `RZE_Engine::Init` gives it to the `AsyncOperationManager` right after loading the config ([Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md#which-operations-are-shown)).
-- `[Rendering]` (`GetAntiAliasing()`, `GetAutoExposure()`) — the main view's `AntiAliasing` (`Off`, `Low`, `Medium` or `High`, any case; anything else logs a warning and keeps `Medium`) and `AutoExposure`. `RZE_Engine::CreateAndInitializeRenderer()` sets them on the main view once the `RenderEngine` is made ([Render-Stages.md](../04-Rendering/Render-Stages.md#anti-aliasing-fxaa)).
+- `[Rendering]` — the main view's rendering, which `RZE_Engine::CreateAndInitializeRenderer()` sets once the `RenderEngine` is made:
+  - `AntiAliasing` (`Off`, `FXAA` or `SMAA`) and `AntiAliasingQuality` (`Low`, `Medium`, `High` or `Ultra`; FXAA uses High for Ultra), together `GetAntiAliasing()`, an `AntiAliasingMode`. SMAA High by default ([Render-Stages.md](../04-Rendering/Render-Stages.md#antialiasingstage)).
+  - `AmbientOcclusion` (`Off`, `Low`, `Medium` or `High`; `GetAmbientOcclusion()`), `GlobalIllumination` and `AutoExposure` (`0` or `1`).
+  - `ProbeTargetCount`, `ProbeCaptureDrawBudget` and `ProbeRelightBudget` (`GetGlobalIlluminationSettings()`; at least 1 each), which go to `RenderEngine::SetGlobalIlluminationSettings` ([Render-Stages.md](../04-Rendering/Render-Stages.md#irradianceprobestage)).
+  - Names are read in any case (`ReadEnumSetting`, from each enum's `EnumNames` table). A name that isn't one logs a warning listing the allowed ones and keeps the default; a missing key keeps it quietly.
 
 Loaded once during `RZE_Engine::Init()` via `LoadEngineConfig()` → `ResourceHandler::LoadResource<EngineConfig>()` — it goes through the exact same resource-loading path as meshes/textures ([Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md)), just with a config-file `IResource` implementation instead of a binary asset format.
 
@@ -33,6 +37,23 @@ UnfocusedFrameRate=30
 ; How many times a second the UI updates while you're not interacting, 0 for every frame. The scene still updates and renders every frame.
 UIFrameRate=15
 
+[Rendering]
+; How the main view smooths jagged edges: Off, FXAA (the cheapest; softens some texture detail) or SMAA (keeps
+; textures sharp; three passes)
+AntiAliasing=SMAA
+; How hard it works at it: Low, Medium, High or Ultra (SMAA only; FXAA uses High)
+AntiAliasingQuality=High
+; How much creases and corners darken the indirect light (GTAO): Off, Low, Medium or High
+AmbientOcclusion=Medium
+; Indirect light from the scene's irradiance probes, 0 for the flat sky and ground ambient
+GlobalIllumination=1
+; About how many probes a scene gets, whatever its size; draws a frame for capturing them; probes relit a frame
+ProbeTargetCount=4096
+ProbeCaptureDrawBudget=4000
+ProbeRelightBudget=512
+; Expose the main view to the scene's brightness, adapting over time; 0 for a fixed exposure of 1
+AutoExposure=1
+
 [BackgroundTasks]
 ; Which tasks progress displays (the editor's status bar) show. Every task is reported; these only pick which to show.
 ; Steps of other tasks, e.g. each image of a folder's "Loading thumbnails", or the scene a thumbnail run loads
@@ -46,12 +67,6 @@ ShowSaving=1
 ; Anything else, e.g. building the game
 ShowOther=1
 
-[Rendering]
-; How much the main view smooths jagged edges (FXAA): Off, Low, Medium or High
-AntiAliasing=Medium
-; Expose the main view to the scene's brightness, adapting over time; 0 for a fixed exposure of 1
-AutoExposure=1
-
 [WindowSettings]
 WindowWidth=1600
 WindowHeight=900
@@ -59,7 +74,7 @@ WindowTitle=Game Title
 LaunchMonitor=0
 ```
 
-Read during startup by the splash screen and `CreateAndInitializeWindow()` (`[WindowSettings]`; `-launchMonitor` overrides `LaunchMonitor`) and `InitializeFramePacing()` (`[FrameSettings]`; `-vsync`, `-maxfps` and `-uifps` override it), see [Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md). The frame settings can change while running (`RZE_Engine::SetFrameSettings`, the Editor's Frame Rate page), and so can the background task filter (`AsyncOperationManager::SetVisibilityFilter`, the Background Tasks page) and the main view's rendering settings (the Scene View page), but nothing writes them back to the file.
+Read during startup by the splash screen and `CreateAndInitializeWindow()` (`[WindowSettings]`; `-launchMonitor` overrides `LaunchMonitor`) and `InitializeFramePacing()` (`[FrameSettings]`; `-vsync`, `-maxfps` and `-uifps` override it), see [Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md). The frame settings can change while running (`RZE_Engine::SetFrameSettings`, the Editor's Frame Rate page), and so can the background task filter (`AsyncOperationManager::SetVisibilityFilter`, the Background Tasks page) and the main view's rendering settings (the Graphics page), but nothing writes them back to the file.
 
 ## `GameConfig` (`GameConfig.h/.cpp`) and `Config\Game.ini`
 

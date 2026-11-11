@@ -4,7 +4,7 @@
 
 #include <Utils/Math/Vector3D.h>
 
-class Win32Window;
+class Window;
 
 namespace Editor
 {
@@ -24,7 +24,7 @@ namespace Editor
 		void Initialize();
 		void ShutDown();
 
-		void Draw(EditorContext& context, Win32Window& window);
+		void Draw(EditorContext& context, Window& window);
 
 	private:
 		void DrawFileMenu(EditorContext& context);

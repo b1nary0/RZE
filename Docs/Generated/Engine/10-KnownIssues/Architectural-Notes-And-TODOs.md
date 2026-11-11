@@ -34,13 +34,19 @@ Rough edges the codebase is candid about (source comments, `#TODO`s), plus a few
 | 26 | A swapped-in material that's missing is tried twice on scene load | Resources | Cosmetic | Open |
 | 27 | A frame rate cap that doesn't divide the refresh rate paces unevenly under vsync | Frame pacing | Low | Open |
 | 28 | An idle tick can put two big units of async work in one frame | Async | Low | Open |
-| 29 | GPU render targets leak, and the D3D device leaks at exit | Renderer | Medium | Open |
+| 29 | The D3D device may leak at exit | Renderer | Medium | Open (the render-target leak on resize was disproved, 11-08) |
 | 30 | In Debug, the game's key bindings never fire | Game | Medium | Open |
-| 31 | `RenderThread::Shutdown` can race | Renderer | Low | Open |
-| 32 | A shader that doesn't compile crashes the app | Renderer | Medium | Open |
+| 31 | `RenderThread::Shutdown` could race | Renderer | — | **Fixed** (11-04: the flag is set with the signal, under the lock) |
+| 32 | A shader that doesn't compile crashes the app | Renderer | — | **Fixed** (11-05: the failed compile logs and leaves the shader null) |
 | 33 | The lit pixel shaders compile with an uninitialised-variable warning | Shaders | — | **Fixed** (10-24: single returns) |
 | 34 | Any light change re-renders every shadow map | Rendering | — | **Fixed** (10-25: per-light shadow caching) |
 | 35 | The sun's shadow map re-renders whenever any object changes | Rendering | Low | Open |
+| 36 | Wayland limits the custom title bar and the window | Windowing (Linux) | Low | Open, by design of Wayland |
+| 37 | RenderDoc can't capture the Linux build as it runs normally | Renderer (Linux) | Low | Open, worked around |
+| 38 | An EditorHarness screenshot stalls the Editor for about a second | Harness | Low | Open |
+| 39 | ImGui can follow the real mouse in a focused harness window | Harness | Low | Open; not seen on Windows (B6) |
+| 40 | A file restored from the Recycle Bin landed in the Editor's trash folder | Editor (Content Browser) | — | **Fixed** (11-06: sent from its own folder; Windows to confirm, E4) |
+| 41 | Scene View picks, icons and the gizmo were 40 px high | Editor (Scene View) | — | **Fixed** (11-05: the panel's position is taken every frame) |
 
 ```mermaid
 quadrantChart
@@ -56,8 +62,8 @@ quadrantChart
     "8 Texture burning": [0.65, 0.62]
     "2 ReflectDB hash": [0.15, 0.35]
     "10 CB over-read": [0.25, 0.25]
-    "5 Dead file": [0.05, 0.05]
-    "7 Component lookups": [0.4, 0.2]
+    "5 Dead file": [0.1, 0.06]
+    "7 Component lookups": [0.34, 0.16]
     "9 Shadow opacity": [0.3, 0.08]
 ```
 
@@ -156,7 +162,7 @@ The handles into a `RenderScene` could be copied, so two holders could end up de
 
 ## 22. A few long frames remain while thumbnails render
 
-Background thumbnail runs keep frames short almost all the time. Over a full run in Release, 3 frames went over 100 ms, the worst at 167 ms, against 962 ms with the old blocking batch. Likely causes are each capture's GPU readback (the render thread waits on the GPU) and resources that don't load asynchronously falling back to a synchronous load. They haven't been profiled yet.
+Background thumbnail runs keep frames short almost all the time. Over a full run in Release (now Development), 3 frames went over 100 ms, the worst at 167 ms, against 962 ms with the old blocking batch. Likely causes are each capture's GPU readback (the render thread waits on the GPU) and resources that don't load asynchronously falling back to a synchronous load. They haven't been profiled yet.
 
 ## 23. Nested types can still describe their own properties
 
@@ -182,21 +188,23 @@ With vsync on, a `MaxFrameRate` below the refresh rate that doesn't divide it (e
 
 The first unit of work in any budget always runs, even when it's bigger than the budget, and idle ticks get a budget of their own. So a frame's tick and its idle tick can each run one large unit, e.g. an extra ~55 ms frame when a thumbnail run starts. Estimating unit times, or giving idle budgets no free first unit, would avoid it. See [Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md#async-operations).
 
-## 29. GPU render targets leak, and the D3D device leaks at exit
+## 29. The D3D device may leak at exit
 
-`RenderTargetTexture`'s destructor is empty, so its GPU textures are never released; the Editor leaks its scene view target on every resize. The D3D debug layer also reports about 390 live objects at exit, probably the same cause.
+The D3D debug layer was seen to report about 390 live objects at exit. That's still to be checked under a debugger (`.claude/WindowsChecks.md`, A8.4), since the report goes to the debugger's output, not the info queue the log reads.
 
-## 30. In Debug, the game's key bindings never fire
+This entry used to say render targets leak too, with the Editor leaking its scene view target on every resize, because `RenderTargetTexture`'s destructor is empty. They don't: the target's handles hold `shared_ptr`s to the driver textures, and `~DX11TextureBuffer2D` calls `Release()`. On 11-08, 20 maximize/restore resizes of the Editor left its GPU memory at 488 MB, unchanged.
 
-`GameApp::ProcessInput` returns `false` in `IMGUI_ENABLED` (Debug) builds, so the engine resets input every frame instead of raising events, and Escape, F1–F3 and the player controller's bindings never fire. See [Game-App.md](../08-Game/Game-App.md).
+## 30. The game's key bindings never fired with ImGui on (fixed)
 
-## 31. `RenderThread::Shutdown` can race
+**Fixed (11-08, `a9812074`).** `GameApp::ProcessInput` returned `false` in `IMGUI_ENABLED` builds (then Debug only), so the engine reset input every frame instead of raising events, and Escape, F1–F3 and the player controller's bindings never fired. Apps now return an `InputGate` with a flag per device, and the Game keeps a device from the game only while ImGui wants it. That matters more now that Development, the default build, has the Game's ImGui too. See [Game-App.md](../08-Game/Game-App.md).
 
-`Shutdown` signals the render thread before it sets `m_shuttingDown`, so the thread can finish a pass and wait again before seeing the flag, leaving `join()` waiting on it. It's a narrow window and hasn't been seen to hang.
+## 31. `RenderThread::Shutdown` could race (fixed)
 
-## 32. A shader that doesn't compile crashes the app
+**Fixed (11-04).** `Shutdown` used to signal the render thread before it set `m_shuttingDown`, with no lock, so the thread could finish the woken pass, miss the flag and wait again, leaving `join()` waiting for good. It was never seen to hang by itself, but a 200 ms sleep in that gap made it hang every time. `Shutdown` now sets the flag with the signal, under `m_updateMutex`, and `Update()` checks it under the same lock right after waking, returning `false` to end the thread's loop. That relies on `Shutdown` and `RunWhileIdle` running on the same thread, so no idle task is pending when the shutdown signal arrives; both assert they run on the thread that called `Initialize`. See [Low-Level-Renderer-Module.md](../04-Rendering/Low-Level-Renderer-Module.md).
 
-`DX11VertexShader::Create` and `DX11PixelShader::Create` log the compiler's errors (at Error, through `LogCompileMessages`), then pass the compiled blob straight to `CreateVertexShader` / `CreatePixelShader`. When the compile failed the blob is null, so the app crashes with an access violation. The error reaches the log file first, but not the Log panel. A fix would skip creating the shader when `D3DCompileFromFile` fails, and have the resource load fail like any other (a `Texture2D` that won't load already does).
+## 32. A shader that doesn't compile crashes the app (fixed)
+
+**Fixed (11-05, `ce15cced`).** On DX11, `DX11VertexShader::Create` and `DX11PixelShader::Create` used to pass the compiled blob straight to `CreateVertexShader` / `CreatePixelShader`, so a failed compile, whose blob is null, crashed with an access violation. They now log fxc's errors (`[Error] Couldn't compile shader [...]`, through `LogCompileMessages`) and return, leaving the shader null, as `DX11ComputeShader` and the OpenGL backend do. On 11-08 four SMAA shaders failing at once (their includes) were logged and the Editor ran on and closed cleanly. Still open: the resource load doesn't fail, so a pass drawn with the null shader just writes no colour. With SMAA the default anti-aliasing, that left the whole scene view blank with nothing on screen saying why.
 
 ## 33. The lit pixel shaders compile with an uninitialised-variable warning
 
@@ -209,6 +217,38 @@ The first unit of work in any budget always runs, even when it's bigger than the
 ## 35. The sun's shadow map re-renders whenever any object changes
 
 The directional map is fitted around every render object as seen from the light, so `ShadowRenderStage` renders it again whenever any object is added, removed, moved or re-meshed (`RenderScene::GetObjectsRevision`), wherever it is. In Sponza that's a 4096² pass over every caster each frame something moves. Caching it against changes elsewhere would need a fit that doesn't move with every object (e.g. one padded around the scene, re-fitted only when an object leaves it), or cascades that each cache their own region.
+
+## 36. Wayland limits the custom title bar and the window
+
+On Linux under Wayland, a few things the window does on Windows and X11 can't be done:
+- **double-clicking the custom title bar doesn't maximize**, since SDL takes the press on a draggable region for the move;
+- **the window can't place itself** on the launch monitor's work area, and neither can the splash screen centre itself; the compositor decides;
+- **`IsMinimised()` is always false**, since xdg-shell never reports it (it only throttles frames, and an unfocused window is already throttled);
+- GNOME ignores per-window icons (KDE shows them).
+
+The maximize button still works, and `SDL_VIDEO_DRIVER=x11` (XWayland) restores placement. See [Windowing.md](../06-Platform-And-Infrastructure/Windowing.md#custom-title-bar).
+
+## 37. RenderDoc can't capture the Linux build as it runs normally
+
+RenderDoc turns capturing off for the whole process ("captures disabled") once anything calls GL it doesn't support. SDL draws window surfaces, the splash screen's among them, with its OpenGL renderer when it can, through fixed-function calls (`glMatrixMode`, `glOrtho`, ...). The RenderDoc 1.45 build Fedora packages also reads its capture key only through xlib. `driver.py launch --renderdoc` works around both: it runs the app on XWayland (`SDL_VIDEO_DRIVER=x11`) with SDL's accelerated window surfaces off (`SDL_FRAMEBUFFER_ACCELERATION=0`); a capture started from RenderDoc's own UI needs the same two variables. A fix in the engine would draw the splash screen without SDL's window surface.
+
+## 38. An EditorHarness screenshot stalls the Editor for about a second
+
+The harness's `shot` encodes the 2560×1398 PNG on the main thread (`stbi_write_png`), so that frame takes about a second. Fine for checks; it could upset something timing-sensitive, such as a double-click spread across it. Encoding on a worker would fix it.
+
+## 39. ImGui can follow the real mouse in a focused harness window
+
+`imgui_impl_sdl3` gives ImGui the real global mouse position when the app is focused and the real pointer is over no SDL window, on drivers that support global mouse state (Windows and X11, never Wayland). EditorHarness's mouse input doesn't move the real pointer, so in that case ImGui could see the real pointer instead. Keep the harness's window unfocused, or the real mouse over it. Windows' check (`.claude/WindowsChecks.md`, B6) didn't see it: with the harness's window focused and the real pointer over the taskbar, a harness click still landed where the harness put it.
+
+## 40. A file restored from the Recycle Bin landed in the Editor's trash folder (fixed)
+
+Deleting in the Content Browser moves the file to `ProjectData/.Trash/<n>/Item/`, so undo can put it back, and sends it to the system trash (the Recycle Bin, or `~/.local/share/Trash`) once it drops out of the undo history or the Editor closes. The system trash recorded `ProjectData/.Trash/<n>/Item` as where it came from, not its folder under `Assets`, so restoring it from there put it in a trash folder the Editor had already emptied, the Content Browser didn't show it, and the next start sent it to the trash again. Seen on Windows (`WindowsChecks.md`, E4) and on Linux.
+
+**Fixed (11-06).** Each trash entry records the original path in an `Original` file, and `AssetFiles::Recycle` and `EmptyTrash` move the file back there just before sending it on, so the system records its own folder. If the name is taken by then, or the folder has gone, it's sent from the trash as before. Verified on Linux (the `.trashinfo` names `Assets/`, and a restore puts it back); Windows' Recycle Bin is checked by E4. See [Thumbnails-And-File-Browser.md](../07-Editor/Thumbnails-And-File-Browser.md).
+
+## 41. Scene View picks, icons and the gizmo were 40 px high (fixed)
+
+**Fixed (11-05).** `SceneViewPanel` cached the panel's position only when its x **and** y both changed. A Scene View docked at x = 0, which moved only down (under the 40 px title bar), kept y = 0, while the image was drawn 40 px lower. Picks, marquee selection, object icons, mesh drops and the gizmo's rect are all placed from that position, so clicks on the lower part of a mesh missed, and icons and the gizmo sat above their objects. Not specific to a graphics API: plain ImGui screen coordinates. The position is now taken every frame. See [Editor-Panels.md](../07-Editor/Editor-Panels.md).
 
 ## Key files
 
@@ -228,3 +268,5 @@ The directional map is fitted around every render object as seen from the light,
 - `Engine\Src\Game\StaticMeshResource.h/.cpp` (24), `Engine\Src\Game\World\GameObjectComponents\RenderComponent.cpp` (25)
 - `Engine\Src\Graphics\MaterialSlot.cpp` (26)
 - `Modules\Rendering\Src\Rendering\Driver\DX11\DX11ShaderTypes.cpp` (32), `Assets\Shaders\Common\Lighting.hlsli` (33)
+- `Engine/Src/Windowing/Linux/WindowNativeLinux.cpp` (36), `.claude/skills/run-rze/driver.py` (37), `EditorHarness/Src/HarnessApp.cpp` (38), `HarnessInput.cpp`, `Externals/Src/imgui/imgui_impl_sdl3.cpp` (39)
+- `Editor/Src/UI/Panels/ContentBrowserPanel.cpp`, `Utils/Src/Utils/Platform/Windows/ShellWindows.cpp` (40), `Editor/Src/UI/Panels/SceneViewPanel.cpp` (41)

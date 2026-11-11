@@ -1,5 +1,3 @@
-#include <StdAfx.h>
-
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Vector2D.h>
 

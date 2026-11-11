@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ImGui/imgui.h>
+#include <imgui/imgui.h>
 
 // The editor's look: the colours and metrics its panels share, and ImGui's style set from them
 namespace Editor

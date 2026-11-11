@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/RenderStages/ReflectionProbeStage.h>
 
 #include <Graphics/GlobalIllumination.h>
@@ -20,7 +19,6 @@ namespace
 	constexpr U32 k_faceSize = 128;
 	constexpr U32 k_probeWidth = k_faceSize * ProbeCapture::k_faceCount;
 	constexpr U32 k_maxProbes = GraphicsLayouts::k_maxReflectionProbes;
-	constexpr U32 k_cubeSlices = k_maxProbes * ProbeCapture::k_faceCount;
 	// Mirrors REFLECTION_MIP_COUNT (Common/Probes.hlsli)
 	constexpr U32 k_prefilteredMipCount = 6;
 	// Probes relit a frame, the one just captured among them
@@ -51,7 +49,7 @@ namespace
 	// the scene has a probe.
 	struct ReflectionProbeState : RenderStageData<ReflectionProbeState>
 	{
-		static constexpr const char* k_name = "ReflectionProbeState";
+		[[maybe_unused]] static constexpr const char* k_name = "ReflectionProbeState";
 
 		struct Slot
 		{

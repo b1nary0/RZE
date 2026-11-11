@@ -1,5 +1,3 @@
-#include <StdAfx.h>
-
 #include <Windowing/TitleBarLayout.h>
 
 // std lib

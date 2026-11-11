@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/CubeMap.h>
 
 #include <Utils/DebugUtils/Debug.h>
@@ -21,6 +20,7 @@ namespace CubeMap
 		case ECubeFace::Down: return WorldAxes::Up() * -1.0f;
 		case ECubeFace::Forward: return WorldAxes::Forward();
 		case ECubeFace::Back: return WorldAxes::Forward() * -1.0f;
+		case ECubeFace::Count: break;
 		}
 
 		AssertFalse();

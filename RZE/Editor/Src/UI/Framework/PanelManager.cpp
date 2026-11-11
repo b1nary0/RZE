@@ -3,7 +3,7 @@
 #include <UI/Framework/EditorContext.h>
 #include <UI/Framework/PanelRegistry.h>
 
-#include <ImGui/imgui_internal.h> // DockBuilder API
+#include <imgui/imgui_internal.h> // DockBuilder API
 
 #include <Utils/DebugUtils/Debug.h>
 

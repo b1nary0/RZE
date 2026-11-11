@@ -74,7 +74,7 @@ namespace ComponentPropertyRegistry
 				{
 					return static_cast<TComponent*>(&component);
 				};
-			SetDescription(TComponent::GetID(), description);
+			SetDescription(TComponent::StaticTypeID(), description);
 		}
 	}
 }

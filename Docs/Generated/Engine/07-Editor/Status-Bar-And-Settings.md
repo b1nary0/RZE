@@ -4,13 +4,15 @@ Two pieces of Editor chrome: the **status bar** along the bottom, which follows 
 
 ## The status bar
 
-`StatusBar` (`UI\StatusBar.h/.cpp`), owned and drawn by `EditorApp` right after the main menu bar. It takes its height out of the viewport's work area, so the dockspace fits above it. It's made of fixed-width items: **"Ready"** and the **frame stats** on the left, and the **tasks area** on the right.
+`StatusBar` (`UI\StatusBar.h/.cpp`), owned and drawn by `EditorApp` right after the main menu bar. It takes its height out of the viewport's work area, so the dockspace fits above it. It's made of fixed-width items: **"Ready"** and the **render memory** on the left, the **frame stats** in the middle, and the **tasks area** on the right.
 
 ```
-| Ready   16.7 ms · 60 FPS · idle 9.8 ms         (o) [Rendering thumbnails +1  33%] |
+| Ready  MemArena: 4 KB / 2048 MB   16.7 ms ...  (o) [Rendering thumbnails +1  33%] |
                                                   |   '-- box: fills with the accent colour as the task progresses
                                                   '-- status circle
 ```
+
+**The render memory** is the render command arena's use ([Low-Level-Renderer-Module.md](../04-Rendering/Low-Level-Renderer-Module.md)): `RenderCommand MemArena:`, then the memory last frame's commands used out of one buffer's size, then the peak this session (`31.00 KB / 2048.00 MB · peak 4583 KB`). The use and the peak include what [spilled to the heap](../04-Rendering/Low-Level-Renderer-Module.md#arena-allocations) when the arena was full, so either can be more than its size. The label and peak are in the bar's grey, and the use is coloured by the arena's pressure: grey when low, yellow from 60% and red from 90%. It's a quick way to see what a change costs on the render path.
 
 **The frame stats** are the frame time, frames a second and idle time per frame, averaged over half a second by the `FramePacer` (`FrameStats`, [Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#frame-pacing)), and how long the render thread is busy each frame (`Rendering::RenderThreadStats`). Hovering opens a panel just above them, like the tasks one, with how many times a second the UI updates, and the idle time split into what went to tasks (`AsyncOperationManager::TickIdle`) and what was spent waiting for the next frame. Under **Rendering** it shows the draw calls a frame and how long each render stage takes to record (`RenderStats`), and under that the render thread's busy time split into running commands and presenting, with how long it waits for the main thread. Frames only have idle time with vsync or a frame rate cap. All three sets of stats share one `StatsWindow` length ([Utils-Library-Reference.md](../06-Platform-And-Infrastructure/Utils-Library-Reference.md#primitives--containers)). They replace the menu bar's old frame time readout.
 
@@ -82,6 +84,7 @@ So for new long-running work to show up here, make it an `AsyncOperation` with t
 | Background   | Thumbnails                                            |
 |  Tasks       | ----------------------------------------------------- |
 | Frame Rate   | Thumbnails render in the background, one at a time... |
+| Graphics     |                                                       |
 | Scene View   |                                                       |
 | >Thumbnails  |                                                       |
 |              | -- Scenes ------------------------------------------- |
@@ -97,11 +100,14 @@ So for new long-running work to show up here, make it an `AsyncOperation` with t
 
 ### Pages
 
+Options with a few choices are drop-downs (`EditorUI::Combo`, or `EnumCombo` over an enum's `EnumNames`), all the same width so they line up, and on/off options are checkboxes. A page draws its own options; the scene view's toolbar has its own controls for the same snap steps ([Gizmo-Snapping-And-Grid.md](Gizmo-Snapping-And-Grid.md)).
+
 | Page | Shows |
 |---|---|
 | **Background Tasks** | Which tasks the status bar shows: **Steps of other tasks** (`SubStep`, e.g. each image of a "Loading thumbnails"), **Tasks with a progress dialog** (`Blocking`, e.g. opening a scene), and one checkbox per kind: **Resource loads**, **Scene loads**, **Rendering**, **Saving** and **Other**. It changes the engine's `AsyncOperationFilter` (`SetVisibilityFilter`) at once. Hidden tasks still run. These last until the editor closes; Engine.ini's `[BackgroundTasks]` sets them at start-up, everything but steps by default ([Config-System.md](../06-Platform-And-Infrastructure/Config-System.md)). |
-| **Frame Rate** | **Vsync**, the **max frame rate** (Off, 30, 60, 120, 144, 240), the frame rate **while unfocused** (Off, 10, 15, 30, 60) and the **UI rate** (Every frame, 60, 30, 20, 15): how often the panels and menus update while you're not using the mouse or keyboard. They're `FrameSettings`, applied at once through `RZE_Engine::SetFrameSettings`, and last until the editor closes; Engine.ini's `[FrameSettings]` sets them at start-up ([Config-System.md](../06-Platform-And-Infrastructure/Config-System.md)). Engine.ini can set rates the page doesn't list, and then none of its options is picked. |
-| **Scene View** | The gizmo's **move step** (0.25–1 m, also the grid's square size and the paste offset) and **rotate step** (15–90°). These are the same `EditorSettings` values the scene view's toolbar edits, drawn by the same code (`GizmoSnapper::DrawSnapSizeOptions` / `DrawRotationStepOptions`), so the two always agree. See [Gizmo-Snapping-And-Grid.md](Gizmo-Snapping-And-Grid.md). Under **Rendering**: **Anti-aliasing** (Off, Low, Medium, High) and **Auto exposure**, which set the main view's `AntiAliasing` and `AutoExposure` at once ([Render-Stages.md](../04-Rendering/Render-Stages.md#anti-aliasing-fxaa)). These last until the editor closes; Engine.ini's `[Rendering]` sets them at start-up. |
+| **Frame Rate** | **Vsync**, drop-downs of the **max frame rate** (Off, 30, 60, 120, 144, 240), the frame rate **while unfocused** (Off, 10, 15, 30, 60) and the **UI rate** (Every frame, 60, 30, 20, 15): how often the panels and menus update while you're not using the mouse or keyboard. They're `FrameSettings`, applied at once through `RZE_Engine::SetFrameSettings`, and last until the editor closes; Engine.ini's `[FrameSettings]` sets them at start-up ([Config-System.md](../06-Platform-And-Infrastructure/Config-System.md)). Engine.ini (or `-maxfps` / `-uifps`) can set rates the page doesn't list: the drop-down then shows the rate itself, e.g. 75, with none of its options picked. |
+| **Graphics** | How the main view renders, applied at once: **Anti-aliasing** (Off, FXAA, SMAA) and, indented under it, its **Quality** (Low, Medium, High, and Ultra for SMAA; greyed out when Off). The quality list is the method's own (`GetHighestQuality`): with FXAA and Ultra set it shows High, and keeps Ultra for SMAA. Then **Ambient occlusion** (Off, Low, Medium, High), **Global illumination**, **Show** (Lit, Ambient occlusion or Indirect light, `RenderView::Debug`) and **Auto exposure**. They set the main view's `AntiAliasing`, `AmbientOcclusion`, `GlobalIllumination`, `Debug` and `AutoExposure` ([Render-Stages.md](../04-Rendering/Render-Stages.md#antialiasingstage)). These last until the editor closes; Engine.ini's `[Rendering]` sets them at start-up ([Config-System.md](../06-Platform-And-Infrastructure/Config-System.md)), except Show, which always starts at Lit. |
+| **Scene View** | Under **Snapping**, drop-downs of the gizmo's **move step** (0.25–1 m, also the grid's square size and the paste offset) and **rotate step** (15–90°). They're the same `EditorSettings` values the scene view's toolbar edits as radio buttons, over the same options (`EditorSettings::k_snapSizeOptions` / `k_rotationStepOptions`) and labels (`EditorUI::FormatMetres` / `FormatDegrees`), so the two always agree. See [Gizmo-Snapping-And-Grid.md](Gizmo-Snapping-And-Grid.md). |
 | **Thumbnails** | For scenes and for meshes: how many thumbnails are up to date, out of date and missing, and their folder. **Update** renders the missing and out-of-date ones (greyed out when all are up to date); **Regenerate All** renders every one again. Both queue the work on the background `ThumbnailRenderer`, so the status bar shows it and the editor carries on. The counts (`FindFiles` + `Thumbnails::Survey`) refresh every second while the page is shown. |
 
 ### Adding a page
@@ -119,7 +125,7 @@ public:
 REGISTER_SETTINGS_PAGE(MyPage);
 ```
 
-Put it in `Editor\Src\UI\Settings\` and run `GenerateSolutions.bat`. The window creates one of each registered page when it's created (`SettingsPageRegistry::CreateAll`, sorted by name). Registration works like panels', so it relies on `Editor` linking `EditorLib` with `/WHOLEARCHIVE` ([Editor-Framework.md](Editor-Framework.md#panels)). A preference more than one place reads goes in `EditorSettings` and gets its control on a page.
+Put it in `Editor\Src\UI\Settings\` and run `GenerateSolutions.bat` (`.sh` on Linux). The window creates one of each registered page when it's created (`SettingsPageRegistry::CreateAll`, sorted by name). Registration works like panels', so it relies on `Editor` linking `EditorLib` with `/WHOLEARCHIVE` ([Editor-Framework.md](Editor-Framework.md#panels)). A preference more than one place reads goes in `EditorSettings` and gets its control on a page.
 
 Settings last for the session only; nothing is saved between runs yet. Settings that describe the game rather than the editor go in [Project Settings](Editor-Panels.md#project-settings-projectsettingspanel), which saves to `Config\Game.ini`.
 
@@ -127,7 +133,7 @@ Settings last for the session only; nothing is saved between runs yet. Settings 
 
 - `Editor\Src\UI\StatusBar.h/.cpp`, `TaskTracker.h/.cpp`, `TaskColours.h/.cpp`
 - `Editor\Src\UI\Panels\TaskHistoryPanel.h/.cpp`, `SettingsPanel.h/.cpp`
-- `Editor\Src\UI\Settings\SettingsPage.h`, `SettingsPageRegistry.h/.cpp`, `BackgroundTasksSettingsPage.h/.cpp`, `FrameRateSettingsPage.h/.cpp`, `SceneViewSettingsPage.h/.cpp`, `ThumbnailsSettingsPage.h/.cpp`
+- `Editor\Src\UI\Settings\SettingsPage.h`, `SettingsPageRegistry.h/.cpp`, `BackgroundTasksSettingsPage.h/.cpp`, `FrameRateSettingsPage.h/.cpp`, `GraphicsSettingsPage.h/.cpp`, `SceneViewSettingsPage.h/.cpp`, `ThumbnailsSettingsPage.h/.cpp`
 - `Engine\Src\EngineCore\Async\AsyncOperationFilter.h/.cpp`
 - `Editor\Src\UI\Framework\EditorSettings.h/.cpp`
 - `UnitTests\Src\Editor\TaskTrackerTests.cpp`, `SettingsPageRegistryTests.cpp`

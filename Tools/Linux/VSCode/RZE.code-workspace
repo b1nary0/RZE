@@ -1,0 +1,174 @@
+// VS Code on Linux: open this file (code Tools/Linux/VSCode/RZE.code-workspace), not the repository folder.
+// Ctrl+Shift+B builds Development (optimized, with asserts and symbols) through the Sharpmake Makefiles, F5 debugs the
+// Editor or UnitTests with gdb, in Development or Debug, and IntelliSense reads compile_commands.json, which every
+// Development build regenerates (Tools/Linux/GenerateCompileCommands.py).
+// Setup (once) is in README.md. Settings of your own go in your user settings or the repository's .vscode/.
+{
+    "folders": [
+        { "name": "RZE", "path": "../../.." }
+    ],
+
+    "extensions": {
+        "recommendations": [ "ms-vscode.cpptools" ]
+    },
+
+    "settings": {
+        "C_Cpp.default.compileCommands": "${workspaceFolder}/compile_commands.json",
+        "C_Cpp.default.compilerPath": "/usr/bin/clang++",
+        "C_Cpp.default.cppStandard": "c++17",
+        "C_Cpp.default.cStandard": "c11",
+        "C_Cpp.default.intelliSenseMode": "linux-clang-x64",
+        // Build outputs: thousands of files that change on every build
+        "files.watcherExclude": {
+            "**/_project/obj/**": true,
+            "**/RZE/_build/**": true
+        },
+        "search.exclude": {
+            "**/_project/obj/**": true,
+            "**/RZE/_build/**": true
+        }
+    },
+
+    "tasks": {
+        "version": "2.0.0",
+        "tasks": [
+            {
+                "label": "RZE: compile_commands.json",
+                "detail": "Regenerates compile_commands.json from the Makefiles (a dry run: nothing compiles)",
+                "type": "shell",
+                "command": "python3 Tools/Linux/GenerateCompileCommands.py --config development",
+                "options": { "cwd": "${workspaceFolder:RZE}" },
+                "problemMatcher": [],
+                "presentation": { "reveal": "silent" }
+            },
+            {
+                "label": "RZE: build development",
+                "type": "shell",
+                "command": "make -C RZE config=development -j\"$(nproc)\"",
+                "dependsOn": "RZE: compile_commands.json",
+                "options": {
+                    "cwd": "${workspaceFolder:RZE}",
+                    // The Makefiles append to CXXFLAGS, so this reaches every compile. Each project compiles from its
+                    // own _project folder, and absolute paths let the problem matcher open errors from any of them.
+                    "env": { "CXXFLAGS": "-fdiagnostics-absolute-paths -fdiagnostics-color=always" }
+                },
+                "problemMatcher": { "base": "$gcc", "fileLocation": "absolute" },
+                "group": { "kind": "build", "isDefault": true }
+            },
+            {
+                "label": "RZE: build debug",
+                "detail": "Unoptimized, for stepping through code the optimizer rearranges",
+                "type": "shell",
+                "command": "make -C RZE config=debug -j\"$(nproc)\"",
+                "options": {
+                    "cwd": "${workspaceFolder:RZE}",
+                    "env": { "CXXFLAGS": "-fdiagnostics-absolute-paths -fdiagnostics-color=always" }
+                },
+                "problemMatcher": { "base": "$gcc", "fileLocation": "absolute" },
+                "group": "build"
+            },
+            {
+                "label": "RZE: unit tests",
+                "type": "shell",
+                "command": "./RZE/_build/development/UnitTests",
+                "dependsOn": "RZE: build development",
+                "options": { "cwd": "${workspaceFolder:RZE}" },
+                "problemMatcher": [],
+                "group": { "kind": "test", "isDefault": true }
+            },
+            {
+                "label": "RZE: burn assets",
+                "detail": "SourceAssetBurner: once after cloning, and after changing source assets",
+                "type": "shell",
+                "command": "./RZE/_build/development/SourceAssetBurner",
+                "dependsOn": "RZE: build development",
+                "options": { "cwd": "${workspaceFolder:RZE}" },
+                "problemMatcher": []
+            },
+            {
+                "label": "RZE: generate Makefiles",
+                "detail": "Sharpmake: again after adding or removing a source file",
+                "type": "shell",
+                "command": "./GenerateSolutions.sh && python3 ../Tools/Linux/GenerateCompileCommands.py --config development",
+                "options": { "cwd": "${workspaceFolder:RZE}/RZE" },
+                "problemMatcher": []
+            }
+        ]
+    },
+
+    "launch": {
+        "version": "0.2.0",
+        "configurations": [
+            {
+                "name": "Editor (development)",
+                "type": "cppdbg",
+                "request": "launch",
+                "program": "${workspaceFolder:RZE}/RZE/_build/development/Editor",
+                "args": [ "-scene", "${input:scene}" ],
+                "cwd": "${workspaceFolder:RZE}/RZE/_build/development",
+                "MIMode": "gdb",
+                "miDebuggerPath": "/usr/bin/gdb",
+                "setupCommands": [
+                    { "description": "Pretty-print STL types", "text": "-enable-pretty-printing", "ignoreFailures": true }
+                ],
+                "preLaunchTask": "RZE: build development"
+            },
+            {
+                "name": "UnitTests (development)",
+                "type": "cppdbg",
+                "request": "launch",
+                "program": "${workspaceFolder:RZE}/RZE/_build/development/UnitTests",
+                "args": [ "-tc=${input:testCases}" ],
+                "cwd": "${workspaceFolder:RZE}/RZE/_build/development",
+                "MIMode": "gdb",
+                "miDebuggerPath": "/usr/bin/gdb",
+                "setupCommands": [
+                    { "description": "Pretty-print STL types", "text": "-enable-pretty-printing", "ignoreFailures": true }
+                ],
+                "preLaunchTask": "RZE: build development"
+            },
+            {
+                "name": "Editor (debug)",
+                "type": "cppdbg",
+                "request": "launch",
+                "program": "${workspaceFolder:RZE}/RZE/_build/debug/Editor",
+                "args": [ "-scene", "${input:scene}" ],
+                "cwd": "${workspaceFolder:RZE}/RZE/_build/debug",
+                "MIMode": "gdb",
+                "miDebuggerPath": "/usr/bin/gdb",
+                "setupCommands": [
+                    { "description": "Pretty-print STL types", "text": "-enable-pretty-printing", "ignoreFailures": true }
+                ],
+                "preLaunchTask": "RZE: build debug"
+            },
+            {
+                "name": "UnitTests (debug)",
+                "type": "cppdbg",
+                "request": "launch",
+                "program": "${workspaceFolder:RZE}/RZE/_build/debug/UnitTests",
+                "args": [ "-tc=${input:testCases}" ],
+                "cwd": "${workspaceFolder:RZE}/RZE/_build/debug",
+                "MIMode": "gdb",
+                "miDebuggerPath": "/usr/bin/gdb",
+                "setupCommands": [
+                    { "description": "Pretty-print STL types", "text": "-enable-pretty-printing", "ignoreFailures": true }
+                ],
+                "preLaunchTask": "RZE: build debug"
+            }
+        ],
+        "inputs": [
+            {
+                "id": "scene",
+                "type": "promptString",
+                "description": "Scene to open (a file in RZE/Assets/Scenes)",
+                "default": "Sponza.scene"
+            },
+            {
+                "id": "testCases",
+                "type": "promptString",
+                "description": "doctest test cases to run (wildcards allowed, e.g. Undo*)",
+                "default": "*"
+            }
+        ]
+    }
+}

@@ -6,7 +6,7 @@
 
 #include <Utils/Platform/Filepath.h>
 
-#include <ImGui/imgui.h>
+#include <imgui/imgui.h>
 
 #include <functional>
 #include <memory>

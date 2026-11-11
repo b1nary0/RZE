@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <functional>
 
 template <typename TReturnType, class... Args>
@@ -42,7 +43,7 @@ public:
 		mCallback = other.mCallback;
 	}
 
-	bool operator!=(nullptr_t)
+	bool operator!=(std::nullptr_t)
 	{
 		return mCallback != nullptr;
 	}

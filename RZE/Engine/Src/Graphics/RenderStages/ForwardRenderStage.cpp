@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/RenderStages/ForwardRenderStage.h>
 
 #include <Graphics/GraphicsLayouts.h>

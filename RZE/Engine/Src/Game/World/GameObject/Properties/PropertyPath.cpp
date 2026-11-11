@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Game/World/GameObject/Properties/PropertyPath.h>
 
 #include <Utils/DebugUtils/Debug.h>

@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <EngineCore/Async/AsyncOperationFilter.h>
 
 bool AsyncOperationFilter::ShowsKind(EAsyncOperationKind kind) const

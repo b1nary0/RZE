@@ -7,8 +7,9 @@
 
 #include <Utils/Math/Math.h>
 #include <Utils/Platform/FileNames.h>
+#include <Utils/StringUtils.h>
 
-#include <ImGui/imgui.h>
+#include <imgui/imgui.h>
 
 #include <algorithm>
 #include <cstring>
@@ -153,7 +154,7 @@ namespace
 		}
 
 		char buffer[k_maxStringLength];
-		strncpy_s(buffer, stringValue.c_str(), _TRUNCATE);
+		StringUtils::CopyTruncated(buffer, stringValue);
 		if (ImGui::InputText("##value", buffer, sizeof(buffer), k_commitOnEnter))
 		{
 			stringValue = buffer;

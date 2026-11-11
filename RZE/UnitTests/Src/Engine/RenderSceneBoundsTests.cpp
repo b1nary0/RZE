@@ -213,7 +213,7 @@ TEST_CASE("A scene's bounds follow its objects being added, moved, given new mes
 	RenderScene scene;
 	CHECK(scene.GetBounds().IsEmpty());
 
-	RenderObjectPtr first = scene.CreateRenderObject(MakeMesh({ k_unitBox }));
+	[[maybe_unused]] RenderObjectPtr first = scene.CreateRenderObject(MakeMesh({ k_unitBox }));
 	CheckBox(scene.GetBounds(), Vector3D(-1.0f), Vector3D(1.0f));
 
 	RenderObjectPtr second = scene.CreateRenderObject(MakeMesh({ k_unitBox }));
@@ -369,7 +369,7 @@ TEST_CASE("A scene tells where its objects changed: where they were and where th
 	CHECK_FALSE(HaveObjectsChangedWithin(scene, atTen, revision));
 
 	// Clearing changes everywhere, even where nothing was
-	RenderObjectPtr other = scene.CreateRenderObject(MakeMesh({ k_unitBox }));
+	[[maybe_unused]] RenderObjectPtr other = scene.CreateRenderObject(MakeMesh({ k_unitBox }));
 	revision = scene.GetRevision();
 	scene.ClearObjects();
 	CHECK(HaveObjectsChangedWithin(scene, atTen, revision));
@@ -379,7 +379,7 @@ TEST_CASE("A scene tells where its objects changed: where they were and where th
 TEST_CASE("A light's changes change the scene's revision but not its objects revision")
 {
 	RenderScene scene;
-	RenderObjectPtr object = scene.CreateRenderObject(MakeMesh({ k_unitBox }));
+	[[maybe_unused]] RenderObjectPtr object = scene.CreateRenderObject(MakeMesh({ k_unitBox }));
 	const U64 objectsRevision = scene.GetObjectsRevision();
 
 	LightObjectPtr light = scene.CreateLightObject(ELightType::Point);
@@ -449,6 +449,8 @@ TEST_CASE("An object changing mobility changes both kinds where it is, and the s
 	CHECK(scene.GetStaticObjectsRevision() == scene.GetRevision());
 	CHECK(scene.GetStaticChanges().HasChangedWithin(atTen, revision));
 	CHECK(scene.GetMovableChanges().HasChangedWithin(atTen, revision));
+	// The wall's alone now
+	CHECK(wall->GetMobility() == ERenderMobility::Static);
 	CheckBox(scene.GetStaticBounds(), Vector3D(-1.0f), Vector3D(1.0f));
 
 	// Setting what it already has changes nothing

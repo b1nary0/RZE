@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Utils/Platform/File.h>
 
 #include <Utils/DebugUtils/Debug.h>
@@ -68,7 +67,8 @@ bool File::Open(EFileOpenMode::Value fileOpenMode)
 
 	if (IsValid())
 	{
-		m_fileStream.open(m_filePath.GetAbsolutePath().c_str(), fileOpenMode);
+		// Cast: libstdc++'s openmode is an enum of its own rather than MSVC's int, so EFileOpenMode doesn't convert to it
+		m_fileStream.open(m_filePath.GetAbsolutePath().c_str(), static_cast<std::ios_base::openmode>(fileOpenMode));
 		
 		m_isOpen = m_fileStream.is_open();
 		if (!m_isOpen)

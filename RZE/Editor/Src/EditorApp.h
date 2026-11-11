@@ -27,18 +27,23 @@ namespace Editor
 
 		void ParseArguments(char** arguments, int count) override;
 		void RegisterInputEvents(InputHandler& inputHandler) override;
-		bool ProcessInput(const InputHandler& handler) override;
+		InputGate ProcessInput(const InputHandler& handler) override;
 
 		void OnWindowResize(const Vector2D& newSize) override;
 		// Asks about unsaved changes first (UnsavedChangesPrompt), which exits once they're dealt with
 		bool OnCloseRequested() override;
 		// The logo
 		Filepath GetSplashScreenImage() const override;
+		// "RZEStudio" from the start, splash screen and all, whatever the game's title
+		std::string GetWindowTitle() const override;
 		// Once the start scene has loaded
 		bool IsReadyToShow() const override;
 
 	protected:
 		void CreateRenderTarget(const Vector2D& dimensions) override;
+
+		// For an app built on the Editor (EditorHarness) to read the Editor's state
+		EditorContext& GetContext() { return m_context; }
 
 	private:
 		void LoadFonts();

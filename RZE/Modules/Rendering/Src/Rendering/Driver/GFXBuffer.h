@@ -2,6 +2,8 @@
 
 #include <Utils/PrimitiveDefs.h>
 
+#include <cstddef>
+
 namespace Rendering
 {
 	// Colour texture formats. RGBA8_UNORM is 0 so zero-initialized params keep the default.
@@ -17,7 +19,9 @@ namespace Rendering
 		// Single channels, e.g. ambient occlusion (R8) or linear depth (R16, R32)
 		R8_UNORM,
 		R16_FLOAT,
-		R32_FLOAT
+		R32_FLOAT,
+		// Two 8-bit channels, e.g. a lookup table
+		RG8_UNORM
 	};
 
 	// This isn't the complete answer to this atm, but will do for now
@@ -33,8 +37,9 @@ namespace Rendering
 		U32 MostDetailedMip;
 		// Ignored for depth textures
 		ETextureFormat Format;
-		// How many slices: 0 or 1 for a single texture. A cube map has 6 per cube, in ECubeFace order (the Engine's
-		// Graphics/CubeMap.h), so more than 6 makes a cube array. Arrays can't be multisampled or made with texels.
+		// How many slices: 0 or 1 for a single texture. A cube map has 6 per cube, in D3D's face order (+X, -X, +Y, -Y,
+		// +Z, -Z; Engine's Graphics/CubeMap.h names them), so more than 6 makes a cube array. Arrays can't be multisampled
+		// or made with texels.
 		U32 ArraySize;
 		//U32 Usage;
 		bool bIsShaderResource;
@@ -52,8 +57,13 @@ namespace Rendering
 		IVertexBuffer() = default;
 		virtual ~IVertexBuffer() = default;
 
+		// Must be called before Allocate(). Dynamic buffers are created empty and written via UpdateData().
+		virtual void SetDynamic(bool isDynamic) = 0;
 		virtual void Allocate(const void* data, size_t size, U32 count, U32 stride) = 0;
 		virtual void Release() = 0;
+
+		// Overwrites the buffer's contents. Dynamic buffers only.
+		virtual void UpdateData(const void* data, size_t bytes) = 0;
 
 		// @TODO Index buffers and vertex buffers don't fit this interface very well
 		// Will have to go back to previous implementation of interface for each
@@ -84,6 +94,9 @@ namespace Rendering
 
 		virtual void Allocate(const void* data, size_t size, U32 count) = 0;
 		virtual void Release() = 0;
+
+		// Overwrites the whole buffer with data, which is as big as it
+		virtual void UpdateData(const void* data) = 0;
 
 		virtual void SetActiveVS(U32 bufferSlot) = 0;
 		virtual void SetActivePS(U32 bufferSlot) = 0;

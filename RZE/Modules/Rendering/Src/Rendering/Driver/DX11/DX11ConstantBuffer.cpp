@@ -16,7 +16,7 @@ namespace Rendering
 		ZeroMemory(&bufferDesc, sizeof(bufferDesc));
 
 		bufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		bufferDesc.ByteWidth = MemoryUtils::AlignSize(size, GetAlignment()) * count;
+		bufferDesc.ByteWidth = static_cast<UINT>(MemoryUtils::AlignSize(size, GetAlignment()) * count);
 		bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		bufferDesc.CPUAccessFlags = 0;
 		bufferDesc.MiscFlags = 0;
@@ -66,7 +66,7 @@ namespace Rendering
 		return *m_buffer;
 	}
 
-	void DX11ConstantBuffer::UpdateSubresources(const void* data)
+	void DX11ConstantBuffer::UpdateData(const void* data)
 	{
 		m_device->GetDeviceContext().UpdateSubresource(m_buffer, 0, nullptr, data, 0, 0);
 	}

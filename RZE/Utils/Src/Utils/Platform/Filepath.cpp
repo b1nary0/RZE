@@ -1,11 +1,15 @@
-#include <StdAfx.h>
-
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Platform/Filepath.h>
+#include <Utils/Platform/Platform.h>
+#include <Utils/Platform/Process.h>
 #include <Utils/StringUtils.h>
 
 #include <filesystem>
-#include <Windows.h>
+
+namespace
+{
+	constexpr char k_separator = Platform::k_pathSeparator;
+}
 
 // #TODO
 // Ideally this isn't on the Filepath but instead part of the broader
@@ -14,23 +18,22 @@ EDirectoryContext gDirectoryContext = EDirectoryContext::Runtime;
 
 Filepath::Filepath(const std::string& path)
 {
+	// Either separator is accepted (scene files store '\\', code writes '/'), and becomes this platform's
 	std::string pathCpy = path;
-	std::replace(pathCpy.begin(), pathCpy.end(), '/', '\\');
+	std::replace(pathCpy.begin(), pathCpy.end(), Platform::k_otherPathSeparator, k_separator);
 
-	char buffer[1024];
-	GetModuleFileNameA(NULL, buffer, 1024);
-	std::string execPath(buffer);
-	std::replace(execPath.begin(), execPath.end(), '/', '\\');
+	std::string execPath = Process::GetExecutablePath();
+	std::replace(execPath.begin(), execPath.end(), Platform::k_otherPathSeparator, k_separator);
 
 	if (gDirectoryContext == EDirectoryContext::Source)
 	{
-		size_t pos = execPath.find("_build\\");
+		size_t pos = execPath.find(std::string("_build") + k_separator);
 		if (pos == std::string::npos)
 		{
 			// #TODO
 			// hacky code to support ci artifacts which wont have the _Build folder.
 			// eventually will write good code here but im lazy and bad so who knows
-			pos = execPath.find_last_of('\\');
+			pos = execPath.find_last_of(k_separator);
 			std::string newpath = execPath.substr(0, pos + 1);
 			
 			m_absolutePath = newpath + pathCpy;
@@ -46,7 +49,7 @@ Filepath::Filepath(const std::string& path)
 	}
 	else
 	{
-		size_t pos = execPath.find_last_of('\\');
+		size_t pos = execPath.find_last_of(k_separator);
 		std::string newpath = execPath.substr(0, pos + 1);
 
 		m_absolutePath = newpath + pathCpy;
@@ -72,8 +75,8 @@ Filepath Filepath::FromAbsolutePathStr(const std::string& absolutePath)
 {
 	// @TODO having to distinguish between Assets folder and ProjectData needs to be reworked
 	// potentially leveraging the DirectoryContext enum
-	size_t index = absolutePath.find("Assets\\");
-	index = (index != std::string::npos) ? index : absolutePath.find("ProjectData\\");
+	size_t index = absolutePath.find(std::string("Assets") + k_separator);
+	index = (index != std::string::npos) ? index : absolutePath.find(std::string("ProjectData") + k_separator);
 	if (index != std::string::npos)
 	{
 		return Filepath(absolutePath.substr(index, absolutePath.size()));
@@ -93,15 +96,22 @@ const std::string& Filepath::GetRelativePath() const
 	return m_relativePath;
 }
 
+std::string Filepath::GetSerializedPath() const
+{
+	std::string serialized = m_relativePath;
+	std::replace(serialized.begin(), serialized.end(), '/', '\\');
+	return serialized;
+}
+
 const std::string Filepath::GetAbsoluteDirectoryPath() const
 {
-	size_t substrCount = m_absolutePath.find_last_of('\\');
+	size_t substrCount = m_absolutePath.find_last_of(k_separator);
 	return m_absolutePath.substr(0, substrCount + 1);
 }
 
 const std::string Filepath::GetRelativeDirectoryPath() const
 {
-	size_t substrCount = m_relativePath.find_last_of('\\');
+	size_t substrCount = m_relativePath.find_last_of(k_separator);
 	return m_relativePath.substr(0, substrCount + 1);
 }
 
@@ -122,7 +132,7 @@ std::string Filepath::GetExtension() const
 
 Filepath Filepath::GetParentFolder() const
 {
-	const size_t separator = m_relativePath.find_last_of('\\');
+	const size_t separator = m_relativePath.find_last_of(k_separator);
 	return separator != std::string::npos ? Filepath(m_relativePath.substr(0, separator)) : Filepath();
 }
 
@@ -135,7 +145,7 @@ bool Filepath::IsInside(const Filepath& folder) const
 	}
 
 	// "Assets\Scenes2" isn't inside "Assets\Scenes"
-	return m_relativePath.size() == folderPath.size() || m_relativePath[folderPath.size()] == '\\';
+	return m_relativePath.size() == folderPath.size() || m_relativePath[folderPath.size()] == k_separator;
 }
 
 bool Filepath::IsValid() const

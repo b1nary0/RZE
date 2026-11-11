@@ -1,5 +1,8 @@
-#include <StdAfx.h>
 #include <Game/World/GameObjectComponents/EditorCameraComponent.h>
+
+#include <RZE.h>
+
+#include <EngineCore/Input/InputHandler.h>
 
 #include <Game/GameScene.h>
 #include <Game/World/GameObject/GameObject.h>
@@ -9,6 +12,12 @@
 
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Math.h>
+
+#include <Optick/optick.h>
+
+#include <algorithm>
+#include <cmath>
+#include <memory>
 
 namespace
 {
@@ -71,11 +80,6 @@ float EditorCameraComponent::GetFOV() const
 	return m_fov;
 }
 
-float EditorCameraComponent::GetAspectRatio() const
-{
-	return m_aspectRatio;
-}
-
 float EditorCameraComponent::GetNearCull() const
 {
 	return m_nearCull;
@@ -111,11 +115,6 @@ void EditorCameraComponent::SetFOV(float fov)
 	m_fov = fov;
 }
 
-void EditorCameraComponent::SetAspectRatio(float aspectRatio)
-{
-	m_aspectRatio = aspectRatio;
-}
-
 void EditorCameraComponent::SetNearCull(float nearCull)
 {
 	m_nearCull = nearCull;
@@ -139,10 +138,15 @@ void EditorCameraComponent::FocusOn(const BoundingBox& bounds)
 	const Vector3D center = bounds.GetCentre();
 	const float radius = std::max(bounds.GetRadius(), k_focusMinRadius);
 
-	// Fit the bounding sphere to the narrower of the vertical and horizontal FOVs
+	// Fit the bounding sphere to the narrower of the vertical and horizontal FOVs, at the scene view's shape
 	const float verticalHalfFov = m_fov * 0.5f * MathUtils::ToRadians;
-	const float horizontalHalfFov = std::atan(std::tan(verticalHalfFov) * m_aspectRatio);
-	const float halfFov = std::min(verticalHalfFov, horizontalHalfFov);
+	float halfFov = verticalHalfFov;
+	const Vector2D& viewportSize = RZE().GetRenderEngine().GetMainView().ViewportSize;
+	if (viewportSize.X() > 0.0f && viewportSize.Y() > 0.0f)
+	{
+		const float horizontalHalfFov = std::atan(std::tan(verticalHalfFov) * viewportSize.X() / viewportSize.Y());
+		halfFov = std::min(verticalHalfFov, horizontalHalfFov);
+	}
 	const float distance = (radius / std::sin(halfFov)) * k_focusFramePadding;
 
 	// Keep the heading we approached from, flattened into the XZ plane
@@ -206,9 +210,7 @@ void EditorCameraComponent::Initialize()
 
 void EditorCameraComponent::OnAddToScene()
 {
-	// #TODO This wont work long term, just trying to get things rendering with new code
 	m_isActiveCamera = true;
-	m_aspectRatio = RZE().GetWindowSize().X() / RZE().GetWindowSize().Y();
 }
 
 void EditorCameraComponent::Update()
@@ -242,8 +244,8 @@ void EditorCameraComponent::UpdateFocus(GameObjectComponentPtr<TransformComponen
 
 	// Any manual look, orbit, pan or zoom takes over from the animation
 	InputHandler& inputHandler = RZE().GetInputHandler();
-	if (inputHandler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed
-		|| inputHandler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Middle) == EButtonState::ButtonState_Pressed
+	if (inputHandler.GetMouseState().IsDownThisFrame(EMouseButton::MouseButton_Right)
+		|| inputHandler.GetMouseState().IsDownThisFrame(EMouseButton::MouseButton_Middle)
 		|| inputHandler.GetMouseState().CurWheelVal != 0)
 	{
 		m_focus.reset();
@@ -269,7 +271,13 @@ void EditorCameraComponent::GenerateCameraMatrices(const Vector3D& position)
 {
 	OPTICK_EVENT("GenerateCameraMatrices");
 
-	m_projectionMat = Matrix4x4::CreatePerspectiveMatrixZeroToOne(m_fov, m_aspectRatio, m_nearCull, m_farCull);
+	const Vector2D& viewportSize = RZE().GetRenderEngine().GetMainView().ViewportSize;
+	if (viewportSize.X() <= 0.0f || viewportSize.Y() <= 0.0f)
+	{
+		return;
+	}
+
+	m_projectionMat = Matrix4x4::CreatePerspectiveMatrixZeroToOne(m_fov, viewportSize.X() / viewportSize.Y(), m_nearCull, m_farCull);
 	m_viewMat = Matrix4x4::CreateViewMatrix(position, position + m_forward, m_upDir);
 }
 
@@ -281,46 +289,45 @@ void EditorCameraComponent::KeyboardInput(GameObjectComponentPtr<TransformCompon
 
 	float speedDelta = (m_speed * m_deltaSpeedRampMultiplier) * dt;
 
-	// TODO(Josh::The extra condition here for hold is because of the frame delay for ::Hold. Should fix eventually.)
-	if (inputHandler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed)
+	// For as long as each key is down: GetButtonState's Pressed is only its first frame
+	if (inputHandler.GetMouseState().IsDownThisFrame(EMouseButton::MouseButton_Right))
 	{
 		bool hasValidMovementInput = false;
 
-		if (inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Key_W) == EButtonState::ButtonState_Pressed
-			|| inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Key_W) == EButtonState::ButtonState_Hold)
+		if (inputHandler.GetKeyboardState().IsDownThisFrame(KeyCode::Key_W))
 		{
 			transfComp->GetPosition() += m_forward * speedDelta;
 			hasValidMovementInput = true;
 		}
-		else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_S])
+		else if (inputHandler.GetKeyboardState().IsDownThisFrame(KeyCode::Key_S))
 		{
 			transfComp->GetPosition() -= m_forward * speedDelta;
 			hasValidMovementInput = true;
 		}
 
-		if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_A])
+		if (inputHandler.GetKeyboardState().IsDownThisFrame(KeyCode::Key_A))
 		{
 			transfComp->GetPosition() -= m_forward.Cross(m_upDir).Normalize() * speedDelta;
 			hasValidMovementInput = true;
 		}
-		else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_D])
+		else if (inputHandler.GetKeyboardState().IsDownThisFrame(KeyCode::Key_D))
 		{
 			transfComp->GetPosition() += m_forward.Cross(m_upDir).Normalize() * speedDelta;
 			hasValidMovementInput = true;
 		}
 
-		if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_E])
+		if (inputHandler.GetKeyboardState().IsDownThisFrame(KeyCode::Key_E))
 		{
 			transfComp->GetPosition() += m_forward.Cross(m_upDir).Cross(m_forward) * speedDelta;
 			hasValidMovementInput = true;
 		}
-		else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_Q])
+		else if (inputHandler.GetKeyboardState().IsDownThisFrame(KeyCode::Key_Q))
 		{
 			transfComp->GetPosition() -= m_forward.Cross(m_upDir).Cross(m_forward) * speedDelta;
 			hasValidMovementInput = true;
 		}
 
-		if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_1])
+		if (inputHandler.GetKeyboardState().IsDownThisFrame(KeyCode::Key_1))
 		{
 			// Focus object
 			hasValidMovementInput = true;
@@ -330,16 +337,16 @@ void EditorCameraComponent::KeyboardInput(GameObjectComponentPtr<TransformCompon
 	}
 
 	// #TODO(Josh::Support for special keys CTRL SHIFT etc)
-	if (inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Key_R) == EButtonState::ButtonState_Pressed)
+	if (inputHandler.GetKeyboardState().IsDownThisFrame(KeyCode::Key_R))
 	{
 		m_speed = k_cameraMaxSpeed * 4.0f;
 	}
-	else if (inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Space) == EButtonState::ButtonState_Pressed)
+	else if (inputHandler.GetKeyboardState().IsDownThisFrame(KeyCode::Space))
 	{
 		m_speed = k_cameraMaxSpeed / 8.0f;
 	}
 
-	if (!inputHandler.GetKeyboardState().IsDownThisFrame(Win32KeyCode::Space) && !inputHandler.GetKeyboardState().IsDownThisFrame(Win32KeyCode::Key_R))
+	if (!inputHandler.GetKeyboardState().IsDownThisFrame(KeyCode::Space) && !inputHandler.GetKeyboardState().IsDownThisFrame(KeyCode::Key_R))
 	{
 		m_speed = k_cameraMaxSpeed;
 	}
@@ -349,9 +356,7 @@ void EditorCameraComponent::MouseInput(GameObjectComponentPtr<TransformComponent
 {
 	InputHandler& inputHandler = RZE().GetInputHandler();
 
-	const Vector2D& curPos = inputHandler.GetMouseState().CurPosition;
-	const Vector2D diff = curPos - m_mousePrevPos;
-	m_mousePrevPos = curPos;
+	const Vector2D diff = inputHandler.GetMouseState().GetPositionDelta();
 
 	Vector3D& position = transfComp->GetPosition();
 
@@ -365,17 +370,17 @@ void EditorCameraComponent::MouseInput(GameObjectComponentPtr<TransformComponent
 		m_orbitDistance = std::max(m_orbitDistance - step, k_minOrbitDistance);
 	}
 
-	if (inputHandler.GetMouseState().CurMouseBtnStates[EMouseButton::MouseButton_Right])
+	if (inputHandler.GetMouseState().IsDownThisFrame(EMouseButton::MouseButton_Right))
 	{
 		const bool withSensitivity = true;
 		CalculateNewForward(diff, withSensitivity);
 	}
-	else if (inputHandler.GetMouseState().CurMouseBtnStates[EMouseButton::MouseButton_Middle] && (diff.X() != 0.0f || diff.Y() != 0.0f))
+	else if (inputHandler.GetMouseState().IsDownThisFrame(EMouseButton::MouseButton_Middle) && (diff.X() != 0.0f || diff.Y() != 0.0f))
 	{
 		const auto& keyboardState = inputHandler.GetKeyboardState();
 		const Vector3D pivot = position + m_forward * m_orbitDistance;
 
-		if (keyboardState.IsDownThisFrame(Win32KeyCode::Shift))
+		if (keyboardState.IsDownThisFrame(KeyCode::Shift))
 		{
 			// Pan: scale pixels to metres at the pivot's depth so the scene stays under the cursor
 			const float viewportHeight = RZE().GetRenderEngine().GetMainView().ViewportSize.Y();
@@ -387,7 +392,7 @@ void EditorCameraComponent::MouseInput(GameObjectComponentPtr<TransformComponent
 				position += (up * diff.Y() - right * diff.X()) * metresPerPixel;
 			}
 		}
-		else if (keyboardState.IsDownThisFrame(Win32KeyCode::Control))
+		else if (keyboardState.IsDownThisFrame(KeyCode::Control))
 		{
 			// Dolly: drag down to pull away from the pivot, up to push in
 			const float newDistance = std::max(m_orbitDistance * std::exp(diff.Y() * k_dragDollyRate), k_minOrbitDistance);

@@ -1,8 +1,8 @@
 # Gizmo Snapping & the Editor Grid
 
-The SceneView's transform gizmo can snap moves to a world grid and turn in fixed steps, and a ground grid that matches the snap size is drawn under the scene. Both live in `Editor\Src\UI\Gizmo\` as classes the `SceneViewPanel` owns: `GizmoSnapper` and `EditorGrid`. Their toolbar controls sit in the SceneView's menu bar (`SceneViewPanel::DrawMenuBar`), separated into groups by the `EditorUI` toolbar helpers (`ScopedToolbarSpacing`, `ToolbarGroupSeparator`).
+The SceneView's transform gizmo can snap moves to a world grid and turn in fixed steps, and a ground grid that matches the snap size is drawn under the scene. Both live in `Editor\Src\UI\Gizmo\` as classes the `SceneViewPanel` owns: `GizmoSnapper` and `EditorGrid`. They hold the logic and state, and draw no UI. The panel draws their toolbar controls in the SceneView's menu bar (`SceneViewPanel::DrawMenuBar` → `DrawSnapControls`, `DrawGridControls`), separated into groups by the `EditorUI` toolbar helpers (`ScopedToolbarSpacing`, `ToolbarGroupSeparator`), through their accessors (`GizmoSnapper::IsEnabled` / `ToggleEnabled`, `EditorGrid::IsVisible` / `SetVisible` / `GetSquareSize`).
 
-The **move step** (snap size) and **rotate step** are shared: they live in `EditorSettings` on the `EditorContext`. The gizmo, the grid and paste all use the move step (paste leaves that gap between copies; see [Editor-Overview.md](Editor-Overview.md#edit-copy-paste-and-duplicate)), and both are also on the Settings window's **Scene View** page ([Status-Bar-And-Settings.md](Status-Bar-And-Settings.md#pages)). The toolbar and that page draw them with the same functions (`GizmoSnapper::DrawSnapSizeOptions` / `DrawRotationStepOptions`, over `EditorSettings::k_snapSizeOptions` / `k_rotationStepOptions`). `GizmoSnapper` keeps only the toggle, and reads both steps from the settings each frame (`PrepareManipulate`).
+The **move step** (snap size) and **rotate step** are shared: they live in `EditorSettings` on the `EditorContext`. The gizmo, the grid and paste all use the move step (paste leaves that gap between copies; see [Editor-Overview.md](Editor-Overview.md#edit-copy-paste-and-duplicate)), and both are also on the Settings window's **Scene View** page ([Status-Bar-And-Settings.md](Status-Bar-And-Settings.md#pages)). The toolbar draws them as radio buttons and the page as drop-downs, each its own, over the same options (`EditorSettings::k_snapSizeOptions` / `k_rotationStepOptions`) with the same labels (`EditorUI::FormatMetres` / `FormatDegrees`: "0.5 m", "45°"). `GizmoSnapper` keeps only the toggle, and reads both steps from the settings each frame (`PrepareManipulate`).
 
 ```
 Translate Rotate Scale | Local World | [ ] Snap (X) | Move step: (o)0.25 m ( )0.5 m ( )0.75 m ( )1 m | Rotate step: (o)15° ( )30° ( )45° ( )90° | [x] Grid  1 m squares
@@ -29,7 +29,7 @@ How each mode snaps:
 Per frame, `SceneViewPanel` calls `PrepareManipulate(settings, operation, mode, ctrlHeld)` before `ImGuizmo::Manipulate` (passing the result as the snap argument), then `Apply(drag, currentPosition, currentRotation, translation, rotation)` on the decomposed result. `drag` is the gizmo's `InteractionTracker`, following `ImGuizmo::IsUsing()`; its start edge is where the starting position and rotation are captured. The snapped result is pushed as a `SetTransformCommand` carrying the drag's interaction ID (see [Editor-Framework.md](Editor-Framework.md#interactions-one-drag-many-commands)). With several objects selected, the others get the same change; see [Editor-Panels.md](Editor-Panels.md#sceneview-sceneviewpanel).
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     Prep["PrepareManipulate<br/>snapping = toggle XOR Ctrl"] --> Local{"Translate in<br/>Local mode?"}
     Local -->|yes| Snap["hand ImGuizmo the move step"]
@@ -46,7 +46,7 @@ flowchart TD
 A semi-transparent grid on the **Y = 0** plane (+Y is up; see [World-Conventions.md](../02-Architecture/World-Conventions.md)), drawn every frame as debug lines around the editor camera. It's drawn from `SceneViewPanel::PreRender`, outside the UI, so it keeps up with the camera on frames that skip the UI ([Editor-Framework.md](Editor-Framework.md#when-things-run-in-a-frame)).
 
 - **Square size follows the move step**, so snapped objects always land on grid lines.
-- **It grows as the camera rises.** Squares are 10× bigger per level, up to two levels (100× the move step). With a 1 m step: 1 m squares near the ground, 10 m from about 50 m up, 100 m from about 500 m up. The toolbar shows the current size ("1 m squares").
+- **It grows as the camera rises.** Squares are 10× bigger per level, up to two levels (100× the move step). With a 1 m step: 1 m squares near the ground, 10 m from about 50 m up, 100 m from about 500 m up. The toolbar shows the current size ("1 m squares"), with room kept for the widest it gets, so the centred toolbar doesn't shift as it changes.
 - Every 10th line is a brighter **major** line. The lines through the origin take axis colours: **X red, Z blue**.
 - Lines are depth-tested, so the scene hides them.
 
@@ -62,7 +62,7 @@ Two fades keep the grid from ever popping or showing an edge:
 Only lines out to the fade end are drawn, centred on the camera in whole major cells so they don't slide as it moves. New lines appear beyond the fade and fade in as the camera approaches.
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     A["Low camera<br/>1 m squares, 10 m major"] -->|"rising: 1 m lines fade,<br/>10 m lines dim"| B["10 m squares<br/>100 m major"]
     B -->|"rising: 10 m lines fade,<br/>100 m lines dim"| C["100 m squares<br/>(the cap)"]
@@ -82,6 +82,7 @@ See [Render-Stages.md](../04-Rendering/Render-Stages.md#debugdrawrenderstage).
 - `Editor\Src\UI\Gizmo\GizmoSnapper.h/.cpp`
 - `Editor\Src\UI\Gizmo\EditorGrid.h/.cpp`
 - `Editor\Src\UI\Framework\EditorSettings.h/.cpp` — the shared move and rotate steps, and their options
-- `Editor\Src\UI\Framework\EditorUI.h/.cpp` — spacing and separators for the SceneView toolbar groups
-- `Editor\Src\UI\Panels\SceneViewPanel.h/.cpp` — owns both, wires them to ImGuizmo and the camera
+- `Editor\Src\UI\Framework\EditorUI.h/.cpp` — spacing and separators for the SceneView toolbar groups, and the step labels (`FormatMetres`, `FormatDegrees`)
+- `Editor\Src\UI\Panels\SceneViewPanel.h/.cpp` — owns both, draws their toolbar controls, wires them to ImGuizmo and the camera
+- `Editor\Src\UI\Settings\SceneViewSettingsPage.h/.cpp` — the Settings window's snap step drop-downs
 - `Engine\Src\Graphics\RenderStages\DebugDrawRenderStage.h/.cpp`, `Assets\Shaders\Vertex_Line.hlsl`, `Pixel_Line.hlsl`

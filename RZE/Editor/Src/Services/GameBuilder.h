@@ -8,7 +8,8 @@ class AsyncOperation;
 
 namespace Editor
 {
-	// Builds and launches the game through BuildGame.bat, tracing its output to the Build log channel.
+	// Builds and launches the game through the build script (Platform::k_buildGameScript, e.g. BuildGame.bat), tracing
+	// its output to the Build log channel.
 	// Owned by EditorContext.
 	class GameBuilder
 	{

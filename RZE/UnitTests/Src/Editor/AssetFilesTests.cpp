@@ -7,6 +7,8 @@
 
 #include <filesystem>
 #include <fstream>
+#include <string>
+#include <vector>
 
 using namespace Editor;
 
@@ -21,7 +23,7 @@ namespace
 		return image;
 	}
 
-	// Removes a file, if it's there, when the test ends
+	// Removes a file, if it's there, when the test ends, and the folders it was in if that leaves them empty
 	class ScopedRemoval
 	{
 	public:
@@ -34,13 +36,15 @@ namespace
 		{
 			std::error_code ignored;
 			std::filesystem::remove(m_file.GetAbsolutePath(), ignored);
+			RemoveEmptyFolders(m_file.GetParentFolder());
 		}
 
 	private:
 		Filepath m_file;
 	};
 
-	// Removes what a test left in the trash when it ends, and the trash itself if that leaves it empty
+	// Removes what a test left in the trash when it ends, and the trash and the folders above it if that leaves them
+	// empty
 	class ScopedTrashCleanup
 	{
 	public:
@@ -56,12 +60,49 @@ namespace
 			{
 				std::filesystem::remove_all(m_item.InTrash.GetParentFolder().GetParentFolder().GetAbsolutePath(), ignored);
 			}
-			std::filesystem::remove(AssetFiles::GetTrashFolder().GetAbsolutePath(), ignored);
+			RemoveEmptyFolders(AssetFiles::GetTrashFolder());
 		}
 
 	private:
 		const TrashedItem& m_item;
 	};
+
+	// Stands in for the Recycle Bin while it's in scope: records the paths sent to it, and removes them, or refuses them
+	class FakeRecycleBin
+	{
+	public:
+		explicit FakeRecycleBin(bool accepts)
+		{
+			s_sent.clear();
+			s_accepts = accepts;
+		}
+
+		static bool Send(const Filepath& path)
+		{
+			s_sent.push_back(path.GetRelativePath());
+			if (!s_accepts)
+			{
+				return false;
+			}
+			std::error_code ignored;
+			std::filesystem::remove_all(path.GetAbsolutePath(), ignored);
+			return true;
+		}
+
+		const std::vector<std::string>& GetSent() const { return s_sent; }
+
+	private:
+		static std::vector<std::string> s_sent;
+		static bool s_accepts;
+	};
+
+	std::vector<std::string> FakeRecycleBin::s_sent;
+	bool FakeRecycleBin::s_accepts = true;
+
+	Filepath GetTrashEntry(const TrashedItem& item)
+	{
+		return item.InTrash.GetParentFolder().GetParentFolder();
+	}
 }
 
 TEST_CASE("AssetFiles::Rename takes a mesh's thumbnail with it")
@@ -179,4 +220,137 @@ TEST_CASE("AssetFiles::MoveToTrash changes nothing for a path that isn't there")
 	const ScopedTrashCleanup cleanup(item);
 
 	CHECK_FALSE(item.IsInTrash());
+}
+
+TEST_CASE("AssetFiles::Recycle sends it from where it was, so the Recycle Bin puts it back there")
+{
+	const ScopedTestFolder folder("UnitTestsTemp_AssetFiles");
+	const Filepath tank = folder.AddFile("UnitTestsTempTank.meshasset");
+	const ScopedRemoval thumbnail(WriteThumbnail(tank));
+	const TrashedItem item = AssetFiles::MoveToTrash(tank);
+	const ScopedTrashCleanup cleanup(item);
+	REQUIRE(item.IsInTrash());
+	const FakeRecycleBin recycleBin(true);
+
+	CHECK(AssetFiles::Recycle(item, &FakeRecycleBin::Send));
+
+	CHECK(recycleBin.GetSent() == std::vector<std::string>{ tank.GetRelativePath() });
+	CHECK_FALSE(tank.Exists());
+	CHECK_FALSE(Thumbnails::FindFor(tank).Exists());
+	CHECK_FALSE(GetTrashEntry(item).Exists());
+}
+
+TEST_CASE("AssetFiles::Recycle sends it from the trash if something else has its name now")
+{
+	const ScopedTestFolder folder("UnitTestsTemp_AssetFiles");
+	const Filepath tank = folder.AddFile("UnitTestsTempTank.meshasset");
+	const TrashedItem item = AssetFiles::MoveToTrash(tank);
+	const ScopedTrashCleanup cleanup(item);
+	REQUIRE(item.IsInTrash());
+	folder.AddFile("UnitTestsTempTank.meshasset");
+	const FakeRecycleBin recycleBin(true);
+
+	CHECK(AssetFiles::Recycle(item, &FakeRecycleBin::Send));
+
+	CHECK(recycleBin.GetSent() == std::vector<std::string>{ item.InTrash.GetRelativePath() });
+	CHECK(tank.Exists());
+	CHECK_FALSE(GetTrashEntry(item).Exists());
+}
+
+TEST_CASE("AssetFiles::Recycle sends it from the trash if the folder it was in has gone")
+{
+	const ScopedTestFolder folder("UnitTestsTemp_AssetFiles");
+	const Filepath tank = folder.AddFile("Vehicles/UnitTestsTempTank.meshasset");
+	const Filepath vehicles = tank.GetParentFolder();
+	const TrashedItem item = AssetFiles::MoveToTrash(tank);
+	const ScopedTrashCleanup cleanup(item);
+	REQUIRE(item.IsInTrash());
+	std::filesystem::remove(vehicles.GetAbsolutePath());
+	const FakeRecycleBin recycleBin(true);
+
+	CHECK(AssetFiles::Recycle(item, &FakeRecycleBin::Send));
+
+	CHECK(recycleBin.GetSent() == std::vector<std::string>{ item.InTrash.GetRelativePath() });
+	CHECK_FALSE(vehicles.Exists());
+	CHECK_FALSE(GetTrashEntry(item).Exists());
+}
+
+TEST_CASE("AssetFiles::Recycle leaves it in the trash if the Recycle Bin won't take it")
+{
+	const ScopedTestFolder folder("UnitTestsTemp_AssetFiles");
+	const Filepath tank = folder.AddFile("UnitTestsTempTank.meshasset");
+	const ScopedRemoval thumbnail(WriteThumbnail(tank));
+	const TrashedItem item = AssetFiles::MoveToTrash(tank);
+	const ScopedTrashCleanup cleanup(item);
+	REQUIRE(item.IsInTrash());
+	const FakeRecycleBin recycleBin(false);
+
+	CHECK_FALSE(AssetFiles::Recycle(item, &FakeRecycleBin::Send));
+
+	CHECK(recycleBin.GetSent() == std::vector<std::string>{ tank.GetRelativePath() });
+	CHECK_FALSE(tank.Exists());
+	CHECK(item.InTrash.Exists());
+	REQUIRE(item.Thumbnails.size() == 1);
+	CHECK(item.Thumbnails.front().InTrash.Exists());
+
+	// Still whole, so undo can put it back
+	REQUIRE(AssetFiles::RestoreFromTrash(item));
+	CHECK(tank.Exists());
+	CHECK(Thumbnails::FindFor(tank).Exists());
+}
+
+TEST_CASE("AssetFiles::EmptyTrash sends each item from where it was, even two that were at the same path")
+{
+	const ScopedTestFolder folder("UnitTestsTemp_AssetFiles");
+	const Filepath tank = folder.AddFile("UnitTestsTempTank.meshasset");
+	const TrashedItem first = AssetFiles::MoveToTrash(tank);
+	const ScopedTrashCleanup firstCleanup(first);
+	folder.AddFile("UnitTestsTempTank.meshasset");
+	const TrashedItem second = AssetFiles::MoveToTrash(tank);
+	const ScopedTrashCleanup secondCleanup(second);
+	REQUIRE(first.IsInTrash());
+	REQUIRE(second.IsInTrash());
+	const FakeRecycleBin recycleBin(true);
+
+	AssetFiles::EmptyTrash(&FakeRecycleBin::Send);
+
+	CHECK(recycleBin.GetSent() == std::vector<std::string>{ tank.GetRelativePath(), tank.GetRelativePath() });
+	CHECK_FALSE(tank.Exists());
+	CHECK_FALSE(AssetFiles::GetTrashFolder().Exists());
+}
+
+TEST_CASE("AssetFiles::EmptyTrash sends an item from the trash if its entry doesn't say where it was")
+{
+	const ScopedTestFolder folder("UnitTestsTemp_AssetFiles");
+	const Filepath tank = folder.AddFile("UnitTestsTempTank.meshasset");
+	const TrashedItem item = AssetFiles::MoveToTrash(tank);
+	const ScopedTrashCleanup cleanup(item);
+	REQUIRE(item.IsInTrash());
+	// As in an entry made before entries recorded it
+	const Filepath original(GetTrashEntry(item).GetRelativePath() + "/Original");
+	REQUIRE(original.Exists());
+	std::filesystem::remove(original.GetAbsolutePath());
+	const FakeRecycleBin recycleBin(true);
+
+	AssetFiles::EmptyTrash(&FakeRecycleBin::Send);
+
+	CHECK(recycleBin.GetSent() == std::vector<std::string>{ item.InTrash.GetRelativePath() });
+	CHECK_FALSE(tank.Exists());
+	CHECK_FALSE(AssetFiles::GetTrashFolder().Exists());
+}
+
+TEST_CASE("AssetFiles::EmptyTrash leaves an entry the Recycle Bin won't take, with the item in it")
+{
+	const ScopedTestFolder folder("UnitTestsTemp_AssetFiles");
+	const Filepath tank = folder.AddFile("UnitTestsTempTank.meshasset");
+	const TrashedItem item = AssetFiles::MoveToTrash(tank);
+	const ScopedTrashCleanup cleanup(item);
+	REQUIRE(item.IsInTrash());
+	const FakeRecycleBin recycleBin(false);
+
+	AssetFiles::EmptyTrash(&FakeRecycleBin::Send);
+
+	CHECK(recycleBin.GetSent() == std::vector<std::string>{ tank.GetRelativePath() });
+	CHECK_FALSE(tank.Exists());
+	CHECK(item.InTrash.Exists());
 }

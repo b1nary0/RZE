@@ -1,5 +1,8 @@
 ﻿using Sharpmake;
+using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Xml.Linq;
 using static CommonTarget;
 
@@ -29,29 +32,98 @@ public abstract class BaseProject : Project
     [Configure]
     public virtual void ConfigureAll(Project.Configuration conf, CommonTarget target)
     {
-        conf.ProjectPath = Path.Combine("[project.SharpmakeCsPath]", "_Project");
+        // Lowercase, so they're the same folders on case-sensitive filesystems (Linux) as everywhere else that names
+        // them: committed files in _project (Editor.args.json and others), and _build in .gitignore, CI and Filepath
+        conf.ProjectPath = Path.Combine("[project.SharpmakeCsPath]", "_project");
         conf.ProjectFileName = @"[project.Name]_[target.Platform]";
 
-        conf.TargetPath = Path.Combine(Globals.RootDir, "_Build/[target.Name]/");
-        conf.LibraryPaths.Add(Path.Combine(Globals.RootDir, "_Build/[target.Name]/"));
+        conf.TargetPath = Globals.BuildDir(target);
+        conf.LibraryPaths.Add(Globals.BuildDir(target));
 
         // It seems like you use <> includes a lot, so this is needed per project
         conf.IncludePaths.Add(Path.Combine("[project.SharpmakeCsPath]", "Src"));
-        conf.IncludePaths.Add(Globals.IncludeDir);
+        if (target.Platform == Platform.linux)
+        {
+            // Someone else's headers, as system headers, so their warnings don't fail the build (-Werror) where ours
+            // include them. The Makefile generator leaves out IncludeSystemPaths, so it's passed as an option, relative
+            // to the project's folder as the generator writes -I paths.
+            string projectFolder = Path.Combine(SharpmakeCsPath, "_project");
+            conf.AdditionalCompilerOptions.Add("-isystem " + Util.PathGetRelative(projectFolder, Path.GetFullPath(Globals.IncludeDir)));
+        }
+        else
+        {
+            conf.IncludePaths.Add(Globals.IncludeDir);
+        }
     }
 
     // For an exe with a window: no console window opens with it, which on Windows 11 opens in Windows Terminal and
     // takes focus from the app's window (-console opens one). The entry point stays main().
+    // Other platforms have no console/windowed split, so it does nothing there.
     protected static void ConfigureAsWindowedApp(Project.Configuration conf)
     {
+        if (conf.Platform != Platform.win64)
+        {
+            return;
+        }
+
         conf.Options.Add(Options.Vc.Linker.SubSystem.Windows);
         conf.AdditionalLinkerOptions.Add("/ENTRY:mainCRTStartup");
+    }
+
+    // A precompiled header: <name>.h in the project's Src folder, built by <name>.cpp. Every source file gets it first
+    // without including it. MSVC force-includes it (/FI, with /Yu), and the Makefile generator already does (-include
+    // of the copy it builds the PCH from), so it isn't forced there too: a second -include would find the header by
+    // name instead. Name it after the project: through the include paths, a shared name like StdAfx.h can find another
+    // project's header (Engine's include of StdAfx.h found Utils' on Linux, and parsed it as text in every file).
+    protected static void UsePrecompiledHeader(Configuration conf, CommonTarget target, string name)
+    {
+        conf.PrecompHeader = name + ".h";
+        conf.PrecompSource = name + ".cpp";
+        if (target.Platform == Platform.win64)
+        {
+            conf.ForcedIncludes.Add(name + ".h");
+        }
+    }
+
+    // Folders that hold code for only some platforms or graphics APIs. A folder with one of these names, at any depth
+    // under a project's Src, is compiled only where it's listed, so per-platform code needs no #ifdefs. E.g.
+    // Utils/Platform/Windows/ShellWindows.cpp and Utils/Platform/Linux/ShellLinux.cpp implement Utils/Platform/Shell.h.
+    private static readonly string[] k_windowsOnlyFolders = { "Windows", "DX11" };
+    private static readonly string[] k_linuxOnlyFolders = { "Linux", "OpenGL" };
+
+    private static void ExcludeFolders(Configuration conf, string[] folderNames)
+    {
+        foreach (string folderName in folderNames)
+        {
+            // Only below Src, so a folder of that name further up (where the repository was cloned) doesn't exclude
+            // everything
+            conf.SourceFilesBuildExcludeRegex.Add(@"[\\/]Src[\\/](?:[^\\/]+[\\/])*" + folderName + @"[\\/]");
+        }
+    }
+
+    // Compiled files first, then by path. Sharpmake's Makefile generator (1.9.1 to 1.11.0) numbers each object after the
+    // files before it in this list with the same name, headers included, so where Foo.h came first, Foo.cpp compiled to
+    // Foo1.o. The list was in the filesystem's order: on btrfs, the order the files were created, so a git pull that
+    // rewrote Foo.cpp renamed its object. Now a number counts only compiled files with the same name, and is the same on
+    // every clone. The Visual Studio generator sorts its own copy, so the .vcxproj files don't change. This relies on
+    // Strings, a HashSet, giving values back in the order they were added after a Clear: check both when upgrading
+    // Sharpmake.
+    public override void PostResolve()
+    {
+        base.PostResolve();
+
+        List<string> ordered = ResolvedSourceFiles
+            .OrderBy(file => SourceFilesCompileExtensions.Contains(Path.GetExtension(file)) ? 0 : 1)
+            .ThenBy(file => file, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        ResolvedSourceFiles.Clear();
+        ResolvedSourceFiles.AddRange(ordered);
     }
 
     #region Platfoms
 
     [ConfigurePriority(ConfigurePriorities.Platform)]
-    [Configure(SubPlatformType.x64)]
+    [Configure(Platform.win64)]
     public virtual void ConfigureWin64(Configuration conf, CommonTarget target)
     {
         conf.Options.Add(Options.Vc.Compiler.CppLanguageStandard.CPP17);
@@ -69,6 +141,62 @@ public abstract class BaseProject : Project
         );
 
         conf.Defines.Add("NOMINMAX");
+        // The graphics API the renderer is built for (Rendering/Driver/GFXDeviceFactory)
+        conf.Defines.Add("RZE_GFX_DX11");
+
+        ExcludeFolders(conf, k_linuxOnlyFolders);
+    }
+
+    [ConfigurePriority(ConfigurePriorities.Platform)]
+    [Configure(Platform.linux)]
+    public virtual void ConfigureLinux(Configuration conf, CommonTarget target)
+    {
+        conf.Options.Add(Options.Makefile.General.PlatformToolset.Clang);
+        conf.Options.Add(Options.Makefile.Compiler.CppLanguageStandard.Cpp17);
+        conf.Options.Add(Options.Makefile.Compiler.Rtti.Enable);
+        conf.Options.Add(Options.Makefile.Compiler.Exceptions.Enable);
+
+        // -Wall, as errors, as Windows' /W3 /WX are
+        conf.Options.Add(Options.Makefile.Compiler.Warnings.MoreWarnings);
+        conf.Options.Add(Options.Makefile.Compiler.TreatWarningsAsErrors.Enable);
+        // Symbols in every configuration, as Windows has PDBs in every configuration
+        conf.Options.Add(Options.Makefile.Compiler.GenerateDebugInformation.Enable);
+
+        switch (target.Optimization)
+        {
+            case Optimization.Debug:
+                conf.Options.Add(Options.Makefile.Compiler.OptimizationLevel.Disable);
+                break;
+            case Optimization.Release:
+                conf.Options.Add(Options.Makefile.Compiler.OptimizationLevel.Full);
+                // Frame pointers, so sampling profilers (perf --call-graph fp, Optick) get whole call stacks from an
+                // optimized build. Measured within noise on RenderPerfTest (update +1.0%, inside run-to-run spread).
+                conf.AdditionalCompilerOptions.Add("-fno-omit-frame-pointer");
+                break;
+            case Optimization.Retail:
+                conf.Options.Add(Options.Makefile.Compiler.OptimizationLevel.FullWithInlining);
+                // As Windows' Retail (AdvancedVectorExtensions2)
+                conf.AdditionalCompilerOptions.Add("-mavx2");
+                break;
+        }
+
+        conf.AdditionalCompilerOptions.Add("-pthread");
+        conf.AdditionalLinkerOptions.Add("-pthread");
+        // LLD finds symbols in static libraries whatever their order, as MSVC's linker does. GNU ld needs them in
+        // dependency order, but the Makefile generator sorts them by name, and its --start-group option is passed to
+        // clang++ without -Wl, so clang++ rejects it.
+        conf.AdditionalLinkerOptions.Add("-fuse-ld=lld");
+
+        // The graphics API the renderer is built for (Rendering/Driver/GFXDeviceFactory)
+        conf.Defines.Add("RZE_GFX_OPENGL");
+
+        ExcludeFolders(conf, k_windowsOnlyFolders);
+
+        // Editor, Game, UnitTests rather than the generator's default Editor.elf
+        if (conf.Output == Configuration.OutputType.Exe)
+        {
+            conf.TargetFileFullExtension = "";
+        }
     }
 
     #endregion

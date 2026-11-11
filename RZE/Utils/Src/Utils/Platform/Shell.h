@@ -12,4 +12,8 @@ namespace Shell
 	// Moves a file, or a folder with everything in it, to the Recycle Bin, without asking. False if it couldn't, e.g.
 	// the path doesn't exist or a file in it is open elsewhere.
 	bool MoveToRecycleBin(const Filepath& path);
+
+	// What the desktop calls these, for the UI's text: "Explorer" and "Recycle Bin" on Windows
+	const char* GetFileBrowserName();
+	const char* GetRecycleBinName();
 }

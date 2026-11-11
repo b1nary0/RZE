@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Utils/DebugUtils/DebugConfig.h>
 #include <Utils/LiveIDAllocator.h>
 #include <Utils/PrimitiveDefs.h>
 
@@ -12,7 +13,7 @@ namespace LiveObjectPtrDetail
 }
 
 // A non-owning handle to an object whose ID comes from a LiveIDAllocator (e.g. GameObjectPtr). Once the object is
-// destroyed the handle is invalid: it compares equal to nullptr, and using it asserts in debug builds. Two handles are
+// destroyed the handle is invalid: it compares equal to nullptr, and using it asserts (in every build but Retail). Two handles are
 // equal when they refer to the same object. Main thread only, like the allocators.
 //
 // TLifetime says whether an ID is alive and what ID an object has:
@@ -136,7 +137,7 @@ LiveObjectPtr<T, TLifetime>& LiveObjectPtr<T, TLifetime>::operator=(LiveObjectPt
 template <typename T, typename TLifetime>
 T* LiveObjectPtr<T, TLifetime>::Get() const
 {
-#ifdef _DEBUG
+#ifdef RZE_ASSERTS_ENABLED
 	if (m_ptr != nullptr)
 	{
 		LiveObjectPtrDetail::CheckAccess(TLifetime::IsAlive(m_id));

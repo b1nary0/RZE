@@ -2,11 +2,33 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstdio>
+#include <cstring>
 #include <string>
+#include <string_view>
 #include <vector>
 
 struct StringUtils
 {
+	// Copies source into the buffer, cut short if it doesn't fit, and always null-terminated (strncpy_s with _TRUNCATE)
+	static void CopyTruncated(char* destination, size_t destinationSize, std::string_view source)
+	{
+		if (destinationSize == 0)
+		{
+			return;
+		}
+
+		const size_t count = std::min(source.size(), destinationSize - 1);
+		std::memcpy(destination, source.data(), count);
+		destination[count] = '\0';
+	}
+
+	template <size_t Size>
+	static void CopyTruncated(char (&destination)[Size], std::string_view source)
+	{
+		CopyTruncated(destination, Size, source);
+	}
+
 	static std::string ExtractFileNameFromPath(const std::string filePath)
 	{
 		const char* const delim = "/\\";
@@ -65,19 +87,5 @@ struct StringUtils
 		const size_t first = text.find_first_not_of(" \t");
 		const size_t last = text.find_last_not_of(" \t");
 		return first == std::string::npos ? std::string() : text.substr(first, last - first + 1);
-	}
-
-	template<class... Args>
-	static std::string FormatString(const std::string& stringToFormat, Args... args)
-	{
-		/*
-		 * #TODO(Josh)
-		 * This function is ok for now but looks likely to be pretty expensive... Optimize later.
-		 * Also, using magic numbers will have to find better way later.
-		 */
-		std::vector<char> buf(1024);
-		sprintf_s(&buf[0], buf.size(), stringToFormat.c_str(), std::forward<Args>(args)...);
-
-		return std::string(buf.begin(), buf.end());
 	}
 };

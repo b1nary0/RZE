@@ -32,7 +32,7 @@ namespace Editor
 			gameObject->GetComponentHandles(components);
 			for (const GameObjectComponentPtr<GameObjectComponentBase>& component : components)
 			{
-				if (component->m_id == componentID)
+				if (component->GetTypeID() == componentID)
 				{
 					return component;
 				}

@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Utils/Math/Ray.h>
 
 #include <Utils/Math/Math.h>

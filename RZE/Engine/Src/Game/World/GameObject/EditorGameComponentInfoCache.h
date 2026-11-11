@@ -5,7 +5,7 @@
 #define REGISTER_EDITORCOMPONENTCACHE_ORDERDATA(ComponentType, ComponentOrder)\
 {\
 	GameObjectComponentTypeID<GameObjectComponentBase>::GetComponentTypeID<ComponentType>();	\
-	EditorComponentCache::RegisterComponentOrder(ComponentType::GetID(), ComponentOrder);\
+	EditorComponentCache::RegisterComponentOrder(ComponentType::StaticTypeID(), ComponentOrder);\
 }
 
 namespace EditorComponentCache

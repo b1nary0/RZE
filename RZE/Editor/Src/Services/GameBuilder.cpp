@@ -10,104 +10,30 @@
 
 #include <DebugUtils/DebugServices.h>
 
-#include <Utils/Conversions.h>
 #include <Utils/Functor.h>
 #include <Utils/Platform/Filepath.h>
-
-#include <process.h>
-#include <Windows.h>
+#include <Utils/Platform/Platform.h>
+#include <Utils/Platform/Process.h>
 
 namespace
 {
 	using OutputLineSink = Functor<void, const std::string&>;
 
-	void ForwardLine(std::string line, const OutputLineSink& onOutputLine)
-	{
-		while (!line.empty() && (line.back() == '\n' || line.back() == '\r'))
-		{
-			line.pop_back();
-		}
-
-		onOutputLine(line);
-	}
-
-	// Runs a process through cmd on the calling thread and forwards each line of its stdout and stderr (without the
-	// trailing newline). Stops reading early if cancellation is requested. Returns the process exit code, or -1 if it
-	// couldn't be started. Not _popen: the editor has no console, so cmd would open a console window that takes focus.
+	// Runs a script and forwards each line of its output. Stops reading early if cancellation is requested. Returns the
+	// script's exit code, or -1 if it couldn't be started.
 	int RunProcessStreamed(const Filepath& processPath, const OutputLineSink& onOutputLine, const Threading::CancellationToken* cancellationToken)
 	{
-		SECURITY_ATTRIBUTES pipeAttributes = {};
-		pipeAttributes.nLength = sizeof(pipeAttributes);
-		pipeAttributes.bInheritHandle = TRUE;
-
-		HANDLE readPipe = nullptr;
-		HANDLE writePipe = nullptr;
-		if (!CreatePipe(&readPipe, &writePipe, &pipeAttributes, 0))
-		{
-			onOutputLine("Failed to start process: " + processPath.GetRelativePath());
-			return -1;
-		}
-		// Only the child's end is inherited
-		SetHandleInformation(readPipe, HANDLE_FLAG_INHERIT, 0);
-
-		STARTUPINFOW startupInfo = {};
-		startupInfo.cb = sizeof(startupInfo);
-		startupInfo.dwFlags = STARTF_USESTDHANDLES;
-		startupInfo.hStdInput = nullptr;
-		startupInfo.hStdOutput = writePipe;
-		startupInfo.hStdError = writePipe;
-
-		// /s takes the outer quotes off, so a path with spaces stays one argument
-		std::wstring commandLine = L"cmd.exe /s /c \"\"" + Conversions::StringToWString(processPath.GetAbsolutePath()) + L"\"\"";
-
-		PROCESS_INFORMATION processInfo = {};
-		const BOOL bStarted = CreateProcessW(nullptr, commandLine.data(), nullptr, nullptr, TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &startupInfo, &processInfo);
-		// Closed here so the read below ends once the child (and anything it started) exits
-		CloseHandle(writePipe);
+		int exitCode = 0;
+		const bool bStarted = Process::RunScript(processPath.GetAbsolutePath(), onOutputLine, Process::StopQuery([cancellationToken]()
+			{
+				return cancellationToken != nullptr && cancellationToken->IsCancellationRequested();
+			}), exitCode);
 		if (!bStarted)
 		{
-			CloseHandle(readPipe);
 			onOutputLine("Failed to start process: " + processPath.GetRelativePath());
 			return -1;
 		}
-
-		std::string pending;
-		char buffer[2048];
-		DWORD bytesRead = 0;
-		bool bCancelled = false;
-		while (!bCancelled && ReadFile(readPipe, buffer, sizeof(buffer), &bytesRead, nullptr) && bytesRead > 0)
-		{
-			pending.append(buffer, bytesRead);
-
-			size_t lineEnd;
-			while ((lineEnd = pending.find('\n')) != std::string::npos)
-			{
-				ForwardLine(pending.substr(0, lineEnd), onOutputLine);
-				pending.erase(0, lineEnd + 1);
-
-				if (cancellationToken != nullptr && cancellationToken->IsCancellationRequested())
-				{
-					bCancelled = true;
-					break;
-				}
-			}
-		}
-
-		if (!bCancelled && !pending.empty())
-		{
-			ForwardLine(pending, onOutputLine);
-		}
-
-		// Like _pclose: stop reading, then wait for the process to exit
-		CloseHandle(readPipe);
-		WaitForSingleObject(processInfo.hProcess, INFINITE);
-
-		DWORD exitCode = 0;
-		GetExitCodeProcess(processInfo.hProcess, &exitCode);
-		CloseHandle(processInfo.hThread);
-		CloseHandle(processInfo.hProcess);
-
-		return static_cast<int>(exitCode);
+		return exitCode;
 	}
 
 	// Traces each line to the editor's build log channel. Safe from worker threads; lines are marshalled to the main thread.
@@ -154,8 +80,7 @@ namespace Editor
 				return;
 			}
 
-			// Quoted, since _spawnl joins its arguments with spaces and the name may have some
-			sceneArgument = "\"" + sceneName + "\"";
+			sceneArgument = sceneName;
 			DebugServices::Get().Trace(LogChannel::Build, "Building and launching game into scene " + launchScene.GetRelativePath() + "...");
 		}
 		else
@@ -165,13 +90,14 @@ namespace Editor
 
 		JobAsyncOperation::WorkFunction work([launchAfterBuild, sceneArgument](AsyncWorkerContext& context) -> bool
 			{
-				static const Filepath buildGameBat("BuildGame.bat");
-				static const Filepath gamePath("_build\\debug\\Game.exe");
+				static const Filepath buildGameScript(Platform::k_buildGameScript);
+				// The configuration BuildGame.bat and BuildGame.sh build
+				static const Filepath gamePath(std::string("_build/development/Game") + Platform::k_executableSuffix);
 
 				const OutputLineSink traceLine = MakeWorkerBuildTraceSink(context);
 
 				context.SetStatusText("Building game...");
-				const int buildResult = RunProcessStreamed(buildGameBat, traceLine, &context.GetCancellationToken());
+				const int buildResult = RunProcessStreamed(buildGameScript, traceLine, &context.GetCancellationToken());
 				if (buildResult != 0)
 				{
 					context.SetErrorText("Build failed with exit code " + std::to_string(buildResult) + ".");
@@ -185,8 +111,7 @@ namespace Editor
 
 				context.SetStatusText("Launching game...");
 				const std::string gameExePath = gamePath.GetAbsolutePath();
-				const std::string quotedGameExePath = "\"" + gameExePath + "\"";
-				if (_spawnl(_P_NOWAIT, gameExePath.c_str(), quotedGameExePath.c_str(), "-scene", sceneArgument.c_str(), nullptr) == -1)
+				if (!Process::Start(gameExePath, { "-scene", sceneArgument }))
 				{
 					context.SetErrorText("Failed to launch " + gameExePath + ".");
 					return false;

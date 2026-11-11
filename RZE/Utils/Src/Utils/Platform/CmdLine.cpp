@@ -1,7 +1,7 @@
-#include <StdAfx.h>
 #include <Utils/Platform/CmdLine.h>
 
 #include <Utils/DebugUtils/Debug.h>
+#include <Utils/Platform/Platform.h>
 
 #include <charconv>
 #include <cstdio>
@@ -46,7 +46,7 @@ namespace CmdLine
 		int startIndex = 1;
 		if (count > 1 && !argStrings[1].empty() && argStrings[1][0] != '-')
 		{
-			m_arguments["-scene"] = argStrings[1].substr(argStrings[1].find_last_of('\\') + 1, argStrings[1].size());
+			m_arguments["-scene"] = argStrings[1].substr(argStrings[1].find_last_of(Platform::k_pathSeparator) + 1, argStrings[1].size());
 			startIndex = 2;
 		}
 
@@ -56,7 +56,7 @@ namespace CmdLine
 			if (!IsFlag(token))
 			{
 				// @note can't use RZE_LOG here, arguments are parsed before the log file is created
-				printf_s("Ignoring unexpected command line argument: %.*s\n", static_cast<int>(token.size()), token.data());
+				printf("Ignoring unexpected command line argument: %.*s\n", static_cast<int>(token.size()), token.data());
 				continue;
 			}
 
@@ -77,7 +77,7 @@ namespace CmdLine
 			if (s_bInitialized)
 			{
 				// @note can't use RZE_LOG here, arguments are parsed before the log file is created
-				printf_s("CmdLine::Arguments::Initialize called more than once. Ignoring.\n");
+				printf("CmdLine::Arguments::Initialize called more than once. Ignoring.\n");
 				AssertMsg(false, "CmdLine::Arguments::Initialize called more than once");
 				return;
 			}

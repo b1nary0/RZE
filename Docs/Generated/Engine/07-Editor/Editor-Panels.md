@@ -16,7 +16,7 @@ Every Editor window is an `EditorPanel` in `Editor\Src\UI\Panels\`, registered w
 | Task History | `TaskHistoryPanel` | floating, 820×480 (closed at first) | View > Windows > Task History, or Full history in the status bar | yes |
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     Scene["Scene<br/>(tree)"] -->|"select"| Sel["EditorSelection<br/>(in EditorContext)"]
     SV["SceneView<br/>(3D viewport)"] -->|"select"| Sel
@@ -37,7 +37,7 @@ The selection is `EditorSelection`, in the `EditorContext`, so every panel reads
 - **Escape** (with the SceneView hovered) clears it, and loading or creating a scene clears it.
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     A["[NeckMech]"] -->|"Ctrl+click M4"| B["[NeckMech, M4]<br/>M4 is primary"]
     B -->|"Ctrl+click M4 again"| C["[NeckMech]<br/>NeckMech is primary again"]
@@ -97,7 +97,7 @@ Clicks on the gizmo, and clicks while the right or middle button (camera control
 **Clicks and the marquee work differently**, each using what suits it:
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     Click["Left click"] --> Icon{"on a light or<br/>camera icon?"}
     Icon -->|yes| SelI["select that object now"]
@@ -141,7 +141,7 @@ Browses the project's `Assets` and `ProjectData` folders: a folder tree beside a
 ## Log (`LogPanel`)
 
 Shows `DebugServices`' log entries, coloured by channel (Error red, Warning orange, Info white, Debug muted, Build grey), and keeps the newest in view while it's scrolled to the bottom. Anything can write to it:
-- the `RZE_LOG` macros from engine, editor and game code, at their level (enabled in Debug and Release, stripped in Retail);
+- the `RZE_LOG` macros from engine, editor and game code, at their level (enabled in Debug and Development, stripped in Retail);
 - resource loads ("Creating resource [...]"), at Debug, including ones loaded asynchronously;
 - the render pipeline's stage order when it compiles, and shader compile warnings and errors;
 - build and launch output, streamed line by line (`LogChannel::Build`).

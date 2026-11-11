@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <EngineCore/Resources/PendingResource.h>
 
 #include <EngineCore/Async/AsyncOperationManager.h>

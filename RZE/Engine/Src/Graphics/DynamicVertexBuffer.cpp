@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/DynamicVertexBuffer.h>
 
 #include <Rendering/Renderer.h>

@@ -9,7 +9,8 @@
 //
 // - Time and upload bytes are soft limits: the first unit of work each frame is always allowed so
 //   operations are guaranteed to make progress, even if that unit is larger than the budget.
-// - Arena bytes are a hard limit: Rendering::MemArena asserts if a frame overflows it.
+// - Arena bytes are a hard limit, to keep uploads inside Rendering::MemArena: what doesn't fit goes to the heap,
+//   one allocation at a time, with a warning for the frame.
 //
 // Each frame's own tick gets a budget that isn't idle. When the frame has spare time before the next one is due, running
 // operations are ticked again with an idle budget (AsyncOperationManager::TickIdle): extra time within the same frame.

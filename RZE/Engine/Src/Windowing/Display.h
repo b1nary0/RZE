@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-// Thin layer over the OS display/monitor API so windowing code doesn't deal with platform handles directly.
+// Thin layer over the OS display/monitor API (through SDL) so windowing code doesn't deal with platform handles directly.
 namespace Display
 {
 	struct ScreenRect
@@ -22,7 +22,7 @@ namespace Display
 
 	struct MonitorInfo
 	{
-		std::string DeviceName;		// e.g. \\.\DISPLAY2
+		std::string DeviceName;		// What the OS calls it, e.g. the monitor's model
 		ScreenRect Bounds;			// Full monitor area in virtual-desktop coordinates
 		ScreenRect WorkArea;		// Monitor area excluding taskbar etc
 		bool bIsPrimary{ false };
@@ -34,6 +34,7 @@ namespace Display
 	// Returns false if index is out of range.
 	bool GetMonitor(int index, MonitorInfo& outInfo);
 
-	// Hz, of the monitor most of the window is on; 0 if it can't be read. Whole numbers, so a 59.94 Hz mode reads 59.
+	// Hz, of the monitor the window is on (windowHandle is Window::GetNativeHandle); 0 if it can't be read. Exact, so a
+	// 59.94 Hz mode reads 59.94.
 	double GetRefreshRate(void* windowHandle);
 }

@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <EngineCore/Threading/MainThreadDispatcher.h>
 
 #include <Utils/DebugUtils/Debug.h>

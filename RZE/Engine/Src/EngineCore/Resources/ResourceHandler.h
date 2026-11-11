@@ -1,22 +1,21 @@
 #pragma once
 
+#include <functional>
+#include <memory>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
-#include <Utils/Conversions.h>
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Interfaces/Resource.h>
 #include <Utils/Platform/Filepath.h>
 
-namespace Editor
-{
-	class ResourceMonitorPanel;
-}
+// Before ResourceHandler uses it: a friend declaration alone doesn't declare the name for the rest of the class
+class ResourceHandle;
 
 class ResourceHandler
 {
 	friend class ResourceHandle;
-	friend class Editor::ResourceMonitorPanel;
 
 private:
 	class ResourceSource
@@ -40,7 +39,11 @@ private:
 		void DecreaseRefCount() { --mReferenceCount; }
 
 		IResource* GetResource() { return mResource; }
+		// Empty for an unnamed resource
 		const Filepath& GetResourcePath() const { return m_resourcePath; }
+		bool IsUnnamed() const { return m_isUnnamed; }
+		// What tools and logs show: the relative path, or an unnamed resource's display name
+		const std::string& GetDisplayName() const { return m_isUnnamed ? m_displayName : m_resourcePath.GetRelativePath(); }
 
 		int GetRefCount() const;
 
@@ -59,10 +62,11 @@ private:
 
 		int mReferenceCount;
 		Filepath m_resourcePath;
+		// Unnamed resources (AddUnnamedResource) have no path, only a name for people to read
+		bool m_isUnnamed = false;
+		std::string m_displayName;
 		IResource* mResource = nullptr;
 	};
-
-	typedef std::pair<std::string, ResourceSource> ResourcePair;
 
 
 public:
@@ -75,9 +79,8 @@ public:
 	// NOTE: ResourceHandler and ResourceHandle are main-thread only (the table and ref counts are unsynchronized).
 	// Use AsyncResourceBatch to load resources off the main thread.
 
-	ResourceHandle GetEmptyResourceHandle();
-
-	// The key a resource path is stored under. Paths that map to the same key refer to the same resource.
+	// The key a resource path is stored under: its relative path, extension and all, with this platform's separators
+	// (Filepath turns either into them). Matching is exact, so name files as they are on disk.
 	static std::string CreateResourceKey(const Filepath& resourcePath);
 
 	bool HasResource(const Filepath& resourcePath) const;
@@ -105,23 +108,35 @@ public:
 	void EndAsyncLoad(const std::string& resourceKey, const void* loader);
 	bool IsAsyncLoadInProgress(const std::string& resourceKey) const;
 
+	// Takes ownership of a resource made in code rather than loaded from a file (e.g. GifChatComponent's frames), so it's
+	// counted, released with its last handle and destroyed at ShutDown like any other. Nothing can look it up:
+	// HasResource and GetHandle never find it, and each call adds a separate resource whatever its display name, which
+	// is only for tools and logs. Empty handle for a null resource.
+	ResourceHandle AddUnnamedResource(std::unique_ptr<IResource>&& resource, const std::string& displayName);
+
+	// The resource the handle holds, as ResourceT; null for an empty handle
 	template <class ResourceT>
 	const ResourceT* GetResource(const ResourceHandle& resourceHandle);
 
-	// @TODO This should be removed when resource instance layer goes in.
-	// Do not rely on this function
-	ResourceHandle Make(const std::string& resourceID, IResource* resource);
+	// For tools: how many resources are held, and each one's display name (GetDisplayName), reference count and
+	// whether it's unnamed, in no particular order
+	size_t GetResourceCount() const;
+	void ForEachResource(const std::function<void(const std::string& displayName, int referenceCount, bool isUnnamed)>& visit) const;
 
 private:
 	template <class ResourceT, class... Args>
 	IResource* CreateAndLoadResource(const Filepath& resourcePath, Args&&... args);
 
-	const std::unordered_map<std::string, ResourceSource>& GetResourceTableInternal() const;
+	// Takes the entry, path or unnamed, out of its container, which destroys it
+	void EraseEntry(const ResourceSource& resourceSource);
 
-
-
-	// #TODO Turn the resource IDs into hashes/guids
+	// Key (CreateResourceKey of the entry's path) -> entry. Keys never leave ResourceHandler and AsyncResourceBatch,
+	// and an entry carries its own path for display, so the key's type can change there alone if lookups ever show up
+	// in a profile. Handles point at their entry, so they need no key.
 	std::unordered_map<std::string, ResourceSource> mResourceTable;
+	// Entries for unnamed resources, by address: nothing looks them up by name. unique_ptr, so they stay put as
+	// handles point at them.
+	std::unordered_map<const ResourceSource*, std::unique_ptr<ResourceSource>> m_unnamedResources;
 
 	// Resource key -> who's loading it
 	std::unordered_map<std::string, const void*> m_asyncLoads;
@@ -134,7 +149,7 @@ class ResourceHandle
 	friend class ResourceHandler;
 
 public:
-	ResourceHandle();
+	ResourceHandle() = default;
 	ResourceHandle(ResourceHandle&& rhs);
 	ResourceHandle(const ResourceHandle& rhs) = delete;
 	~ResourceHandle();
@@ -142,24 +157,23 @@ public:
 	static ResourceHandle EmptyHandle() { return ResourceHandle(); }
 
 	bool IsValid() const;
-	const std::string& GetID() const;
+	// Empty for an unnamed resource (ResourceHandler::AddUnnamedResource)
 	const Filepath& GetResourcePath() const;
 	// The resource this holds, or null when empty
 	const IResource* GetResource() const;
 
-	bool operator==(const ResourceHandle& rhs);
 	ResourceHandle& operator=(const ResourceHandle& rhs);
 	void operator=(ResourceHandle&& rhs);
 
 private:
-	ResourceHandle(const std::string& resourceID, ResourceHandler::ResourceSource* resourceSource, ResourceHandler* handler);
+	ResourceHandle(ResourceHandler::ResourceSource* resourceSource, ResourceHandler* handler);
 
 	// Drops this handle's reference and resets it to empty.
 	void ReleaseHeldResource();
 
-	ResourceHandler* mHandler;
-	std::string mResourceID; // #TODO Turn this into a hash
-	ResourceHandler::ResourceSource* mResourceSource;
+	ResourceHandler* mHandler = nullptr;
+	// Its entry in the handler's table, which stays put while handles point at it
+	ResourceHandler::ResourceSource* mResourceSource = nullptr;
 };
 
 template <class ResourceT, class... Args>
@@ -173,7 +187,7 @@ ResourceHandle ResourceHandler::LoadResource(const Filepath& resourcePath, Args.
 		return existingHandle;
 	}
 
-	RZE_LOG_DEBUG_ARGS("Creating resource [%s]", CreateResourceKey(resourcePath).c_str());
+	RZE_LOG_DEBUG_ARGS("Creating resource [%s]", resourcePath.GetRelativePath().c_str());
 	IResource* resource = CreateAndLoadResource<ResourceT>(resourcePath, args...);
 	if (resource == nullptr)
 	{
@@ -186,22 +200,14 @@ ResourceHandle ResourceHandler::LoadResource(const Filepath& resourcePath, Args.
 template <class ResourceT>
 const ResourceT* ResourceHandler::GetResource(const ResourceHandle& resourceHandle)
 {
-	// @TODO We dont actually need to do this. We can use our friendship with ResourceHandle to reach into its privates
-	auto iter = mResourceTable.find(resourceHandle.GetID());
-	if (iter != mResourceTable.end())
-	{
-		ResourceSource& resourceSource = (*iter).second;
-		return static_cast<ResourceT*>(resourceSource.GetResource());
-	}
-
-	RZE_LOG_ERROR_ARGS("Resource with key [%s] does not exist. Request it first.", resourceHandle.GetID().c_str());
-	return nullptr;
+	// The handle points at its entry in the table, so there's no key to look up
+	return static_cast<const ResourceT*>(resourceHandle.GetResource());
 }
 
 template <class ResourceT, class... Args>
 IResource* ResourceHandler::CreateAndLoadResource(const Filepath& resourcePath, Args&&... args)
 {
-	IResource* resource = new ResourceT(args...);//new (mAllocator.Allocate(sizeof(ResourceT))) ResourceT;
+	IResource* resource = new ResourceT(args...);
 	AssertNotNull(resource);
 	if (resource->Load(resourcePath))
 	{

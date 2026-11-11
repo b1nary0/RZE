@@ -20,7 +20,7 @@
 #include <Utils/StatsWindow.h>
 #include <Utils/TimeUtils.h>
 
-#include <ImGui/imgui_internal.h> // BeginViewportSideBar, RenderTextEllipsis
+#include <imgui/imgui_internal.h> // BeginViewportSideBar, RenderTextEllipsis
 
 #include <algorithm>
 #include <cstdio>

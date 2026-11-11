@@ -3,7 +3,7 @@
 #include <UI/Framework/EditorContext.h>
 #include <UI/Framework/EditorUI.h>
 
-#include <ImGui/imgui_internal.h> // BeginViewportSideBar, ImGuiViewportP, SplitterBehavior, DockBuilder API, settings handlers
+#include <imgui/imgui_internal.h> // BeginViewportSideBar, ImGuiViewportP, SplitterBehavior, DockBuilder API, settings handlers
 
 #include <algorithm>
 #include <cmath>

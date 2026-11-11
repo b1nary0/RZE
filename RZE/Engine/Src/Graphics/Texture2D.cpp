@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/Texture2D.h>
 
 #include <Game/World/GameObject/Properties/PropertyBuilder.h>
@@ -12,7 +11,6 @@ Texture2D::Texture2D()
 	: IResource()
 	, m_width(0)
 	, m_height(0)
-	, m_channels(0)
 {
 }
 
@@ -41,8 +39,10 @@ bool Texture2D::LoadCPU(const Filepath& filePath)
 {
 	m_filepath = filePath;
 
-	// #TODO(Josh) This will need to be customized for different bit sizes... 24, 32 etc?
-	m_texels = Rendering::TexelBuffer(stbi_load(filePath.GetAbsolutePath().c_str(), &m_width, &m_height, &m_channels, STBI_rgb_alpha), &stbi_image_free);
+	// Always RGBA8: stb converts files with 1 to 3 channels as it loads them. It still reports the file's own count,
+	// which nothing needs, but its PIC loader writes it without checking for null, so it gets somewhere to go.
+	int channelsInFile = 0;
+	m_texels = Rendering::TexelBuffer(stbi_load(filePath.GetAbsolutePath().c_str(), &m_width, &m_height, &channelsInFile, STBI_rgb_alpha), &stbi_image_free);
 	if (m_texels.IsEmpty())
 	{
 		RZE_LOG_ERROR_ARGS("Loading texture from [%s] failed.", filePath.GetRelativePath().c_str());

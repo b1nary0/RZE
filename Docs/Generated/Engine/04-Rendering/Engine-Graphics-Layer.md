@@ -3,7 +3,7 @@
 `RenderEngine` (`Engine\Src\Graphics\RenderEngine.h/.cpp`) is the engine's rendering coordinator. It's reached through `RZE().GetRenderEngine()`, and it sits between gameplay code and the low-level renderer:
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     subgraph Game["Game objects (Engine/Src/Game)"]
         RC["RenderComponent"]
@@ -77,7 +77,7 @@ A light of any type. It holds the data every type shares, and its **type** (`ELi
 It has **no GPU resources of its own**. `ShadowRenderStage` puts every light of a scene into one buffer each frame (see [Render-Stages.md](Render-Stages.md#shadowrenderstage)). `GetShadowRevision()` is the scene revision when the light was made or its shadows last moved (the same changes that move `GetRevision`), so its shadow map is out of date once that's newer than the revision the map was rendered at. `SetType` can change a light's type in place, which is how the inspector's Type drop-down works without remaking it. The `ELightType` values are what the shaders branch on (`LIGHT_TYPE_*`), so new types go at the end.
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     LC["LightComponent<br/>Type, Colour, Strength, Range"]
     LO["LightObject in the RenderScene<br/>type + shared data, no GPU resources"]
@@ -101,6 +101,10 @@ flowchart TD
 
 A point that captures its surroundings for glossy surfaces to reflect, and the box it's used in: centred on it, along the world's axes, sized to the room so reflections can be projected onto its sides. `ReflectionProbeComponent` (Size, Blend Distance) places one at its object's position; the editor shows it as a shiny-ball icon with its box. Like a light, it has no GPU resources of its own; `ReflectionProbeStage` keeps a scene's together ([Render-Stages.md](Render-Stages.md#reflectionprobestage)). It's given the scene's revision counter when it's made, and moving or resizing it advances it, so its captures can tell they're out of date (`GetRevision()`).
 
+## Cube maps (`CubeMap.h/.cpp`)
+
+The cube map convention, for anything that renders into or samples a cube. `ECubeFace { Right, Left, Up, Down, Forward, Back }` names the faces by the world direction each looks in, in the order a cube texture stores them (slices 0–5). `CubeMap::GetFaceForward(face)` / `GetFaceUp(face)`, `CreateFaceView(position, face)` (the view through the face, built with `Matrix4x4::CreateViewMatrix`), and `ToSampleDirection(worldDirection)`. D3D's cube is laid out for a left-handed world with +Z forward and ours is right-handed with −Z forward, so the cube's +Z face is our **Forward**, and sampling flips Z. With that, `CubeMap::CreateFaceView` and a 90°, square projection render each face exactly as sampling reads it, unmirrored, so triangles keep their winding (tested over the whole sphere against D3D's face table in `CubeMapTests.cpp`). `ToCubeSampleDirection` in `Common/LightResources.hlsli` mirrors `ToSampleDirection`. Used for point light shadows and reflection probes. It's in the Engine, not `Utils/Math`, because what it encodes is D3D's cube layout, not maths: see [World-Conventions.md](../02-Architecture/World-Conventions.md). The Rendering module only knows a cube texture as six slices per cube (`GFXTextureBufferParams::bIsCubeMap`), in this order.
+
 ## Views
 
 A **`RenderView`** is one point of view to render the scene from. Its owner fills in the inputs; render stages read them.
@@ -115,7 +119,8 @@ public:
     Rendering::RenderTargetTexture* Target;  // owned by whoever owns the view
     bool AutoExposure = true;                // off for a fixed exposure of 1, for lighting whose brightness is known
     float ExposureCompensation;              // EV on top of the exposure
-    EAntiAliasing AntiAliasing = Medium;     // FXAA after tonemapping: Off, Low, Medium or High
+    AntiAliasingMode AntiAliasing;           // after tonemapping: Method (Off, FXAA, SMAA) and Quality
+                                             // (Low, Medium, High, Ultra); SMAA High by default
     EAmbientOcclusion AmbientOcclusion = Medium; // GTAO: Off, Low, Medium or High
     bool GlobalIllumination = true;          // indirect light from the scene's probes; off for the hemisphere ambient
     ERenderViewDebug Debug = Lit;            // Lit, or one part of the lighting alone: AmbientOcclusion, IndirectDiffuse
@@ -127,7 +132,7 @@ public:
 ```
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart LR
     subgraph Main["Main view (one, owned by RenderEngine)"]
         direction TB
@@ -143,7 +148,7 @@ flowchart LR
     end
 ```
 
-- `GetMainView()` returns the main view. The app sets its `Target` and `ViewportSize` (the Editor sizes it to the scene view panel); the active scene's main camera fills in `Camera` every frame. Engine.ini's `[Rendering]` sets its `AntiAliasing`, `AmbientOcclusion`, `GlobalIllumination` and `AutoExposure` at start-up, and the Editor's Scene View settings change them, and `Debug`, while it runs.
+- `GetMainView()` returns the main view. The app sets its `Target` and `ViewportSize` (the Editor sizes it to the scene view panel); the active scene's main camera fills in `Camera` every frame. Engine.ini's `[Rendering]` sets its `AntiAliasing`, `AmbientOcclusion`, `GlobalIllumination` and `AutoExposure` at start-up, and the Editor's Graphics settings change them, and `Debug`, while it runs.
 - A camera that renders a view fills in `RenderCamera::Projection` as well as `ClipSpace` (`CameraComponent`, `EditorCameraComponent`, `MeshFraming`). A view without a perspective projection there gets no ambient occlusion.
 - `RenderSecondaryView(name, view, scene)` renders a scene into another view as part of the current frame. `CameraComponent` uses this for the "Camera View" preview it draws in the Editor's inspector (`CameraComponent::RenderPreview`, called by the camera's `Preview` property each frame the inspector shows it), so a preview is only rendered while that camera is selected. Stages marked `MainOnly` (picking, ImGui, the final blit) skip secondary views.
 
@@ -152,7 +157,7 @@ flowchart LR
 `ViewCapture` (`Engine\Src\Graphics\ViewCapture.h/.cpp`) renders a scene from a camera into an offscreen target of its own, at a size fixed when it's made, and saves it as a PNG. The editor's thumbnails use a 512×512 one; it's in the Engine so the game could take screenshots the same way.
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     Cap["ViewCapture::Capture(scene, camera, settings, file)"] --> Sec["RenderSecondaryView<br/>its own view, DrawsDebug off"]
     Sec --> Save["TextureFile::SaveToPNG(target, file)"]
@@ -170,7 +175,7 @@ flowchart TD
 ## Frame lifecycle
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 sequenceDiagram
     participant Main as Engine frame loop
     participant RE as RenderEngine
@@ -224,5 +229,6 @@ Both object containers erase with swap-and-pop (`ContainerUtils::VectorEraseBack
 - `Engine\Src\Graphics\RenderView.h` — `RenderView`, `RenderCamera`, `RenderPickRequest`, `ERenderViewDebug`
 - `Engine\Src\Graphics\ViewCapture.h/.cpp`, `TextureFile.h/.cpp` — capturing a view to a PNG
 - `Utils\Src\Utils\Math\Frustum.h/.cpp` — the six-plane view frustum used for culling and marquee selection (see [Utils-Library-Reference.md](../06-Platform-And-Infrastructure/Utils-Library-Reference.md))
+- `Engine\Src\Graphics\CubeMap.h/.cpp` — `ECubeFace` and the cube map convention
 - `Engine\Src\Graphics\GraphicsDefines.h` — `RenderSceneLifetime` and the `RenderObjectPtr` / `LightObjectPtr` / `ReflectionProbeObjectPtr` aliases, move-only and lifetime-checked
 - `Engine\Src\Graphics\GraphicsLayouts.h` — the shader buffer layouts the render stages share: lights and shadows (`GraphicsLayouts::LightLayout`, `GraphicsLayouts::ShadowBufferLayout`, ...), an object's matrices (`ObjectBufferLayout`) and a material's parameters (`MaterialBufferLayout`) (see [Render-Stages.md](Render-Stages.md#shadowrenderstage))

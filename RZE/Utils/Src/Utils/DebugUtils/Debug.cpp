@@ -1,13 +1,13 @@
-#include <StdAfx.h>
 #include <Utils/DebugUtils/Debug.h>
 
+#include <Utils/DebugUtils/DebugPlatform.h>
+#include <Utils/Platform/Platform.h>
+
 #include <atomic>
-#include <crtdbg.h>
 #include <cstdio>
 #include <ctime>
 #include <iomanip>
 #include <mutex>
-#include <Windows.h>
 
 namespace Debug
 {
@@ -17,7 +17,7 @@ namespace Debug
 	{
 		std::time_t time = std::time(nullptr);
 		tm timeInfo;
-		localtime_s(&timeInfo, &time);
+		Platform::LocalTime(time, timeInfo);
 
 		std::ostringstream ss;
 		ss << std::put_time(&timeInfo, "%d-%m-%Y_%H-%M-%S");
@@ -100,26 +100,9 @@ namespace Debug
 		WriteToLog(level, str);
 	}
 
-	bool OpenConsole()
-	{
-		if (GetConsoleWindow() != nullptr)
-		{
-			return true;
-		}
+	// OpenConsole and SetAssertFailureHook are per platform (Utils/Platform/<platform>/Debug<platform>.cpp)
 
-		if (!AllocConsole())
-		{
-			return false;
-		}
-
-		// A windowed app's stdout and stderr go nowhere until they're reopened on the new console
-		FILE* stream = nullptr;
-		freopen_s(&stream, "CONOUT$", "w", stdout);
-		freopen_s(&stream, "CONOUT$", "w", stderr);
-		return true;
-	}
-
-#ifdef _DEBUG
+#ifdef RZE_ASSERTS_ENABLED
 	namespace
 	{
 		// Writes an assert's report to stderr and the log. An assert that fires while another is being logged (e.g.
@@ -157,12 +140,7 @@ namespace Debug
 		}
 		LogAssertReport(report.str());
 
-		// _CRT_ASSERT reports go to a message box by default for both console and
-		// windows subsystem apps, unlike assert() which only uses one for the latter.
-		// Retry returns 1, Ignore returns 0, Abort terminates; -1 means the report
-		// itself failed, so break rather than silently continuing.
-		const int result = _CrtDbgReport(_CRT_ASSERT, file, line, nullptr, "%s", text.c_str());
-		return result != 0;
+		return ShowAssertReport(file, line, text, report.str());
 	}
 #endif
 }

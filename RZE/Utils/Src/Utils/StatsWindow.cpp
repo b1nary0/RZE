@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Utils/StatsWindow.h>
 
 bool StatsWindow::AddFrame(double now)

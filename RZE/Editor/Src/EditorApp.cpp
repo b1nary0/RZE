@@ -22,8 +22,8 @@
 #include <Utils/Platform/CmdLine.h>
 #include <Utils/Platform/Filepath.h>
 
-#include <ImGui/imgui.h>
-#include <ImGui/imgui_internal.h> // DockBuilderGetNode
+#include <imgui/imgui.h>
+#include <imgui/imgui_internal.h> // DockBuilderGetNode
 
 #include <Optick/optick.h>
 
@@ -71,7 +71,6 @@ namespace Editor
 		m_imguiConfigFilepath = Filepath("Config/imgui.ini");
 		ImGui::GetIO().IniFilename = m_imguiConfigFilepath.GetAbsolutePath().c_str();
 
-		GetWindow()->SetTitle("RZEStudio");
 		// The main menu bar is the title bar
 		GetWindow()->SetCustomTitleBar(true);
 		GetWindow()->Maximize();
@@ -95,7 +94,7 @@ namespace Editor
 		AssetFiles::EmptyTrash();
 		m_context.GetProjectWatcher().Start();
 
-#ifdef _DEBUG
+#ifdef RZE_ASSERTS_ENABLED
 		// Undo only sees changes made through commands, so catch anything that changes the scene's objects another way
 		RZE().GetActiveScene().SetObjectsChangedCallback([this]()
 			{
@@ -201,6 +200,11 @@ namespace Editor
 		return Filepath("logo.png");
 	}
 
+	std::string EditorApp::GetWindowTitle() const
+	{
+		return "RZEStudio";
+	}
+
 	bool EditorApp::IsReadyToShow() const
 	{
 		return !m_context.GetSceneDocument().IsLoading();
@@ -235,7 +239,7 @@ namespace Editor
 		// SEE: EditorApp::ProcessInput return statement. 
 		Functor<void, const InputKey&> keyFunc([this](const InputKey& key)
 			{
-				if (key.GetKeyCode() == Win32KeyCode::Escape)
+				if (key.GetKeyCode() == KeyCode::Escape)
 				{
 					EditorSelection& selection = m_context.GetSelection();
 					if (!selection.IsEmpty())
@@ -244,14 +248,16 @@ namespace Editor
 					}
 				}
 			});
-		inputHandler.BindAction(Win32KeyCode::Escape, EButtonState::ButtonState_Pressed, keyFunc);
+		inputHandler.BindAction(KeyCode::Escape, EButtonState::ButtonState_Pressed, keyFunc);
 	}
 
-	bool EditorApp::ProcessInput(const InputHandler& handler)
+	InputGate EditorApp::ProcessInput(const InputHandler& handler)
 	{
 		ImGuiInput::SubmitInput(handler);
 
-		return m_context.GetSceneViewport().IsHovered;
+		// The scene (editor camera, gizmo shortcuts) only gets input while the Scene view is hovered
+		const bool isSceneHovered = m_context.GetSceneViewport().IsHovered;
+		return InputGate{ isSceneHovered, isSceneHovered };
 	}
 
 	void EditorApp::OnWindowResize(const Vector2D& newSize)
@@ -262,8 +268,6 @@ namespace Editor
 
 	void EditorApp::CreateRenderTarget(const Vector2D& dimensions)
 	{
-		// #TODO pretty sure this causes a leak. doesn't look like the default destructors
-		// are set up to do any cleanup. investigate.
 		m_renderTarget.reset();
 
 		m_renderTarget = std::make_unique<Rendering::RenderTargetTexture>(static_cast<U32>(dimensions.X()), static_cast<U32>(dimensions.Y()));

@@ -24,10 +24,10 @@ namespace Rendering
 	public:
 		void SetDevice(DX11Device* device);
 		// Must be called before Allocate(). Dynamic buffers are created empty and written via UpdateData().
-		void SetDynamic(bool isDynamic) { m_isDynamic = isDynamic; }
+		void SetDynamic(bool isDynamic) override { m_isDynamic = isDynamic; }
 
 		// Overwrites the buffer contents (WRITE_DISCARD). Dynamic buffers only.
-		void UpdateData(const void* data, size_t bytes);
+		void UpdateData(const void* data, size_t bytes) override;
 
 	private:
 		U32 m_stride;

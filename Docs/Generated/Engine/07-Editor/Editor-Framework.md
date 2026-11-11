@@ -16,7 +16,7 @@ The Editor uses **immediate-mode** Dear ImGui throughout. The framework adds str
 `EditorApp` owns one `EditorContext` and hands it to every panel. It owns the editor's state and services:
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     App["EditorApp"] --> Ctx["EditorContext"]
     Ctx --> State["State<br/>EditorSelection, editor camera,<br/>SceneViewportState, EditorSettings"]
@@ -131,7 +131,7 @@ It reads ImGui's dock nodes, windows and focus from `imgui_internal.h`, which an
 ## When things run in a frame
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 sequenceDiagram
     participant Eng as RZE_Engine
     participant App as EditorApp
@@ -206,7 +206,7 @@ A gizmo drag or a dragged number changes a value every frame, and each frame is 
 `UndoHistory` (`Services\UndoHistory`, owned by the context) is a list of **steps**. A step is everything one interaction did: a gizmo drag over three objects is one step holding three records, each with the transform from before the drag and from its end.
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     Cmd["command Execute<br/>changes the scene,<br/>SetUndoRecord"] --> Flush["CommandQueue::Flush<br/>TakeUndoRecord"]
     Flush --> Join{"same interaction as<br/>the open last step?"}
@@ -319,7 +319,7 @@ Rules:
 - **Toolbars:** `ScopedToolbarSpacing` (tight spacing within a group) and `ToolbarGroupSeparator` (a separator with gaps), used by the SceneView's menu bar.
 - **Property tables:** `BeginPropertyTable` / `PropertyRow` / `EndPropertyTable` and `CalcLabelColumnWidth`, the label/value layout of the Object Inspector. Labels too long for their column show in full on hover. `PushPropertyRowClipRect(bottom)` lets something in the label column run across the whole row (a list element's heading) while keeping it inside the table's visible area; a plain `ImGui::PushClipRect(..., false)` would draw it over whatever is below the window.
 - **Tree nodes:** `TreeNode(id, flags, format, ...)`, in place of `ImGui::TreeNodeEx`; see below.
-- **Images:** `TextureID(handle)`, the ID to pass `ImGui::Image`, `ImDrawList::AddImage` and the like. It keeps the texture alive for as long as the UI drawn this frame is rendered, so a texture released while it's on screen doesn't go from under the render thread ([Low-Level-Renderer-Module.md](../04-Rendering/Low-Level-Renderer-Module.md#imgui-integration-lives-at-this-layer-too)).
+- **Images:** `TextureID(handle)`, the ID to pass `ImGui::Image`, `ImDrawList::AddImage` and the like. It keeps the texture alive for as long as the UI drawn this frame is rendered, so a texture released while it's on screen doesn't go from under the render thread ([Low-Level-Renderer-Module.md](../04-Rendering/Low-Level-Renderer-Module.md#imgui-iimguirenderer)).
 
 ### Style
 
@@ -347,12 +347,12 @@ Windows, popups, fields, buttons, checkboxes, images and highlights have slightl
 
 | To add | Do |
 |---|---|
-| A panel | Subclass `EditorPanel`, add `Describe()`, `Draw()` (and `Update()` if it has data to prepare), put `REGISTER_EDITOR_PANEL` in the `.cpp`, then run `GenerateSolutions.bat` |
+| A panel | Subclass `EditorPanel`, add `Describe()`, `Draw()` (and `Update()` if it has data to prepare), put `REGISTER_EDITOR_PANEL` in the `.cpp`, then run `GenerateSolutions.bat` (`.sh` on Linux) |
 | A scene change from the UI | Write an `EditorCommand` holding handles; check `UndoTargets::IsInScene` before changing anything, and give it an `UndoRecord` that finds its target by GUID. Push it from `Draw()`, with the interaction ID if it's part of a drag |
 | Something that would lose unsaved changes | Run it through `UnsavedChangesPrompt::Request` |
 | Something that reacts to loading, saving, selection or edits | Subscribe to the event, keeping the `EventSubscription` as a member |
 | A shared preference | Add it to `EditorSettings`, and a control for it on a Settings page |
-| A Settings page | Subclass `SettingsPage` (`GetName()`, `Draw(context)`), put `REGISTER_SETTINGS_PAGE` in the `.cpp`, then run `GenerateSolutions.bat`. See [Status-Bar-And-Settings.md](Status-Bar-And-Settings.md#the-settings-window) |
+| A Settings page | Subclass `SettingsPage` (`GetName()`, `Draw(context)`), put `REGISTER_SETTINGS_PAGE` in the `.cpp`, then run `GenerateSolutions.bat` (`.sh` on Linux). See [Status-Bar-And-Settings.md](Status-Bar-And-Settings.md#the-settings-window) |
 | Long-running work | An `AsyncOperation`: `Blocking` if the user must wait, `Background` if not, with its kind, and `SubStep` if another operation reports on it. The status bar and Task History show it, with what it logs, as Settings > Background Tasks allows ([Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md#async-operations)) |
 | An asset loaded for the user without stalling | A `PendingResource`, polled from the panel's `Update`; push the command once it's in, and hold the resource until the next `Update` so the command finds it loaded. An asset property gets this from `.Preload<T>()` |
 | A component's inspector fields | Describe its properties; see [Object-Inspector-And-Properties.md](Object-Inspector-And-Properties.md) |

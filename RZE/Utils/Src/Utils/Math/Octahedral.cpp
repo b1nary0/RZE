@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Utils/Math/Octahedral.h>
 
 #include <Utils/Math/Vector2D.h>

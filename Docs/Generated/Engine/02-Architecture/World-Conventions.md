@@ -12,7 +12,7 @@ Everything spatial in the engine, the Editor and the content assumes these. The 
 | **Angles people see** | **Degrees**: `TransformComponent` rotation, camera FOV, the inspector, ImGuizmo, scene files. |
 | **Angles in maths** | **Radians** inside trig and math calls. Convert only with `MathUtils::ToRadians` / `ToDegrees`. |
 | **Euler order** | `R = Rz * Ry * Rx`, so X is applied first. This is what `glm::quat(eulerRadians)` builds in `Matrix4x4::CreateInPlace`, and what ImGuizmo's matrix (de)composition uses. |
-| **Clip-space depth** | D3D's **0..1** (`CreatePerspectiveMatrixZeroToOne`), not OpenGL's −1..1. |
+| **Clip-space depth** | D3D's **0..1** (`CreatePerspectiveMatrixZeroToOne`), not OpenGL's usual −1..1, on both APIs: the OpenGL backend sets it (`glClipControl`), and draws the engine's targets D3D's way up too. |
 | **Matrices** | glm, column-major, multiplied `projection * view * world`. |
 | **Triangle winding** | Counter-clockwise front faces, as models are authored. |
 
@@ -28,7 +28,7 @@ Everything spatial in the engine, the Editor and the content assumes these. The 
 
 `WorldAxes::Right()`, `Up()` and `Forward()` return these directions; use them instead of writing basis vectors by hand. `TransformComponent::GetForward()` / `GetUp()` turn them by an object's rotation. `Units::` has named length constants.
 
-**Cube maps are the one place D3D's handedness shows.** D3D lays out a cube's faces for a left-handed world with +Z forward, so the cube's +Z face is our Forward (−Z) and sampling a cube flips Z. `Utils/Math/CubeMap.h` holds that convention (`ECubeFace`, `CubeMap::ToSampleDirection`, `CubeMap::CreateFaceView`); go through it rather than building cube face views by hand. See [Utils-Library-Reference.md](../06-Platform-And-Infrastructure/Utils-Library-Reference.md).
+**Cube maps are the one place D3D's handedness shows.** D3D lays out a cube's faces for a left-handed world with +Z forward, so the cube's +Z face is our Forward (−Z) and sampling a cube flips Z. `Engine/Src/Graphics/CubeMap.h` holds that convention (`ECubeFace`, `CubeMap::ToSampleDirection`, `CubeMap::CreateFaceView`); go through it rather than building cube face views by hand. See [Engine-Graphics-Layer.md](../04-Rendering/Engine-Graphics-Layer.md#cube-maps-cubemaphcpp).
 
 ## Why it matters
 
@@ -41,7 +41,7 @@ Everything spatial in the engine, the Editor and the content assumes these. The 
 These conventions were written down on 2026-10-10, and three fixes brought the content into line:
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     A["Units.h<br/>conventions defined"] --> B["Importer converts<br/>declared units to metres"]
     B --> C["Scenes rescaled<br/>to metres"]

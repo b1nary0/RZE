@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Game/World/GameObjectComponents/OscillatorComponent.h>
 
 #include <Game/World/GameObject/GameObject.h>

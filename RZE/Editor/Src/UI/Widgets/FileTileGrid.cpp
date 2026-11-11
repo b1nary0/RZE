@@ -12,7 +12,7 @@
 #include <Utils/StringUtils.h>
 #include <Utils/TimeUtils.h>
 
-#include <ImGui/imgui_internal.h> // RenderTextEllipsis
+#include <imgui/imgui_internal.h> // RenderTextEllipsis
 
 #include <algorithm>
 #include <chrono>
@@ -331,7 +331,7 @@ namespace Editor
 		const std::string currentName = entry.IsFolder ? entry.Name : entry.Path.GetStem();
 		if (rename.FillBox)
 		{
-			strncpy_s(rename.Name, currentName.c_str(), _TRUNCATE);
+			StringUtils::CopyTruncated(rename.Name, currentName);
 			rename.FillBox = false;
 		}
 

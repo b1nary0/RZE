@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <EngineCore/Threading/JobSystem/JobScheduler.h>
 
 #include <Utils/DebugUtils/Debug.h>

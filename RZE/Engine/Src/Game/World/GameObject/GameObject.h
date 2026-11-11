@@ -40,6 +40,8 @@ public:
 	// The components should be self-contained state that will initialize themselves and
 	// set up objects from their end.
 	void Initialize();
+	// Uninitializes and destroys every component. Once the object is out of the scene (OnRemoveFromScene), and before
+	// it's destroyed: whatever destroys a GameObject (GameScene) calls this first, and the destructor asserts it did.
 	void Uninitialize();
 
 public:
@@ -154,12 +156,16 @@ private:
 template <typename TComponentType>
 GameObjectComponentPtr<TComponentType> GameObject::GetComponent()
 {
-	// #TODO Slow function
-
+	// Linear search through this object's components by type ID. Cheap while objects have a few components (the
+	// shipped scenes have 2-3), but it doesn't scale: a call costs O(components on the object), and the components
+	// that fetch their TransformComponent every frame (RenderComponent, LightComponent, CameraComponent, ...)
+	// multiply that by the number of objects. Large scenes, or objects with many components, will make it a
+	// measurable per-frame cost. The fix then: index components by type ID, or keep a direct pointer to the
+	// TransformComponent every object has.
 	auto it = std::find_if(m_components.begin(), m_components.end(),
 		[](const GameObjectComponentBase* component)
 		{
-			return TComponentType::GetID() == component->m_id;
+			return TComponentType::StaticTypeID() == component->GetTypeID();
 		});
 
 	if (it != m_components.end())
@@ -173,18 +179,18 @@ GameObjectComponentPtr<TComponentType> GameObject::GetComponent()
 template <typename TComponentType>
 void GameObject::RemoveComponent()
 {
-	RemoveComponentByID(TComponentType::GetID());
+	RemoveComponentByID(TComponentType::StaticTypeID());
 }
 
 template <typename TComponentType, typename ... Args>
 GameObjectComponentPtr<TComponentType> GameObject::AddComponent(Args... args)
 {
-	// #TODO Slow function
-
+	// The same linear search as GetComponent, to refuse a second component of one type. Runs once per add (scene
+	// load, editor commands), so load time grows with objects x components per object; see GetComponent for the fix.
 	auto it = std::find_if(m_components.begin(), m_components.end(),
 		[](const GameObjectComponentBase* component)
 		{
-			return TComponentType::GetID() == component->m_id;
+			return TComponentType::StaticTypeID() == component->GetTypeID();
 		});
 
 	if (it == m_components.end())
@@ -199,7 +205,6 @@ GameObjectComponentPtr<TComponentType> GameObject::AddComponent(Args... args)
 		}
 		MarkHierarchyBoundsChanged();
 
-		// #TODO Initialize here
 		return GameObjectComponentPtr<TComponentType>(component);
 	}
 

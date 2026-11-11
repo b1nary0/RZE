@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/IrradianceProbeScheduler.h>
 
 #include <Graphics/RenderScene.h>

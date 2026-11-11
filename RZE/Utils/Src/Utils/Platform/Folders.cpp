@@ -1,5 +1,3 @@
-#include <StdAfx.h>
-
 #include <Utils/Platform/Folders.h>
 
 #include <Utils/StringUtils.h>

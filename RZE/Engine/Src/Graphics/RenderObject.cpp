@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/RenderObject.h>
 
 #include <Graphics/GraphicsDefines.h>
