@@ -70,8 +70,8 @@ on the frame as a user's input would.
 | `ping` | | Answers at once |
 | `info` | | The window's title, client size, whether it's maximized, the frame count, and whether real input is blocked |
 | `move` | `x`, `y` | Moves the mouse (a hover) |
-| `click`, `dblclick` | `x`, `y`, `button` (`left`, `right`, `middle`) | A move, a press and a release, a frame each |
-| `drag` | `x`, `y`, `x2`, `y2` | A left-button press, 10 moves and a release |
+| `click`, `dblclick` | `x`, `y`, `button` (`left`, `right`, `middle`), `mods` | A move, a press and a release, a frame each |
+| `drag` | `x`, `y`, `x2`, `y2`, `mods` | A left-button press, 10 moves and a release |
 | `scroll` | `x`, `y`, `notches` | Wheel notches; + is away from you |
 | `key` | `keys` | `SendKeys` syntax (`^a45{ENTER}`, `{TAB 3}`, `%f`), US layout (`HarnessKeys`). Printable keys also send their text, as a keyboard would. |
 | `shot` | `path` | Writes a PNG of the next presented frame: an absolute path, or one relative to the project |
@@ -80,7 +80,9 @@ on the frame as a user's input would.
 | `realinput` | `on` | Whether the real mouse and keyboard reach the Editor (blocked by default) |
 | `quit` | | As the window's close button: unsaved changes are asked about first |
 
-Coordinates are client-area pixels, the same space as `shot`'s image.
+Coordinates are client-area pixels, the same space as `shot`'s image. `mods`, optional, is an array of `"ctrl"`,
+`"shift"` and `"alt"` (`HarnessKeys::ModifierKeyNamed`), held around the buttons: Ctrl+click adds an object to the
+selection, Shift+click selects a range. Anything else in it, or a `mods` that isn't an array, is refused with an error.
 
 ### Input: SDL events, a frame at a time
 
@@ -89,6 +91,10 @@ through `Window`, `InputHandler` and ImGui ([Windowing.md](../06-Platform-And-In
 in the Editor knows the difference.
 - **One step a frame.** A click is a move, then a press, then a release, so ImGui first sees what's under the mouse,
   then sees it pressed. Actions queue, and each plays after the one before it.
+- **Modifiers are keys, a step of their own.** With `mods`, the modifiers go down in a step between the move and the
+  press, and up in one after the release (`HarnessInput::Modifiers`), as a hand holds them. SDL's mouse events don't
+  carry modifiers: ImGui's SDL backend takes them from key events (`SDL_KeyboardEvent::mod`) into `io.KeyCtrl` and
+  the rest, which is what the panels read. A click without `mods` keeps its three steps.
 - **The answer waits for the action to land.** Two more frames pass after the last step: events pushed on one frame
   are pumped at the start of the next, and the UI acts on them during that one. A `state` sent after a `click`
   therefore sees the click's result.
@@ -156,6 +162,8 @@ holds the Editor's process and, in OS mode, the input devices; every other comma
   - **spectacle** captures the client area.
 - **Harness mode** (`--harness`) writes commands to EditorHarness's stdin and matches the `RZEHARNESS` answers to
   them by id. Other output lines go to the session's log. `launch` waits for `info` to say the window is maximized.
+- **Modifiers:** `click`, `dblclick` and `drag` take `--mods ctrl,shift,alt`, in both modes: the harness's `mods`, or
+  the virtual keyboard's keys held around the buttons.
 - **Also:** `log` (the app's output, or the newest `RZELOG`), `clip` (the clipboard), `windows` and `close-window`
   (windows opened since `launch`, like the Game or a file manager), `optick` (a capture over Optick's network
   protocol, [ThirdParty-And-Externals.md](../09-BuildSystem/ThirdParty-And-Externals.md)), and `launch --renderdoc`
@@ -245,7 +253,7 @@ flowchart TD
 
 Where the panels sit depends on the dock layout, the client size and the monitor. A nested session fixes all three:
 one 2560×1440 output, and `.claude/skills/run-rze/nested-imgui.ini` copied over `RZE/Config/imgui.ini` for the session,
-once the user's file has been backed up (it's put back as usual). The coordinates in the skill's nested layout
+once the user's file has been backed up (it's put back as usual), whether or not there was one. The coordinates in the skill's nested layout
 reference (`SKILL.md`), each clicked through the harness and checked with `state`, `object` or before-and-after shots,
 therefore hold however the user has arranged their own panels. `--keep-imgui-ini` runs with the user's layout instead,
 as that run is meant to change it. To change the nested layout, copy a layout over `nested-imgui.ini` and measure the
@@ -267,7 +275,9 @@ Each call is a process of its own, and does one action.
   as `driver.py launch -- ...` does. The helper is started with `powershell -File`, which could take a value starting
   with `-` for a parameter of its own, so `launch -Harness` hands it the string base64-encoded (`-EncodedAppArgs`).
 - **The same commands in both:** `click`, `dblclick`, `drag`, `scroll`, `key`, `shot`, `info`, `alive`, `close` and
-  `quit`; harness mode adds `state`, `object` and `realinput`. A click that makes the app exit (Don't Save) reports
+  `quit`; harness mode adds `state`, `object` and `realinput`. `click`, `dblclick` and `drag` take `-Mods ctrl,shift`
+  in harness mode only (a `string[]`, sent as the harness's `mods` array); in OS mode `-Mods` stops with an error,
+  as user32 input holds no keys around a click. A click that makes the app exit (Don't Save) reports
   `the app exited`.
 - **`close` in harness mode** sends `quit` and waits. With unsaved changes it stops at the prompt and leaves the session
   running, so it can be looked at (`shot`) and answered (`click` on Don't Save); `close` again ends the session.
@@ -276,9 +286,12 @@ Each call is a process of its own, and does one action.
 
 ### `imgui.ini` is put back
 
-Every Editor run rewrites `RZE/Config/imgui.ini`, which often holds a layout someone means to keep. Both drivers copy
-it aside at `launch` and restore it once the app has exited, and the next `launch` restores a backup a dead session
-left. `--keep-imgui-ini` (`-KeepImguiIni`) keeps a run's layout: nothing is backed up, but a dead session's backup is
+Every Editor run rewrites `RZE/Config/imgui.ini`, which often holds a layout someone means to keep. It isn't tracked
+(gitignored), so a fresh clone has none, and the Editor then builds the default dock layout. Both drivers copy it
+aside at `launch` and restore it once the app has exited, and the next `launch` restores a backup a dead session
+left. When there was no file, they record that (`imgui.ini.absent`, beside the backup), and restoring removes the
+file the run wrote, so the next run builds the default layout again; the CI smoke test (`editor_smoke.py`) does the
+same. `--keep-imgui-ini` (`-KeepImguiIni`) keeps a run's layout: nothing is backed up, but a dead session's backup is
 still restored first, at `launch`. Left on disk, `close` would restore it over the layout being kept.
 - **`driver.py`**: `close` and `quit` restore it, and so does the helper if the session ends any other way. A nested
   session runs with `nested-imgui.ini` in its place ([A layout of its own](#a-layout-of-its-own)).

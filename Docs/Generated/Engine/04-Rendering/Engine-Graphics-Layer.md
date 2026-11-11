@@ -126,7 +126,9 @@ public:
     ERenderViewDebug Debug = Lit;            // Lit, or one part of the lighting alone: AmbientOcclusion, IndirectDiffuse
     ERenderViewLighting Lighting = Scene;    // Scene: the scene's light and sky. Uniform: even, ignoring the light
     bool DrawsDebug = true;                  // debug lines; off for clean captures such as thumbnails
-    std::optional<RenderPickRequest> Pick;   // Editor picking (clicks, drops); cleared after each render
+    RenderFrameRequests Frame;               // for the next render only, cleared after it (ClearFrameRequests):
+                                             //   Pick, the Editor's picking (clicks, drops), and Outlines,
+                                             //   lines around objects (the Editor's selection; OutlineRenderStage)
     // + a frame blackboard and a persistent blackboard (see Render-Stages.md)
 };
 ```
@@ -226,7 +228,7 @@ Both object containers erase with swap-and-pop (`ContainerUtils::VectorEraseBack
 - `Engine\Src\Graphics\DebugLine.h` — `DebugLine`, `DebugLineFade`
 - `Engine\Src\Graphics\SceneChangeLog.h/.cpp` — where a scene's render objects changed, by revision
 - `Engine\Src\Game\World\GameObjectComponents\LightComponent.h/.cpp` — the component that drives a `LightObject` ([Built-In-Components.md](../03-SceneAndGameObjects/Built-In-Components.md#lightcomponent))
-- `Engine\Src\Graphics\RenderView.h` — `RenderView`, `RenderCamera`, `RenderPickRequest`, `ERenderViewDebug`
+- `Engine\Src\Graphics\RenderView.h` — `RenderView`, `RenderCamera`, `RenderFrameRequests`, `RenderPickRequest`, `RenderOutline`, `ERenderViewDebug`
 - `Engine\Src\Graphics\ViewCapture.h/.cpp`, `TextureFile.h/.cpp` — capturing a view to a PNG
 - `Utils\Src\Utils\Math\Frustum.h/.cpp` — the six-plane view frustum used for culling and marquee selection (see [Utils-Library-Reference.md](../06-Platform-And-Infrastructure/Utils-Library-Reference.md))
 - `Engine\Src\Graphics\CubeMap.h/.cpp` — `ECubeFace` and the cube map convention

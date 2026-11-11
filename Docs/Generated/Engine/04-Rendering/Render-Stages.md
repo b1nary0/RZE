@@ -31,18 +31,19 @@ flowchart TD
     AA --> DCD[/"DisplayColourData<br/>8-bit colour + depth"/]
     DCD --> View(["DebugViewStage<br/>(modifies)"])
     View --> Debug(["DebugDrawRenderStage<br/>(modifies)"])
-    Debug --> DCD2[/"DisplayColourData<br/>+ debug lines"/]
+    Debug --> Outline(["OutlineRenderStage<br/>(modifies, Editor only)"])
+    Outline --> DCD2[/"DisplayColourData<br/>+ debug lines and outlines"/]
     DCD2 --> ImGui(["ImGuiRenderStage"])
     DCD2 --> Final(["FinalRenderTargetStage<br/>(Game only)"])
     Pick(["PickRenderStage<br/>(only on a click or drop)"])
 ```
 
-`ReflectionProbeStage` also reads `SceneLightingData`, and `DebugViewStage` reads `AmbientOcclusionData` for its debug view; those edges are left out to keep the picture readable. `PickRenderStage` stands apart because it uses no contracts. It renders from the scene alone and hands its result straight back to the Editor (see [Picking](#pickrenderstage)).
+`ReflectionProbeStage` also reads `SceneLightingData`, `DebugViewStage` reads `AmbientOcclusionData` for its debug view, and `OutlineRenderStage` reads `SceneDepthData`; those edges are left out to keep the picture readable. `PickRenderStage` stands apart because it uses no contracts. It renders from the scene alone and hands its result straight back to the Editor (see [Picking](#pickrenderstage)).
 
 The order the pipeline settles on is logged when it compiles, e.g. in the Editor:
 
 ```
-Render pipeline: ShadowRenderStage -> DepthPrepassStage -> AmbientOcclusionStage -> IrradianceProbeStage -> ReflectionProbeStage -> ForwardRenderStage -> PostProcessRenderStage -> AntiAliasingStage -> DebugViewStage -> PickRenderStage -> DebugDrawRenderStage -> ImGuiRenderStage
+Render pipeline: ShadowRenderStage -> DepthPrepassStage -> AmbientOcclusionStage -> IrradianceProbeStage -> ReflectionProbeStage -> ForwardRenderStage -> PostProcessRenderStage -> AntiAliasingStage -> DebugViewStage -> PickRenderStage -> DebugDrawRenderStage -> OutlineRenderStage -> ImGuiRenderStage
 ```
 
 ## The pieces
@@ -122,10 +123,11 @@ Work that should happen once a frame per scene, whichever view draws it first, c
 | `DebugViewStage` | reads `AmbientOcclusionData`, modifies `DisplayColourData` | all | With `RenderView::Debug` at `AmbientOcclusion`, overwrites the image with the ambient occlusion alone. |
 | `PickRenderStage` | nothing | main | On a click or drop, finds the object under one pixel and the depth there. |
 | `DebugDrawRenderStage` | modifies `DisplayColourData` | all | Draws debug lines on top, after tonemapping. Not in Retail builds. |
+| `OutlineRenderStage` | reads `SceneDepthData`, modifies `DisplayColourData` | all (draws only for a view with outlines) | Draws lines around the outer edge of objects a view asks for, over the debug lines. Added by the Editor, for its selection. |
 | `ImGuiRenderStage` | Editor: reads `DisplayColourData`; Game: modifies it | main | Draws ImGui. Added by the app, not the engine. |
 | `FinalRenderTargetStage` | reads `DisplayColourData` | main | Game only: copies the finished image to the back buffer. |
 
-The engine adds Shadow, DepthPrepass, AmbientOcclusion, IrradianceProbe, ReflectionProbe, Forward, PostProcess, AntiAliasing, DebugView, Pick and (outside Retail) DebugDraw in `RenderEngine::Initialize()`. DebugView and DebugDraw both modify `DisplayColourData`, so they run in the order they're added: the debug view first, or it would cover the debug lines. The Editor adds `ImGuiRenderStage(withEditor = true)`; the Game adds `ImGuiRenderStage` and `FinalRenderTargetStage`.
+The engine adds Shadow, DepthPrepass, AmbientOcclusion, IrradianceProbe, ReflectionProbe, Forward, PostProcess, AntiAliasing, DebugView, Pick and (outside Retail) DebugDraw in `RenderEngine::Initialize()`. DebugView and DebugDraw both modify `DisplayColourData`, so they run in the order they're added: the debug view first, or it would cover the debug lines. The Editor adds `OutlineRenderStage`, then `ImGuiRenderStage(withEditor = true)`: added after DebugDraw and modifying the same contract, the outline goes over the debug lines, and ImGui after both. The Game adds `ImGuiRenderStage` and `FinalRenderTargetStage`.
 
 ### `ShadowRenderStage`
 
@@ -362,7 +364,7 @@ With `RenderView::Debug` at `AmbientOcclusion`, overwrites the view's finished i
 
 ### `PickRenderStage`
 
-Finds the object at one pixel of the main view, and how far away its surface is, for the Editor's click selection and for placing meshes dropped into the SceneView. It only does work on frames where `RenderView::Pick` holds a `RenderPickRequest { X, Y, Result, DepthResult }`; `RenderEngine::Render()` clears the request afterwards.
+Finds the object at one pixel of the main view, and how far away its surface is, for the Editor's click selection and for placing meshes dropped into the SceneView. It only does work on frames where the view's `Frame.Pick` holds a `RenderPickRequest { X, Y, Result, DepthResult }`. `Frame` is the view's `RenderFrameRequests`, what it's asked for in its next render alone; `RenderEngine` clears it after each render (`RenderView::ClearFrameRequests`).
 
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
@@ -371,7 +373,7 @@ sequenceDiagram
     participant View as main RenderView
     participant Pick as PickRenderStage
     participant RT as Render thread
-    Ed->>View: Pick = { pixel, ID and depth TexelReadbacks }
+    Ed->>View: Frame.Pick = { pixel, ID and depth TexelReadbacks }
     Note over Pick: next frame
     Pick->>Pick: stretch that pixel over a 1x1 R32G32_UINT target<br/>and a 1x1 depth target<br/>(Matrix4x4::CreateSubRectProjection)
     Pick->>Pick: draw nearby objects' pick IDs<br/>(frustum culling skips the rest)
@@ -390,6 +392,62 @@ sequenceDiagram
 ### `DebugDrawRenderStage`
 
 Draws the rendered scene's debug lines, queued with `RenderScene::DrawLine()` / `DrawWireBox()` / `DrawWireSphere()` or `RenderEngine`'s versions for the main scene (bounds boxes, camera frustums, a directional light's direction, point light ranges, the editor grid), on top of the display colour. A view with `DrawsDebug` off (a `ViewCapture`'s) skips it. They're drawn after tonemapping so they keep their exact colours. They depth-test against the scene; lines with a `DebugLine::occludedAlpha` above 0 are then drawn again with the depth test off (`EDepthState::Off`) at that opacity, from a second buffer, so their hidden parts still show, faintly. That also goes over their visible parts, which are already drawn more opaque, so it barely changes those. Lines can be semi-transparent: the stage turns on `EBlendState::AlphaBlend` for its draw and restores `Opaque` after. Each vertex also carries an optional distance fade (`FADECENTRE`, `FADERANGE`), which `Pixel_Line.hlsl` applies per pixel; pixels that fade to nothing are clipped so they don't write depth. The queue is cleared after the main view renders, so secondary views drawn earlier in the frame get them too. Compiled out of Retail builds.
+
+### `OutlineRenderStage`
+
+Draws a line around the outer edge of objects a view asks for, over the finished image: the Editor's selection outline ([Editor-Panels.md](../07-Editor/Editor-Panels.md#selection)). The engine doesn't add it; the Editor does. It only does work in a view whose `Frame.Outlines` (`RenderFrameRequests`) has something in it. Those requests are cleared after each render, so whoever wants an outline adds it every frame.
+
+A request is a `RenderOutline` (`Graphics/RenderView.h`):
+
+| Field | What it is |
+|---|---|
+| `Colour` | The line's colour, after tonemapping, as debug lines' are |
+| `Width` | In pixels, up to `k_maxWidth` (4) |
+| `OccludedOpacity` | How opaque the line is where the objects are behind the scene; 0 hides those parts |
+| `Objects` | `RenderOutlineObject { LiveID, Shape }`: a render object, by `RenderObject::GetLiveID` so one that's gone matches nothing, and which of the outline's shapes it's in |
+
+An outline is a **look**, and its objects make **shapes**: the objects with the same `Shape` (numbered from 0 in each outline) make one shape, and only that shape's outer edge is drawn. Where its objects overlap, or one has inner edges, there's no line. Each shape keeps its own edge, also where it's in front of another outlined shape. A view can have up to `k_maxOutlines` (8) looks. An object listed more than once goes in the first outline listing it, in the lowest shape it's listed in there.
+
+```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
+flowchart TD
+    Req[/"Frame.Outlines<br/>looks, objects in shapes"/] --> Collect["CollectOutlinedObjects<br/>shape IDs across the outlines,<br/>each object once"]
+    Collect --> Mask["Mask pass: the outlined objects only,<br/>into a mask with its own depth<br/>(Pixel_OutlineMask)"]
+    SDD[/"SceneDepthData"/] --> Mask
+    Mask --> MaskTex[/"mask (R32_UINT)<br/>+ mask depth"/]
+    MaskTex --> Lines["Outline pass: full screen,<br/>alpha-blended (Pixel_Outline)"]
+    Lines --> DCD[/"DisplayColourData<br/>+ outlines"/]
+```
+
+**Shape IDs.** `CollectOutlinedObjects` numbers the shapes across all of the view's outlines, from 1, each outline's after the one before's, so no two outlines' shapes share an ID. It sorts the objects by `LiveID` and keeps each once, so the mask pass can find a render object's entry by binary search. Past `k_maxShapes` (2²³ − 1), the remaining shapes share the last ID. A view with more than 8 outlines, a wider line or more shapes than that logs one warning and draws what fits.
+
+**The mask pass** draws only the outlined objects, each culled by the view's frustum as a whole and per draw, into a mask and a depth buffer of its own. Both are the size of the view's target and kept per view (`OutlineMaskState`, in `context.Persistent()`). With its own depth, the nearest outlined object at each pixel wins it. The vertex shader is the forward pass's, so where an object is the surface the prepass kept, the mask's depth matches the scene's. Cutout pixels are clipped, so a leaf's outline follows its cut-out shape. Each pixel of the mask packs:
+
+| Bits | Holds |
+|---|---|
+| 0–7 | `OutlineID`: the outline's index + 1, which picks the line's look. 0 means no outlined object. |
+| 8 | In front: the object is in front of the scene's depth here (within 2 steps of the 24-bit depth), so the line next to it is drawn fully, not at `OccludedOpacity` |
+| 9–31 | `ShapeID`: which shape the object is in (`Common/Outline.hlsli`, `OutlineShapeShift`) |
+
+**The outline pass** is full screen, over `DisplayColourData`, alpha-blended. Each pixel looks at the mask within `SearchRadius` (the widest line + 0.5, rounded up: 4 pixels for the Editor's 3-pixel line, so 9 × 9 texels). It skips neighbours in no shape, or in the pixel's own shape, which is what leaves out a shape's inner edges. A neighbour in another shape puts that shape's line on the pixel:
+- coverage `saturate(Width + 0.5 − distance)`, solid within the width and fading over the half pixel past it;
+- opacity 1 where that neighbour is in front of the scene, `OccludedOpacity` where it's behind;
+- where several lines reach a pixel, the most opaque wins.
+
+**Where two shapes touch**, the line goes on the farther one's side only. A pixel that's in a shape skips a neighbour whose mask depth is farther than its own (the mask's depth is bound as the pass's second input), so a nearer shape is outlined as if against the background, at one width, not two. The depth is only read on those pixels.
+
+For example, with Sponza and the Tank inside it both selected: the camera is inside Sponza, so Sponza's mask covers the whole view and Sponza itself has no edge on screen, and no line. The Tank's line goes on the floor around it, where Sponza is behind it, and on the Tank's own side along the banner that's in front of it, which is Sponza's edge over the Tank.
+
+```
+   floor (Sponza)     Tank (nearer than the floor)     banner (Sponza, nearer than the Tank)
+   . . . . . . ## | T T T T T T T T T T T T T T ## | B B B B B B
+               ^^                               ^^
+         the Tank's line,                  Sponza's line,
+         on the floor                      on the Tank
+   (## = line pixels, | = where the shapes meet)
+```
+
+Unit tests cover `CollectOutlinedObjects` (`UnitTests/Src/Engine/OutlineRenderStageTests.cpp`).
 
 ### `ImGuiRenderStage` and `FinalRenderTargetStage`
 
@@ -433,9 +491,11 @@ Keep per-view, across-frame state in `context.Persistent()`, and add new per-fra
 - `Engine\Src\Graphics\ProbeCapture.h/.cpp`, `IrradianceProbeGrid.h/.cpp`, `GlobalIllumination.h` — probe capture, the irradiance grid, the probe budgets
 - `Engine\Src\Graphics\ReflectionProbeObject.h/.cpp` — a reflection probe in a `RenderScene`
 - `Engine\Src\Graphics\RenderStages\` — one `.h/.cpp` per stage
-- `Engine\Src\Graphics\GraphicsLayouts.h` — the CPU side of shader buffers the stages share, in `namespace GraphicsLayouts`: the light and shadow layouts and their limits, `ViewLightingLayout`, an object's matrices (`ObjectBufferLayout`, the vertex shaders' `ObjectBuffer`), a material's parameters (`MaterialBufferLayout`, the pixel shaders' `MaterialBuffer`), and the probes' (`IrradianceVolumeLayout`, `ReflectionProbeBufferLayout`, and `ProbeListLayout`, which both probe stages' compute passes take). A layout only one stage's shaders use stays in that stage (`PickRenderStage::PickBufferLayout`, `PostProcessRenderStage::ParamsLayout`, `AntiAliasingStage::FXAAParamsLayout` and `SMAAParamsLayout`, `AmbientOcclusionStage::ParamsLayout`); put new ones by the same rule.
+- `Engine\Src\Graphics\GraphicsLayouts.h` — the CPU side of shader buffers the stages share, in `namespace GraphicsLayouts`: the light and shadow layouts and their limits, `ViewLightingLayout`, an object's matrices (`ObjectBufferLayout`, the vertex shaders' `ObjectBuffer`), a material's parameters (`MaterialBufferLayout`, the pixel shaders' `MaterialBuffer`), and the probes' (`IrradianceVolumeLayout`, `ReflectionProbeBufferLayout`, and `ProbeListLayout`, which both probe stages' compute passes take). A layout only one stage's shaders use stays in that stage (`PickRenderStage::PickBufferLayout`, `OutlineRenderStage::MaskBufferLayout` and `OutlineBufferLayout`, `PostProcessRenderStage::ParamsLayout`, `AntiAliasingStage::FXAAParamsLayout` and `SMAAParamsLayout`, `AmbientOcclusionStage::ParamsLayout`); put new ones by the same rule.
 - `Engine\Src\Graphics\AntiAliasing.h/.cpp` — `EAntiAliasingMethod`, `EAntiAliasingQuality` and `AntiAliasingMode`, their names, and each quality's FXAA and SMAA settings
 - `Engine\Src\Graphics\FullScreenPass.h/.cpp` — `DrawFullScreenPass`
-- `Assets\Shaders\` — `Pixel_ShadowCaster`, `Pixel_DepthPrepass`, `Pixel_NewRenderer*`, `Pixel_ProbeCapture`, `Pixel_LuminanceLog`, `Pixel_ExposureAdapt`, `Pixel_Tonemap`, `Pixel_FXAA`, `Pixel_SMAAEdgeDetection`, `Pixel_SMAABlendingWeights(NoDiagonals)`, `Pixel_SMAANeighborhoodBlending`, `Pixel_DebugAmbientOcclusion`, `Pixel_PickID`, `Pixel_Line`; compute: `Compute_GTAO*`, `Compute_ProbeVisibility`, `Compute_ProbeRelight`, `Compute_ReflectionRelight`, `Compute_ReflectionPrefilter`
-- `Assets\Shaders\Common\` — `Lighting.hlsli` (surface shading), `LightResources.hlsli` (lights, shadows, sky), `PixelResources.hlsli` (the forward pass's bindings), `GTAO.hlsli`, `Probes.hlsli` (capture packing, face layouts, probe lists), `ProbeLighting.hlsli`, `IrradianceVolume.hlsli`, `ReflectionProbes.hlsli`, `FullScreenQuad.hlsli` (the full-screen pixel shaders' input), `SMAA/` (upstream `SMAA.hlsl`, our `SMAA.hlsli` and `SMAABlendingWeights.hlsli`)
+- `Engine\Src\Graphics\RenderView.h` — `RenderFrameRequests` (a view's pick request and outlines), `RenderOutline`, `RenderOutlineObject`
+- `UnitTests\Src\Engine\OutlineRenderStageTests.cpp` — `CollectOutlinedObjects`
+- `Assets\Shaders\` — `Pixel_ShadowCaster`, `Pixel_DepthPrepass`, `Pixel_NewRenderer*`, `Pixel_ProbeCapture`, `Pixel_LuminanceLog`, `Pixel_ExposureAdapt`, `Pixel_Tonemap`, `Pixel_FXAA`, `Pixel_SMAAEdgeDetection`, `Pixel_SMAABlendingWeights(NoDiagonals)`, `Pixel_SMAANeighborhoodBlending`, `Pixel_DebugAmbientOcclusion`, `Pixel_PickID`, `Pixel_Line`, `Pixel_OutlineMask`, `Pixel_Outline`; compute: `Compute_GTAO*`, `Compute_ProbeVisibility`, `Compute_ProbeRelight`, `Compute_ReflectionRelight`, `Compute_ReflectionPrefilter`
+- `Assets\Shaders\Common\` — `Lighting.hlsli` (surface shading), `LightResources.hlsli` (lights, shadows, sky), `PixelResources.hlsli` (the forward pass's bindings), `GTAO.hlsli`, `Probes.hlsli` (capture packing, face layouts, probe lists), `ProbeLighting.hlsli`, `IrradianceVolume.hlsli`, `ReflectionProbes.hlsli`, `FullScreenQuad.hlsli` (the full-screen pixel shaders' input), `Outline.hlsli` (the outline mask's bits), `SMAA/` (upstream `SMAA.hlsl`, our `SMAA.hlsli` and `SMAABlendingWeights.hlsli`)
 - `Externals\Src\SMAA\` — SMAA's area and search textures as C arrays (`AreaTex.h`, `SearchTex.h`), and its licence

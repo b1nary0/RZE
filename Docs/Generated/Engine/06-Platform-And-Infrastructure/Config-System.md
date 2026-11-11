@@ -98,6 +98,8 @@ The checked-in file is in the layout SimpleINI writes (the blank line before a c
 
 A standard Dear ImGui persisted window-layout file, auto-generated/updated by ImGui itself — not hand-authored, and not part of the `EngineConfig`/`Config` class hierarchy. The Editor points ImGui's `io.IniFilename` at this path during `EditorApp::OnInitialize()`. ImGui saves it a few seconds after a change, and again on exit when the render thread destroys its context ([Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#shutdown)). Besides the windows and dock layout, it holds the Editor's own `[BottomDockArea][Area]` section ([Editor-Framework.md](../07-Editor/Editor-Framework.md#the-bottom-dock-area)).
 
+It's local: every Editor run rewrites it, so it isn't tracked (`.gitignore`), and a fresh clone has none. Without one, the Editor builds its default layout (`PanelManager::BuildDefaultDockLayout` and `BuildBottomDockLayout`, [Editor-Framework.md](../07-Editor/Editor-Framework.md)). The run-rze drivers and the CI smoke test put it back as it was after a session, or remove the one a run wrote if there was none ([EditorHarness-And-Drivers.md](../07-Editor/EditorHarness-And-Drivers.md#imguiini-is-put-back)).
+
 ## Where config lives in the build/asset flow
 
 Nowhere else: the Editor and the Game both read `Config\` from the source tree (`EDirectoryContext::Source`), so an edit to `Engine.ini` or `Game.ini` applies on their next launch with no copy step. See [Building-And-Running.md](../01-GettingStarted/Building-And-Running.md).
@@ -107,5 +109,5 @@ Nowhere else: the Editor and the Game both read `Config\` from the source tree (
 - `Engine\Src\EngineCore\Config\Config.h/.cpp`
 - `Engine\Src\EngineCore\Config\EngineConfig.h/.cpp`, `FrameSettings.h`; `Engine\Src\EngineCore\Async\AsyncOperationFilter.h/.cpp`
 - `Engine\Src\EngineCore\Config\GameConfig.h/.cpp`
-- `Config\Engine.ini`, `Config\Game.ini`, `Config\imgui.ini`
+- `Config\Engine.ini`, `Config\Game.ini`, `Config\imgui.ini` (local, not tracked)
 - `UnitTests\Src\Engine\GameConfigTests.cpp`

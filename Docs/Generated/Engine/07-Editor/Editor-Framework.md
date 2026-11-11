@@ -22,7 +22,7 @@ flowchart TD
     Ctx --> State["State<br/>EditorSelection, editor camera,<br/>SceneViewportState, EditorSettings"]
     Ctx --> UI["UI<br/>PanelManager, ScenePicker"]
     Ctx --> Flow["Change flow<br/>CommandQueue, UndoHistory, EditorEvents"]
-    Ctx --> Svc["Services<br/>SceneDocument, GameBuilder,<br/>GameObjectClipboard, SelectionBoundsDisplay,<br/>ThumbnailRenderer"]
+    Ctx --> Svc["Services<br/>SceneDocument, GameBuilder,<br/>GameObjectClipboard, ThumbnailRenderer"]
     Ctx --> Modals["Modals<br/>UnsavedChangesPrompt, FileBrowserModal"]
 ```
 
@@ -104,7 +104,7 @@ The file browser modal does the same in its own `ShutDown`.
 `PanelManager` creates every registered panel at start-up, sorted by name. On each UI frame it updates and draws the open ones (`UpdateAll`, `DrawAll`), and every frame it calls their `PreRender` (`PreRenderAll`). It also builds the Edit, View and Help menu items from their `MenuPath`s, and docks panels:
 
 - **Tab order.** Panels sharing a slot are tabs in a fixed order: the ones open at first (`DefaultOpen`), then the rest, each by name. So `BottomRight` is Log, then Resource Monitor.
-- **No saved layout.** `BuildDefaultDockLayout` splits the main dockspace into the columns panels use: `Left`, then the right column (19% of the width), split evenly between `RightTop` and `RightBottom`; `Center` is what's left. `BuildBottomDockLayout` splits the bottom area's dockspace evenly between `BottomLeft` and `BottomRight`. Each panel docks into its slot in that order, and each slot shows its first tab. It sets the tab order explicitly, since ImGui otherwise orders tabs that appear in the same frame as it likes. So the default is the scene view with a column on its right (Scene above Object Inspector), and the bottom area auto-hidden with Content Browser beside Log.
+- **No saved layout.** `BuildDefaultDockLayout` splits the main dockspace into the columns panels use: `Left`, then the right column (19% of the width), split evenly between `RightTop` and `RightBottom`; `Center` is what's left. `BuildBottomDockLayout` splits the bottom area's dockspace evenly between `BottomLeft` and `BottomRight`. Each panel docks into its slot in that order, and each slot shows its first tab. It sets the tab order explicitly, since ImGui otherwise orders tabs that appear in the same frame as it likes. So the default is the scene view with a column on its right (Object Browser above Object Inspector), and the bottom area auto-hidden with Content Browser beside Log.
 - **A panel `imgui.ini` doesn't know**, e.g. one added since the layout was saved, would otherwise open floating. Before its first `Begin`, `PlaceUnsavedPanel` docks it into the node of a saved panel from the same slot. It takes the place of the first saved panel that comes after it in the tab order, and the tabs from there on move along one; with none after it, it goes last. Tabs the user has rearranged keep their order. It's shown as the selected tab, so a new panel gets noticed. From then on `imgui.ini` remembers it like any other. If no panel from its slot is saved, it's left to ImGui.
 
 This uses ImGui's internal window settings and dock nodes (`imgui_internal.h`), as the DockBuilder calls already do.
@@ -300,7 +300,6 @@ Current listeners:
 | `PanelManager` | Scene unloading | Calls each panel's `OnSceneReset()` |
 | `ObjectBrowserPanel` | GameObject created | Starts renaming the new object in place; it's drawn in the next frame, since commands run after the panels |
 | `SceneDocument` | Scene modified | Sets `IsModified()` from the undo history's save point |
-| `SelectionBoundsDisplay` | Selection changed | Turns mesh bounds on for newly selected objects and off for deselected ones, through `RenderComponent`'s own toggle so the inspector checkbox agrees |
 | `EditorApp` | Loaded, saved, modified state | Sets the window title: `RZEStudio - <file>`, `*` while there are unsaved changes, `Untitled` for a new scene |
 | `ThumbnailRenderer` | Loaded, saved | Renders the scene's thumbnail in the background: after a save always, after a load if it's missing or out of date |
 | `EditorContext`, `ContentBrowserPanel` | Thumbnail written | Reload the tiles showing that image, in the file browser (the context forwards it to `FileBrowserModal::RefreshThumbnail`) and in the Content Browser |
@@ -370,7 +369,7 @@ Windows, popups, fields, buttons, checkboxes, images and highlights have slightl
 - `Editor\Src\UI\BottomDockArea.h/.cpp` — the bottom dock area
 - `Editor\Src\Commands\EditorCommand.h`, `CommandQueue.h/.cpp`, `SceneCommands`, `TransformCommands`, `PropertyCommands`, `HistoryCommands`, `UndoRecord`, `ParkedSubtree`
 - `Editor\Src\Commands\AssetFileCommands` — rename, delete and new folder, undoable
-- `Editor\Src\Services\SceneDocument`, `GameBuilder`, `GameObjectClipboard`, `GameObjectSnapshot`, `SelectionBoundsDisplay`, `UndoHistory`, `ThumbnailRenderer`, `ProjectWatcher`, `AssetFiles`
+- `Editor\Src\Services\SceneDocument`, `GameBuilder`, `GameObjectClipboard`, `GameObjectSnapshot`, `SelectionOutline` (the selection's outline, [Editor-Panels.md](Editor-Panels.md#selection)), `UndoHistory`, `ThumbnailRenderer`, `ProjectWatcher`, `AssetFiles`
 - `Editor\Src\UI\TaskTracker.h/.cpp` — the background tasks the status bar and Task History show (`EditorContext::GetTasks`)
 - `Editor\Src\UI\Modals\UnsavedChangesPrompt.h/.cpp`, `FileBrowserModal.h/.cpp`
 - `Editor\Src\UI\Widgets\FileTileGrid.h/.cpp` — the tile grid the file browser and the Content Browser share

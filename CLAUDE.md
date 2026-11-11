@@ -67,7 +67,7 @@ driving the editor are covered by the `run-rze` skill (`.claude/skills/run-rze/`
 - **Upgrading a vendored library:** put a zip of the new binaries in `Files/`, named like the old one (e.g.
   `assimp-<ver>-win64-<toolset>-binaries.zip`), and delete the old zip.
 - **Specs in `Docs/Plans/` aren't committed** (gitignored). Write them there and leave them out of commits. The pages
-  in `Docs/Generated/Engine` are committed.
+  in `Docs/Generated/Engine` are committed; their diagram rules are in `Docs/Generated/Engine/CLAUDE.md`.
 - **Logs:** every Editor/Game run writes `RZE/Logs/RZELOG_<dd-mm-yyyy>_<hh-mm-ss>.txt`. For temporary instrumentation,
   use `RZE_LOG_ARGS` and read the newest file. Don't add ad-hoc file logging.
 - **`RZE/Config/imgui.ini` is the local Editor layout**: untracked, and without it the Editor builds the default
@@ -104,19 +104,3 @@ driving the editor are covered by the `run-rze` skill (`.claude/skills/run-rze/`
   worktree with the `-perfcapture <file> -perfwarmup <s> -perfduration <s>` flags. Alternate A and B runs, several per
   side, in the same build configuration and `imgui.ini` layout. Report tables with a % delta column (mean, median, p95,
   p99, spread), and say plainly when a difference is within noise.
-
-## Docs diagrams (Mermaid)
-
-`Docs/Generated/Engine` is read in Obsidian, which ships **Mermaid 11.13.0**. Failures are silent in the source, so
-render and look.
-- Start every flowchart, graph, state and sequence diagram with the shared init line. Copy it from an existing doc. It
-  sets subgraph title margins and the label backgrounds and halos that keep lines from showing through labels. Don't
-  add fallback colours.
-- Sequence diagrams: no `;` anywhere in text, no keyword participant aliases (`loop`, `alt`, `end`), notes spanning two
-  participants (`Note over A,B:`), short participant names.
-- Gantt: `dateFormat x`, `axisFormat %L`, tasks as `id, start, 4ms` or `id, after other, 4ms`.
-- Prefer `flowchart TD` to long LR chains; use `direction TB` inside side-by-side subgraphs. Avoid several edges
-  between the same two nodes and self-links in class diagrams. Keep quadrant points away from y≈0.5 and the titles.
-- Before committing, render every block with the Mermaid CLI pinned to Mermaid 11.13.0
-  (`@mermaid-js/mermaid-cli` 11.12.0 with `"overrides": { "mermaid": "11.13.0" }`), dark theme, a `-C` CSS file setting
-  `--background-primary`, and look at each PNG.

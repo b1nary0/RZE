@@ -33,7 +33,12 @@ The selection is `EditorSelection`, in the `EditorContext`, so every panel reads
 
 - The **last** object is the **primary** selection. The transform gizmo is on it, the Object Inspector shows its values and F2 in the Object Browser renames it.
 - `Select` / `SetSelection` replace the selection, `Toggle` / `AddToSelection` extend it, `Clear` empties it, `IsSelected` tests one object.
-- Each call that changes it publishes `SelectionChangedEvent`. `SelectionBoundsDisplay` listens and draws every selected object's **mesh bounds** in yellow, through its `RenderComponent`'s "Mesh Bounds" toggle (Debug Draw), so the inspector checkbox agrees.
+- Each call that changes it publishes `SelectionChangedEvent`.
+- **The selection is outlined** in the SceneView: a yellow line, 3 pixels wide, around each selected object's meshes, and at 30% where they're behind the scene. `ApplySelectionOutline` (`Services/SelectionOutline`) asks the main view for it every frame, in `EditorApp::PreRender`, after the UI frame's commands have run, so what was just selected is outlined in the same frame's render. `OutlineRenderStage` draws it ([Render-Stages.md](../04-Rendering/Render-Stages.md#outlinerenderstage)).
+  - It's one outline, and each selected object makes **a shape of its own** with its descendants, so each is edged: an object selected with Sponza, which surrounds the camera, keeps its line, where in one shape it would be lost inside Sponza's. Where two selected objects overlap on screen, the line goes around the nearer, on the farther one's side.
+  - A selected object under a selected ancestor is part of the ancestor's shape, so a parent and its child have no line between them, whichever was selected first. The ancestors are looked up in a sorted copy of the selection, so a large selection of nested objects isn't searched through for every one each frame.
+  - Objects with no mesh have no line, and an object surrounding the camera (Sponza selected alone) has none either: it has no edge on screen.
+  - The RenderComponent's "Mesh Bounds" toggle (Debug Draw) is separate from it: selecting an object doesn't change the toggle.
 - **Escape** (with the SceneView hovered) clears it, and loading or creating a scene clears it.
 
 ```mermaid
@@ -54,7 +59,8 @@ A tree of the scene's objects (the editor camera is hidden).
 - **Double-click** glides the editor camera to frame the object (`EditorCameraComponent::FocusOn`; see [Editor-Camera-And-Build-Launch.md](Editor-Camera-And-Build-Launch.md)).
 - **Drag and drop** one object onto another to parent it. It keeps its local transform, so it moves if the new parent isn't at the origin (see [10-KnownIssues](../10-KnownIssues/Architectural-Notes-And-TODOs.md)).
 - **Right-click** an object for its menu. The first line is its name, then Rename (F2), Add Component (every registered type), DetachFromParent (child objects only) and Delete. All of them, and drag-and-drop parenting, can be undone; Delete removes the object's children too, and undo brings them all back in the same order.
-- **Right-click empty space**: Create GameObject. It adds an object named `GameObject` (`GameObject (1)`, `(2)`, ... if the name is taken), selects it and puts it straight into a rename. Creating and naming are two undo steps. Once a scene's rows fill the panel there's no empty space left to right-click; an "Add GameObject" button is planned for that.
+- **Right-click empty space**: Create GameObject. It adds an object named `GameObject` (`GameObject (1)`, `(2)`, ... if the name is taken), selects it and puts it straight into a rename. Creating and naming are two undo steps.
+- **Add GameObject** in the panel's toolbar does the same. Once a scene's rows fill the panel there's no empty space left to right-click, so the toolbar is in the panel's menu bar (`ImGuiWindowFlags_MenuBar`), where it isn't scrolled away with the rows. The button sits at the bar's right end, placed from the bar's edge rather than the content region's, so it doesn't move when the scrollbar appears. Clicking the toolbar beside it doesn't clear the selection; only empty space under the rows does.
 - **Rename in place:** **F2** (with the panel focused) renames the primary selection. A text box replaces the row's name, scrolled into view if it isn't. **Enter** applies the name (`RenameGameObjectCommand`); **Escape** or a click elsewhere cancels. An empty name can't be applied: the box gets a red border and the tooltip "A GameObject needs a name", and Enter keeps it open. The renamed row stays drawn while it's scrolled out of the list clipper's range, so the box keeps the keyboard; if its row stops being listed (the object deleted or undone, or its parent collapsed), the rename ends.
 - Clicking empty space in the panel clears the selection.
 - Collapsed parents can be clicked, dragged and right-clicked like any other row.
@@ -185,6 +191,7 @@ Every background task's history in full: a row per run, newest first, that opens
 - `Editor\Src\UI\Panels\ObjectBrowserPanel`, `SceneViewPanel`, `InspectorPanel`, `ContentBrowserPanel`, `LogPanel`, `ResourceMonitorPanel`, `ImGuiDemoPanel`, `SettingsPanel`, `ProjectSettingsPanel`, `TaskHistoryPanel` (`.h/.cpp`)
 - `Editor\Src\UI\Framework\EditorSelection.h/.cpp`, `ScenePicker.h/.cpp`
 - `Editor\Src\Commands\SceneCommands.h/.cpp` — `CreateMeshObjectCommand`
-- `Editor\Src\Services\SelectionBoundsDisplay.h/.cpp`
+- `Editor\Src\Services\SelectionOutline.h/.cpp` — `ApplySelectionOutline`; tests in `UnitTests\Src\Editor\SelectionOutlineTests.cpp`
+- `Engine\Src\Graphics\RenderStages\OutlineRenderStage.h/.cpp` — draws the outline
 - `Editor\Src\UI\Gizmo\GizmoSnapper.h/.cpp`, `EditorGrid.h/.cpp` — see [Gizmo-Snapping-And-Grid.md](Gizmo-Snapping-And-Grid.md)
 - `Engine\Src\Graphics\RenderStages\PickRenderStage.h/.cpp` — the GPU side of picking
