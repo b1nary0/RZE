@@ -131,6 +131,8 @@ public:
 };
 ```
 
+`ReleaseStageState()` clears both blackboards: what stages keep for the view across frames and what the last frame published. They're made again the next time the view renders. A view that outlives the renderer must call it before the renderer shuts down, as `RenderEngine::ReleaseRenderStages()` does for the main view, which lives until the render engine is deleted.
+
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart LR
@@ -204,7 +206,7 @@ Every render gets the frame's index (`RenderContext::FrameIndex`), the same for 
 
 | Area | Calls |
 |---|---|
-| Lifetime | `Initialize(windowHandle)` (also adds the engine's stages), `Shutdown()`, `ReleaseRenderStages()` (must run before `ResourceHandler::ShutDown()`) |
+| Lifetime | `Initialize(windowHandle)` (also adds the engine's stages), `Shutdown()`, `ReleaseRenderStages()` (must run before `ResourceHandler::ShutDown()` and `Shutdown()`: drops the stages, then the main view's and main scene's stage state) |
 | Per frame | `Render(frameName)` (the main view, of the main scene), `Finish()`, `RenderSecondaryView(name, view, scene)` |
 | Scene | `SetMainScene(scene)` / `GetMainScene()`. Objects and lights are made in a [`RenderScene`](#scene-data). |
 | Debug drawing | Into the main scene: `DrawLine(start, end, colour, alpha = 1, fade = {})`, `DrawWireBox(box, transform, colour, alpha = 1)`, `DrawWireSphere(centre, radius, colour, alpha = 1, occludedAlpha = 0)` (three circles, one around each world axis). `alpha` makes lines semi-transparent; `fade` (`DebugLineFade { centre, start, end }`) fades a line out with each pixel's distance from `centre`, between the `start` and `end` radii (`end` = 0: no fade). The editor grid uses both. `occludedAlpha` (`DebugLine::occludedAlpha`) is how opaque a line's parts behind the scene are drawn, so e.g. a light's range still shows through the walls it passes behind; 0 hides them, as for every other line. |

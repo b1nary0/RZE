@@ -34,7 +34,7 @@ Rough edges the codebase is candid about (source comments, `#TODO`s), plus a few
 | 26 | A swapped-in material that's missing is tried twice on scene load | Resources | Cosmetic | Open |
 | 27 | A frame rate cap that doesn't divide the refresh rate paces unevenly under vsync | Frame pacing | Low | Open |
 | 28 | An idle tick can put two big units of async work in one frame | Async | Low | Open |
-| 29 | The D3D device may leak at exit | Renderer | Medium | Open (the render-target leak on resize was disproved, 11-08) |
+| 29 | The D3D device leaked at exit | Renderer | — | **Fixed** (11-10: everything is released before the device shuts down, and the Debug smoke test checks it) |
 | 30 | In Debug, the game's key bindings never fire | Game | Medium | Open |
 | 31 | `RenderThread::Shutdown` could race | Renderer | — | **Fixed** (11-04: the flag is set with the signal, under the lock) |
 | 32 | A shader that doesn't compile crashes the app | Renderer | — | **Fixed** (11-05: the failed compile logs and leaves the shader null) |
@@ -188,9 +188,15 @@ With vsync on, a `MaxFrameRate` below the refresh rate that doesn't divide it (e
 
 The first unit of work in any budget always runs, even when it's bigger than the budget, and idle ticks get a budget of their own. So a frame's tick and its idle tick can each run one large unit, e.g. an extra ~55 ms frame when a thumbnail run starts. Estimating unit times, or giving idle budgets no free first unit, would avoid it. See [Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md#async-operations).
 
-## 29. The D3D device may leak at exit
+## 29. The D3D device leaked at exit (fixed)
 
-The D3D debug layer was seen to report about 390 live objects at exit. That's still to be checked under a debugger (`.claude/WindowsChecks.md`, A8.4), since the report goes to the debugger's output, not the info queue the log reads.
+**Fixed (11-10, `9bad1239`).** The debug layer reported the device still alive as the process ended (`Process is terminating. Using simple reporting`), with a refcount of 60. `-gfxliveobjects` (`469f87db`), which logs what's alive once the device has shut down, listed 237 objects on DrawLineTest and 280 on Sponza. Four causes:
+- `DX11ConstantBuffer` had no destructor, so a constant buffer whose handle went was never released.
+- Render commands pushed after the last frame, such as the shader releases from shutting the scene and stages down, stayed in the producer queue, never run or destroyed, holding their handles. `RenderThread::Shutdown` now runs them as one last batch.
+- The main view's stage state, its targets among them, lived until the render engine was deleted, after the device. `ReleaseRenderStages` now releases it with the main scene's.
+- The application's render target, and `Renderer`'s copy of the last UI frame with its textures, were let go after the device. `RZE_Application::ShutDown` and `Renderer::Shutdown` now release them first.
+
+Since then no object outlives shutdown on DrawLineTest, Sponza, RenderPerfTest, RenderTest, after New Scene, or in the Game, and the process-exit report is gone. The Debug smoke test runs with `-gfxliveobjects` and fails on Windows if any object is listed. See [Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#shutdown).
 
 This entry used to say render targets leak too, with the Editor leaking its scene view target on every resize, because `RenderTargetTexture`'s destructor is empty. They don't: the target's handles hold `shared_ptr`s to the driver textures, and `~DX11TextureBuffer2D` calls `Release()`. On 11-08, 20 maximize/restore resizes of the Editor left its GPU memory at 488 MB, unchanged.
 

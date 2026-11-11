@@ -41,6 +41,7 @@ While it starts, the Editor shows a splash screen with the logo and what start-u
 | `-launchMonitor <n>` | Opens the window on monitor *n*, overriding the config's launch monitor. Handled by the engine, so the Game accepts it too. Does nothing on Wayland, where the compositor places windows; there, `driver.py launch --output` picks the monitor ([EditorHarness-And-Drivers.md](EditorHarness-And-Drivers.md#picking-the-monitor---output-linux)). |
 | `-console` | Opens a console showing the log (stdout and stderr). Handled by the engine, so the Game accepts it too. |
 | `-gfxvalidation [0]` | Turns the graphics API's validation on, or off with `0` (on by default in Debug only; never in Retail). Handled by the engine, so the Game accepts it too. See [Debug-Services-And-Logging.md](../06-Platform-And-Infrastructure/Debug-Services-And-Logging.md#graphics-validation). |
+| `-gfxliveobjects` | Logs the D3D11 objects still alive at shutdown, and a count; turns validation on. Does nothing on OpenGL or in Retail. Handled by the engine, so the Game accepts it too. See [Debug-Services-And-Logging.md](../06-Platform-And-Infrastructure/Debug-Services-And-Logging.md#objects-alive-at-shutdown). |
 
 `Editor\_project\Editor.args.json` holds presets for these in Visual Studio.
 
