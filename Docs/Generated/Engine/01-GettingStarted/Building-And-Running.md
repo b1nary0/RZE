@@ -83,7 +83,7 @@ docs and the CI files ever disagree, trust the CI files.
 |---|---|---|---|
 | For | Stepping through code the optimizer rearranges | Everyday work and testing | The build that ships |
 | Optimization, Linux | Off (`-O0`) | `-O2`, with frame pointers (`-fno-omit-frame-pointer`) | `-O3 -mavx2` |
-| Optimization, Windows | Off, no inlining | On, inlining only what's marked `inline` | Maximize speed, any inlining, AVX2 |
+| Optimization, Windows | Off, no inlining | On, any inlining (`/Ob2`) | Maximize speed, any inlining, AVX2 |
 | Windows CRT | Debug (`/MDd`) | Release (`/MD`) | Release (`/MD`) |
 | Symbols | ✓ | ✓ | ✓ |
 | Asserts, logging, the Game's ImGui, `START_TIMED_BLOCK`, `RZE_DISABLE_OPTIMIZATION` | ✓ | ✓ | — (`RZE_RETAIL`) |
