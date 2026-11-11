@@ -71,7 +71,7 @@ flowchart TD
 | Port | `Graphics/RenderPorts.h` | What `Setup()` hands back: `RenderInput<T>` (`Get`/`TryGet`), `RenderOutput<T>` (`Publish`), `RenderInOut<T>`. A stage can only touch data it declared. |
 | `RenderPipeline` | `Graphics/RenderPipeline.h/.cpp` | Owns the stages; compiles the declarations when stages change, then runs them in order for a view. |
 | `RenderView` | `Graphics/RenderView.h` | One point of view: camera, viewport size, target, lighting (`Scene` or `Uniform`), auto-exposure and exposure compensation, pick request, and two blackboards. See [Engine-Graphics-Layer.md](Engine-Graphics-Layer.md#views). |
-| `RenderContext` | `Graphics/RenderContext.h` | What a stage gets while rendering one view: the view's inputs (read-only), the `RenderScene` being drawn, `DeltaTime`, `FrameIndex` (the same for every view in a frame), `Persistent()` (this view's state across frames) and `ScenePersistent()` (this scene's state across frames, shared by every view that renders it). |
+| `RenderContext` | `Graphics/RenderContext.h` | What a stage gets while rendering one view: the view's inputs (read-only), the `RenderScene` being drawn, `DeltaTime`, `FrameIndex` (the same for every view in a frame), `WorkCounts` (`RenderWorkCounts`: where a stage counts the probe and shadow work a scene change caused, shown in the status bar's [frame stats](../07-Editor/Status-Bar-And-Settings.md)), `Persistent()` (this view's state across frames) and `ScenePersistent()` (this scene's state across frames, shared by every view that renders it). |
 
 ## How the order is worked out
 
@@ -484,7 +484,7 @@ Keep per-view, across-frame state in `context.Persistent()`, and add new per-fra
 
 ## Key files
 
-- `Engine\Src\Graphics\RenderStage.h`, `RenderStageBuilder.h`, `RenderPorts.h`, `RenderBlackboard.h`, `RenderContext.h`
+- `Engine\Src\Graphics\RenderStage.h`, `RenderStageBuilder.h`, `RenderPorts.h`, `RenderBlackboard.h`, `RenderContext.h`, `RenderWorkCounts.h`
 - `Engine\Src\Graphics\RenderPipeline.h/.cpp`, `RenderPipelineCompiler.h/.cpp`
 - `Engine\Src\Graphics\RenderData\` — `SceneLightingData.h`, `SceneDepthData.h`, `AmbientOcclusionData.h`, `SceneIrradianceData.h`, `SceneReflectionData.h`, `SceneColourData.h`, `TonemappedColourData.h`, `DisplayColourData.h`
 - `Engine\Src\Graphics\AmbientOcclusion.h/.cpp` — `EAmbientOcclusion` levels and their GTAO settings
