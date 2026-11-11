@@ -15,6 +15,10 @@ namespace Rendering
 	void DX11ImGuiRenderer::Initialize()
 	{
 		ImGui_ImplDX11_Init(&m_device.GetHardwareDevice(), &m_device.GetDeviceContext());
+		// Now, as GLImGuiRenderer does: NewFrame would make them on the main thread, while the render thread uses the
+		// device, which is made single-threaded (DX11Device::Initialize). Seen deadlocked in the driver, loading
+		// RenderPerfTest.scene.
+		ImGui_ImplDX11_CreateDeviceObjects();
 	}
 
 	void DX11ImGuiRenderer::NewFrame()
