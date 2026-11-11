@@ -13,6 +13,8 @@
 
 #include <imgui/imgui.h>
 
+#include <algorithm>
+
 namespace Rendering
 {
 	RenderThread::RenderThread()
@@ -39,11 +41,14 @@ namespace Rendering
 			{
 				OPTICK_THREAD("Render Thread");
 				m_device->AttachToCurrentThread();
+				m_gpuTimer.Initialize([this](U32 capacity) { return m_device->CreateGPUTimestamps(capacity); });
 				bool isRunning = true;
 				while (isRunning)
 				{
 					isRunning = Update();
 				}
+				// Its timestamps are the render thread's, so they go while the device is still attached to it
+				m_gpuTimer.Release();
 				m_device->DetachFromCurrentThread();
 			};
 
@@ -174,6 +179,8 @@ namespace Rendering
 		// Markers are only made when a profiler is listening (some APIs convert each name).
 		// Checked once per batch: a batch is a whole frame, so every BeginEvent below still gets its EndEvent.
 		m_emitProfilerMarkers = m_device->IsProfilerAttached();
+		// A batch is a frame, so this opens a frame each batch; one that didn't present keeps its frame open
+		m_gpuTimer.BeginFrameIfNeeded();
 
 		for (RenderCommand* command : m_consumerQueue)
 		{
@@ -185,6 +192,8 @@ namespace Rendering
 			case RenderCommandType::Begin: Execute(static_cast<RenderCommand_Begin&>(*command)); break;
 			case RenderCommandType::End: Execute(static_cast<RenderCommand_End&>(*command)); break;
 			case RenderCommandType::DevicePresent: Execute(static_cast<RenderCommand_DevicePresent&>(*command)); hasPresented = true; break;
+			case RenderCommandType::BeginGPUScope: Execute(static_cast<RenderCommand_BeginGPUScope&>(*command)); break;
+			case RenderCommandType::EndGPUScope: Execute(static_cast<RenderCommand_EndGPUScope&>(*command)); break;
 			case RenderCommandType::HandleWindowResize: Execute(static_cast<RenderCommand_HandleWindowResize&>(*command)); break;
 			case RenderCommandType::SetSyncInterval: Execute(static_cast<RenderCommand_SetSyncInterval&>(*command)); break;
 			case RenderCommandType::CreateVertexBuffer: Execute(static_cast<RenderCommand_CreateVertexBuffer&>(*command)); break;
@@ -272,22 +281,61 @@ namespace Rendering
 			m_windowBusyTime += m_frameBusyTime;
 			m_windowPresentTime += m_framePresentTime;
 		}
+
+		const bool hasWindowEnded = m_statsWindow.AddFrame(now);
+		{
+			std::lock_guard lock(m_statsMutex);
+			m_stats.LastFrameBusyTimeMS = m_frameBusyTime * 1000.0;
+			m_stats.LastFramePresentTimeMS = m_framePresentTime * 1000.0;
+			m_stats.LastFrameGPUTimeMS = m_lastGPUFrameTime;
+			if (hasWindowEnded)
+			{
+				m_stats.BusyTimeMS = m_statsWindow.PerFrame(m_windowBusyTime) * 1000.0;
+				m_stats.PresentTimeMS = m_statsWindow.PerFrame(m_windowPresentTime) * 1000.0;
+
+				// Per frame read back, not per frame presented: a frame the GPU timer skipped has no times
+				const double gpuFrames = static_cast<double>(std::max<U32>(m_windowGPUFrames, 1));
+				m_stats.GPUFrameTimeMS = m_windowGPUTime / gpuFrames;
+				m_stats.GPUScopeTimesMS.resize(m_windowGPUScopeTimes.size());
+				for (size_t id = 0; id < m_windowGPUScopeTimes.size(); ++id)
+				{
+					m_stats.GPUScopeTimesMS[id] = m_windowGPUScopeTimes[id] / gpuFrames;
+				}
+			}
+		}
 		m_frameBusyTime = 0.0;
 		m_framePresentTime = 0.0;
 
-		if (!m_statsWindow.AddFrame(now))
+		if (hasWindowEnded)
+		{
+			m_windowBusyTime = 0.0;
+			m_windowPresentTime = 0.0;
+			m_windowGPUFrames = 0;
+			m_windowGPUTime = 0.0;
+			std::fill(m_windowGPUScopeTimes.begin(), m_windowGPUScopeTimes.end(), 0.0);
+		}
+	}
+
+	void RenderThread::AddGPUFrame(const GPUFrameTimes& times)
+	{
+		m_lastGPUFrameTime = times.FrameMS;
+
+		// Only once the window has started, as with the busy time
+		if (!m_statsWindow.HasStarted())
 		{
 			return;
 		}
 
+		++m_windowGPUFrames;
+		m_windowGPUTime += times.FrameMS;
+		if (m_windowGPUScopeTimes.size() < times.ScopeMS.size())
 		{
-			std::lock_guard lock(m_statsMutex);
-			m_stats.BusyTimeMS = m_statsWindow.PerFrame(m_windowBusyTime) * 1000.0;
-			m_stats.PresentTimeMS = m_statsWindow.PerFrame(m_windowPresentTime) * 1000.0;
+			m_windowGPUScopeTimes.resize(times.ScopeMS.size(), 0.0);
 		}
-
-		m_windowBusyTime = 0.0;
-		m_windowPresentTime = 0.0;
+		for (size_t id = 0; id < times.ScopeMS.size(); ++id)
+		{
+			m_windowGPUScopeTimes[id] += times.ScopeMS[id];
+		}
 	}
 
 	void RenderThread::BeginProfilerEvent(const char* name)

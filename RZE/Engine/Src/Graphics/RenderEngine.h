@@ -31,12 +31,21 @@ struct RenderStats
 {
 	// Per frame, recording every view's render stages
 	double RecordTimeMS = 0.0;
-	// Each stage's part of RecordTimeMS per frame, in the order they run
-	std::vector<RenderStageTime> Stages;
+	// Each stage's part of RecordTimeMS and DrawCalls per frame, in the order they run
+	std::vector<RenderStageStats> Stages;
 	// Per frame, not counting the UI's
 	double DrawCalls = 0.0;
 	// Per frame: the probe captures and relights and the shadow maps that scene changes caused
 	RenderWorkCounts Work;
+};
+
+// One frame of what RenderStats averages, for measuring frame by frame (FrameTimeCapture)
+struct RenderFrameCounts
+{
+	// Recording every view's render stages
+	double RecordTimeMS = 0.0;
+	// Not counting the UI's
+	U32 DrawCalls = 0;
 };
 
 class RenderEngine
@@ -107,9 +116,13 @@ public:
 
 	// Empty until the first window of frames has passed. Main thread only.
 	const RenderStats& GetStats() const { return m_stats; }
+	// The last frame that finished: the one before the frame being rendered. Main thread only.
+	const RenderFrameCounts& GetLastFrame() const { return m_lastFrame; }
 
 private:
 	void InternalAddRenderStage(IRenderStage* stage);
+	// Ends the frame so far as the next one starts rendering: it becomes the last frame, and is added to the stats window
+	void EndFrameCounts();
 	// Ends the stats window's frame as the next one starts rendering; the first frame only starts the window
 	void UpdateStats(double now);
 
@@ -125,9 +138,13 @@ private:
 	GlobalIlluminationSettings m_globalIlluminationSettings;
 
 	RenderStats m_stats;
+	RenderFrameCounts m_lastFrame;
+	// Seconds recording the frame so far: the main view, and secondary views rendered since the last main view
+	double m_frameRecordTime = 0.0;
 	StatsWindow m_statsWindow;
 	// The stats window so far
 	double m_windowRecordTime = 0.0;
+	U32 m_windowDrawCalls = 0;
 };
 
 template <typename TRenderStageType, typename... Args>

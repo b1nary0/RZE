@@ -51,6 +51,11 @@ namespace Rendering
 		static void Begin(const char* drawSetName);
 		static void End();
 
+		// Times what's recorded between them on the GPU, summed per id over each frame, in GetRenderThreadStats a few
+		// frames later (GPUScopeTimesMS[id]). The ids are the caller's: RenderPipeline's stage indices. Scopes nest.
+		static void BeginGPUScope(U32 id);
+		static void EndGPUScope();
+
 		static void DevicePresent();
 		// Hands what's been recorded so far (e.g. uploads) to the render thread with no frame and no present, such as
 		// while loading before the window shows. Like DevicePresent, returns once the render thread has taken it.
@@ -68,6 +73,8 @@ namespace Rendering
 		static RenderThreadStats GetRenderThreadStats();
 		// Draw calls recorded since the last call, then starts over. The UI's aren't counted. Main thread only.
 		static U32 TakeDrawCallCount();
+		// Draw calls recorded since TakeDrawCallCount, without starting over, e.g. to count one stage's. Main thread only.
+		static U32 GetDrawCallCount() { return m_drawCallCount; }
 
 		// Each UI frame, on the main thread, before ImGui::NewFrame: ImGui's renderer side of the new frame
 		static void ImGuiNewFrame();

@@ -158,9 +158,23 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 			const double frameStart = m_programTimer.GetElapsed<double>();
 			BeginFrame(frameStart);
 
-			if (m_frameTimeCapture.AddFrame(frameStart, m_framePacer.GetFrameTime() * 1000.0, lastUpdateMS))
+			if (m_frameTimeCapture.IsEnabled())
 			{
-				break;
+				const RenderFrameCounts& renderFrame = m_renderEngine->GetLastFrame();
+				const Rendering::RenderThreadStats renderThreadStats = Rendering::Renderer::GetRenderThreadStats();
+
+				FrameTimeSample sample;
+				sample.FrameMS = static_cast<float>(m_framePacer.GetFrameTime() * 1000.0);
+				sample.UpdateMS = static_cast<float>(lastUpdateMS);
+				sample.RecordMS = static_cast<float>(renderFrame.RecordTimeMS);
+				sample.RenderThreadBusyMS = static_cast<float>(renderThreadStats.LastFrameBusyTimeMS);
+				sample.RenderThreadPresentMS = static_cast<float>(renderThreadStats.LastFramePresentTimeMS);
+				sample.GPUMS = static_cast<float>(renderThreadStats.LastFrameGPUTimeMS);
+				sample.DrawCalls = renderFrame.DrawCalls;
+				if (m_frameTimeCapture.AddFrame(frameStart, sample, m_renderEngine->GetStats()))
+				{
+					break;
+				}
 			}
 
 			{

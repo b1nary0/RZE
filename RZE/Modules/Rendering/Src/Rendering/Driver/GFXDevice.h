@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Rendering/RenderingDefines.h>
+#include <Rendering/Driver/GPUTimestamps.h>
 
 #include <Utils/PrimitiveDefs.h>
 
@@ -62,6 +63,9 @@ namespace Rendering
 		virtual std::shared_ptr<IVertexShader> CreateVertexShader() = 0;
 		virtual std::shared_ptr<IPixelShader> CreatePixelShader() = 0;
 		virtual std::shared_ptr<IComputeShader> CreateComputeShader() = 0;
+		// Unlike the others, made and used on the render thread alone (GPUTimer); capacity is how many timestamps a
+		// frame can write
+		virtual std::unique_ptr<IGPUTimestamps> CreateGPUTimestamps(U32 capacity) = 0;
 
 		// The frame
 		virtual void Present() = 0;

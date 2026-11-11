@@ -1,13 +1,37 @@
 #pragma once
 
+#include <Utils/PrimitiveDefs.h>
+
 #include <string>
-#include <utility>
 #include <vector>
 
+struct RenderStats;
+
+// One frame's timings and counts for FrameTimeCapture, each from the frame before the one starting
+struct FrameTimeSample
+{
+	float FrameMS = 0.0f;
+	// The async operations' tick, the application's PreUIUpdate, UpdateUI, Update and PreRender, and the scene's update,
+	// but not ImGui's NewFrame and EndFrame or rendering
+	float UpdateMS = 0.0f;
+	// Recording every view's render stages (RenderFrameCounts)
+	float RecordMS = 0.0f;
+	// The render thread's last presented frame: running its commands, Present included, and the part in Present
+	// (Rendering::RenderThreadStats). It runs a frame behind the main thread.
+	float RenderThreadBusyMS = 0.0f;
+	float RenderThreadPresentMS = 0.0f;
+	// The GPU's time for the newest frame read back, a few frames older than the rest (Rendering::RenderThreadStats)
+	float GPUMS = 0.0f;
+	// Not counting the UI's
+	U32 DrawCalls = 0;
+};
+
 // Records every frame's timings for A/B performance comparisons, enabled from the command line:
-//   -perfcapture <file>      where to write the samples, one "frameMs,updateMs" line per frame, where updateMs is
-//                            the async operations' tick, the application's PreUIUpdate, UpdateUI, Update and
-//                            PreRender, and the scene's update, but not ImGui's NewFrame and EndFrame or rendering
+//   -perfcapture <file>      where to write the samples: a header line, then one line per frame with
+//                            FrameTimeSample's values
+//                            (frameMs,updateMs,recordMs,renderBusyMs,renderPresentMs,gpuMs,drawCalls). Beside it,
+//                            <file>.stages.csv has each render stage's record time, draw calls and GPU time a frame,
+//                            averaged over the capture.
 //   -perfwarmup <seconds>    how long to wait before recording, e.g. for the scene to load (default 10)
 //   -perfduration <seconds>  how long to record (default 15)
 // When the duration is up the samples are written and the engine exits. A capture turns frame pacing off (vsync and
@@ -24,20 +48,33 @@ public:
 
 	bool IsEnabled() const { return m_isEnabled; }
 
-	// Once per frame. elapsedSeconds is the time since the engine loop started; frameMs and updateMs are the
-	// previous frame's total and update times. Returns true once the capture has been written, meaning the engine
-	// should exit.
-	bool AddFrame(double elapsedSeconds, double frameMs, double updateMs);
+	// Once per frame. elapsedSeconds is the time since the engine loop started; sample is the previous frame's, and
+	// renderStats the render engine's current averages, which give the stages' figures. Returns true once the capture
+	// has been written, meaning the engine should exit.
+	bool AddFrame(double elapsedSeconds, const FrameTimeSample& sample, const RenderStats& renderStats);
 
 private:
 	void Write() const;
+	void WriteStages() const;
 
 private:
+	// A render stage's figures, summed over the frames recorded
+	struct StageTotals
+	{
+		std::string Name;
+		double TimeMS = 0.0;
+		double DrawCalls = 0.0;
+		double GPUTimeMS = 0.0;
+	};
+
 	bool m_isEnabled = false;
 	std::string m_outputPath;
 	double m_warmupSeconds = 10.0;
 	double m_durationSeconds = 15.0;
 
-	// frameMs, updateMs
-	std::vector<std::pair<float, float>> m_samples;
+	std::vector<FrameTimeSample> m_samples;
+	// From RenderStats' averages, each frame, so the capture's average is theirs averaged over every frame recorded
+	std::vector<StageTotals> m_stageTotals;
+	// The frames m_stageTotals has added up
+	size_t m_stageFrameCount = 0;
 };

@@ -74,8 +74,9 @@ void RenderEngine::Render(const char* frameName)
 	OPTICK_EVENT();
 	AssertNotNull(m_mainView.Target);
 
-	// Before recording, so a window's stage times and draw calls are its own frames'
+	// Before recording, so a frame's and a window's stage times and draw calls are their own frames'
 	const double renderStart = TimeUtils::GetSeconds();
+	EndFrameCounts();
 	UpdateStats(renderStart);
 
 	Rendering::Renderer::BeginFrame(frameName);
@@ -89,7 +90,7 @@ void RenderEngine::Render(const char* frameName)
 
 	Rendering::Renderer::EndFrame();
 
-	m_windowRecordTime += TimeUtils::GetSeconds() - renderStart;
+	m_frameRecordTime += TimeUtils::GetSeconds() - renderStart;
 }
 
 void RenderEngine::Finish()
@@ -175,12 +176,22 @@ void RenderEngine::RenderSecondaryView(const char* frameName, RenderView& view, 
 
 	Rendering::Renderer::End();
 
-	m_windowRecordTime += TimeUtils::GetSeconds() - renderStart;
+	m_frameRecordTime += TimeUtils::GetSeconds() - renderStart;
 }
 
 void RenderEngine::InternalAddRenderStage(IRenderStage* stage)
 {
 	m_pipeline->AddStage(std::unique_ptr<IRenderStage>(stage));
+}
+
+void RenderEngine::EndFrameCounts()
+{
+	m_lastFrame.RecordTimeMS = m_frameRecordTime * 1000.0;
+	m_lastFrame.DrawCalls = Rendering::Renderer::TakeDrawCallCount();
+
+	m_windowRecordTime += m_frameRecordTime;
+	m_windowDrawCalls += m_lastFrame.DrawCalls;
+	m_frameRecordTime = 0.0;
 }
 
 void RenderEngine::UpdateStats(double now)
@@ -190,16 +201,17 @@ void RenderEngine::UpdateStats(double now)
 		return;
 	}
 
-	// The stage times and draw calls build up over the window, so they're taken once at its end
+	// The stage stats build up over the window, so they're taken once at its end
 	m_stats.RecordTimeMS = m_statsWindow.PerFrame(m_windowRecordTime) * 1000.0;
-	m_stats.DrawCalls = m_statsWindow.PerFrame(static_cast<double>(Rendering::Renderer::TakeDrawCallCount()));
+	m_stats.DrawCalls = m_statsWindow.PerFrame(static_cast<double>(m_windowDrawCalls));
 	m_stats.Work = PerFrame(m_statsWindow, m_pipeline->TakeWorkCounts());
 
 	m_stats.Stages.clear();
-	for (const RenderStageTime& stageTime : m_pipeline->TakeStageTimes())
+	for (const RenderStageStats& stageStats : m_pipeline->TakeStageStats())
 	{
-		m_stats.Stages.push_back({ stageTime.Name, m_statsWindow.PerFrame(stageTime.TimeMS) });
+		m_stats.Stages.push_back({ stageStats.Name, m_statsWindow.PerFrame(stageStats.TimeMS), m_statsWindow.PerFrame(stageStats.DrawCalls), stageStats.GPUTimeMS });
 	}
 
 	m_windowRecordTime = 0.0;
+	m_windowDrawCalls = 0;
 }

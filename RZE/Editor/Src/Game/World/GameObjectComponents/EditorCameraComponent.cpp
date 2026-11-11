@@ -41,6 +41,8 @@ namespace
 	constexpr float k_focusFramePadding = 1.4f;
 	// Keeps tiny or mesh-less objects from pulling the camera right on top of them
 	constexpr float k_focusMinRadius = 0.5f;
+	// How far past a framed box's far side the far clip is moved, when it has to be
+	constexpr float k_focusFarCullMargin = 1.1f;
 	// Degrees above the object the focused camera looks down from; 45 is a hard cap
 	constexpr float k_focusMinElevation = 30.0f;
 	constexpr float k_focusMaxElevation = 45.0f;
@@ -148,6 +150,10 @@ void EditorCameraComponent::FocusOn(const BoundingBox& bounds)
 		halfFov = std::min(verticalHalfFov, horizontalHalfFov);
 	}
 	const float distance = (radius / std::sin(halfFov)) * k_focusFramePadding;
+
+	// Framing a box the far clip cuts through would hide its far side (a whole scene can reach past the default), so
+	// the far clip moves out to take it in. It's never moved in.
+	m_farCull = std::max(m_farCull, (distance + radius) * k_focusFarCullMargin);
 
 	// Keep the heading we approached from, flattened into the XZ plane
 	Vector3D heading = center - transformComponent->GetPosition();

@@ -48,7 +48,8 @@ public:
 
 	void SetAsActiveCamera(bool isActiveCamera);
 
-	// Glides the camera to frame the given world-space box, keeping the current heading and looking down on it from 30-45 degrees
+	// Glides the camera to frame the given world-space box, keeping the current heading and looking down on it from 30-45
+	// degrees. Moves the far clip out if the box would reach past it.
 	void FocusOn(const BoundingBox& bounds);
 
 private:

@@ -2,6 +2,7 @@
 
 #include <Rendering/Driver/DX11/DX11.h>
 #include <Rendering/Driver/DX11/DX11ConstantBuffer.h>
+#include <Rendering/Driver/DX11/DX11GPUTimestamps.h>
 #include <Rendering/Driver/DX11/DX11IndexBuffer.h>
 #include <Rendering/Driver/DX11/DX11ShaderTypes.h>
 #include <Rendering/Driver/DX11/DX11TextureBuffer2D.h>
@@ -615,6 +616,11 @@ namespace Rendering
 		std::shared_ptr<DX11ComputeShader> shader = std::make_shared<DX11ComputeShader>();
 		shader->SetDevice(this);
 		return shader;
+	}
+
+	std::unique_ptr<IGPUTimestamps> DX11Device::CreateGPUTimestamps(U32 capacity)
+	{
+		return std::make_unique<DX11GPUTimestamps>(*this, capacity);
 	}
 
 	void DX11Device::BeginDrawSet()

@@ -1,7 +1,10 @@
 #include <DebugUtils/FrameTimeCapture.h>
 
+#include <Graphics/RenderEngine.h>
+
 #include <Utils/Platform/CmdLine.h>
 
+#include <algorithm>
 #include <fstream>
 
 void FrameTimeCapture::Initialize()
@@ -28,7 +31,7 @@ void FrameTimeCapture::Initialize()
 	RZE_LOG_ARGS("Frame time capture: recording %d s after a %d s warm-up, to %s", durationSeconds, warmupSeconds, m_outputPath.c_str());
 }
 
-bool FrameTimeCapture::AddFrame(double elapsedSeconds, double frameMs, double updateMs)
+bool FrameTimeCapture::AddFrame(double elapsedSeconds, const FrameTimeSample& sample, const RenderStats& renderStats)
 {
 	if (!m_isEnabled || elapsedSeconds < m_warmupSeconds)
 	{
@@ -37,11 +40,35 @@ bool FrameTimeCapture::AddFrame(double elapsedSeconds, double frameMs, double up
 
 	if (elapsedSeconds < m_warmupSeconds + m_durationSeconds)
 	{
-		m_samples.emplace_back(static_cast<float>(frameMs), static_cast<float>(updateMs));
+		m_samples.push_back(sample);
+
+		// The stages don't change while a scene renders; if they do, the totals start over with the new ones
+		const bool isSameStages = m_stageTotals.size() == renderStats.Stages.size()
+			&& std::equal(m_stageTotals.begin(), m_stageTotals.end(), renderStats.Stages.begin(), [](const StageTotals& totals, const RenderStageStats& stage)
+				{
+					return totals.Name == stage.Name;
+				});
+		if (!isSameStages)
+		{
+			m_stageTotals.clear();
+			m_stageFrameCount = 0;
+			for (const RenderStageStats& stage : renderStats.Stages)
+			{
+				m_stageTotals.push_back({ stage.Name, 0.0, 0.0, 0.0 });
+			}
+		}
+		for (size_t index = 0; index < m_stageTotals.size(); ++index)
+		{
+			m_stageTotals[index].TimeMS += renderStats.Stages[index].TimeMS;
+			m_stageTotals[index].DrawCalls += renderStats.Stages[index].DrawCalls;
+			m_stageTotals[index].GPUTimeMS += renderStats.Stages[index].GPUTimeMS;
+		}
+		++m_stageFrameCount;
 		return false;
 	}
 
 	Write();
+	WriteStages();
 	m_isEnabled = false;
 	return true;
 }
@@ -55,8 +82,29 @@ void FrameTimeCapture::Write() const
 		return;
 	}
 
-	for (const std::pair<float, float>& sample : m_samples)
+	file << "frameMs,updateMs,recordMs,renderBusyMs,renderPresentMs,gpuMs,drawCalls\n";
+	for (const FrameTimeSample& sample : m_samples)
 	{
-		file << sample.first << ',' << sample.second << '\n';
+		file << sample.FrameMS << ',' << sample.UpdateMS << ',' << sample.RecordMS << ',' << sample.RenderThreadBusyMS << ','
+			<< sample.RenderThreadPresentMS << ',' << sample.GPUMS << ',' << sample.DrawCalls << '\n';
+	}
+}
+
+void FrameTimeCapture::WriteStages() const
+{
+	const std::string stagesPath = m_outputPath + ".stages.csv";
+	std::ofstream file(stagesPath);
+	if (!file)
+	{
+		RZE_LOG_ERROR_ARGS("Frame time capture: couldn't open %s for writing", stagesPath.c_str());
+		return;
+	}
+
+	// Averages of averages: each frame added RenderStats' figures, which are per frame over its stats window
+	const double frameCount = static_cast<double>(std::max<size_t>(m_stageFrameCount, 1));
+	file << "stage,timeMs,drawCalls,gpuMs\n";
+	for (const StageTotals& totals : m_stageTotals)
+	{
+		file << totals.Name << ',' << totals.TimeMS / frameCount << ',' << totals.DrawCalls / frameCount << ',' << totals.GPUTimeMS / frameCount << '\n';
 	}
 }

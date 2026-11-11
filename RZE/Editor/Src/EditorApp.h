@@ -51,6 +51,8 @@ namespace Editor
 		// "RZEStudio - <scene file>", with a * while it has unsaved changes. Drawn in the main menu bar, which is the title
 		// bar, and shown on the taskbar.
 		void RefreshWindowTitle(const SceneDocument& document);
+		// Glides the editor camera to frame every render object in the scene
+		void FrameScene();
 
 	private:
 		EditorContext m_context;
@@ -66,5 +68,7 @@ namespace Editor
 
 		// Keep the window title on the scene's file and modified state
 		std::vector<EventSubscription> m_titleSubscriptions;
+		// With -framescene: frames each scene once it has loaded
+		EventSubscription m_frameSceneOnLoad;
 	};
 }

@@ -127,7 +127,31 @@ namespace Editor
 		const Filepath scenePath = AssetPaths::GetScene(CmdLine::Arguments::Get("-scene", startScene)
 			? std::string(startScene)
 			: std::string(kSceneFileToLoadHack));
+		// -framescene: the camera frames the whole scene once it has loaded, e.g. so a performance capture (-perfcapture)
+		// draws every object rather than what the default camera position happens to see
+		std::string_view frameScene;
+		if (CmdLine::Arguments::Get("-framescene", frameScene))
+		{
+			m_frameSceneOnLoad = m_context.GetEvents().Subscribe<SceneLoadedEvent>([this](const SceneLoadedEvent&)
+				{
+					FrameScene();
+				});
+		}
+
 		m_context.GetSceneDocument().Load(scenePath);
+	}
+
+	void EditorApp::FrameScene()
+	{
+		const BoundingBox& bounds = RZE().GetRenderEngine().GetMainScene().GetBounds();
+		GameObjectComponentPtr<EditorCameraComponent> editorCamera = m_context.GetEditorCameraComponent();
+		if (bounds.IsEmpty() || editorCamera == nullptr)
+		{
+			RZE_LOG_WARNING("-framescene: the scene has nothing to frame.");
+			return;
+		}
+
+		editorCamera->FocusOn(bounds);
 	}
 
 	void EditorApp::PreUIUpdate()

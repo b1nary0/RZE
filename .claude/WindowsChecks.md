@@ -192,6 +192,23 @@ Things to know on this machine (2026-11-10):
   PointLight_Shadowed_0's and Nanosuit_0's OscillatorComponent: the light swings 4 m along Z every 6 s, Nanosuit 2 m
   along X every 4 s, and the status bar's Scene updates count probe captures and shadow faces. Untick both: each is
   back where it started. Ctrl+Z twice, close with nothing to save.
+- **A34. Perf capture columns, per-stage draw calls and GPU times, `-framescene`** (branch
+  `look-what-claude-can-do-batch-refactor`, draw batching Steps 0 and 0b). New files (`GPUTimer`, `GPUTimestamps.h`,
+  `DX11GPUTimestamps`), so run `GenerateSolutions.bat` first. **`DX11GPUTimestamps.cpp` was never compiled on Linux:**
+  check it first. 1: A1's three builds; A2's counts (5 new `GPUTimer` cases, which Windows builds too). 2: Development
+  Editor on the desktop (not harness): `driver.ps1 launch -Scene RenderPerfTest.scene -AppArgs '-framescene
+  -perfcapture %TEMP%\rze-perf\rpt.csv -perfwarmup 25 -perfduration 15 -vsync 0'` (make the folder first): the camera
+  glides to frame the whole grid, and the Editor exits by itself; `rpt.csv` starts
+  `frameMs,updateMs,recordMs,renderBusyMs,renderPresentMs,gpuMs,drawCalls`, its `gpuMs` above 0 and below `frameMs`;
+  `rpt.csv.stages.csv` has `stage,timeMs,drawCalls,gpuMs` rows, DepthPrepassStage and ForwardRenderStage at about 947
+  and 950 draw calls (Linux's, framed). 3: Editor, `RenderPerfTest.scene`, hover the status bar's frame stats: every
+  stage shows "..., N ms on the GPU", the ones that draw meshes their draw calls too, and under Render thread "N ms of
+  each frame on the GPU, up to presenting"; the forward pass's GPU time is the largest. 4: Debug with `-gfxliveobjects`
+  (the Smoke check): "No D3D11 objects outlived shutdown besides the device." (the timestamp queries are released on
+  the render thread). 5: **measured, for the later A/B (DX11 baseline):** generate `Stress2500.scene` (`python
+  Tools\StressScene\GenerateStressScene.py 2500`), then two captures each of RenderPerfTest and Stress2500 as in 2
+  (with `-framescene`), alternated, on the desktop: record each column's mean and p95, and the prepass/forward/shadow
+  draws, record and GPU times.
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 

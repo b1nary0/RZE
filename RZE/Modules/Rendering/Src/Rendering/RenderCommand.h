@@ -32,6 +32,8 @@ namespace Rendering
 		DevicePresent,
 		HandleWindowResize,
 		SetSyncInterval,
+		BeginGPUScope,
+		EndGPUScope,
 		CreateVertexBuffer = 500,
 		CreateIndexBuffer,
 		CreateConstantBuffer,
@@ -124,6 +126,18 @@ namespace Rendering
 	struct RenderCommand_End : RenderCommand
 	{
 		RenderCommand_End() { type = RenderCommandType::End; }
+	};
+
+	struct RenderCommand_BeginGPUScope : RenderCommand
+	{
+		RenderCommand_BeginGPUScope() { type = RenderCommandType::BeginGPUScope; }
+
+		U32 id = 0;
+	};
+
+	struct RenderCommand_EndGPUScope : RenderCommand
+	{
+		RenderCommand_EndGPUScope() { type = RenderCommandType::EndGPUScope; }
 	};
 
 	struct RenderCommand_DevicePresent : RenderCommand

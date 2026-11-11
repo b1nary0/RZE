@@ -4,6 +4,8 @@
 #include <Graphics/RenderStage.h>
 #include <Graphics/RenderView.h>
 
+#include <Rendering/Renderer.h>
+
 #include <Utils/TimeUtils.h>
 
 RenderPipeline::RenderPipeline() = default;
@@ -16,6 +18,7 @@ void RenderPipeline::AddStage(std::unique_ptr<IRenderStage> stage)
 	stage->Initialize();
 	m_stages.push_back(std::move(stage));
 	m_stageTimes.push_back(0.0);
+	m_stageDrawCalls.push_back(0);
 	m_isDirty = true;
 }
 
@@ -23,6 +26,7 @@ void RenderPipeline::Clear()
 {
 	m_stages.clear();
 	m_stageTimes.clear();
+	m_stageDrawCalls.clear();
 	m_compiled = CompiledRenderPipeline();
 	m_isDirty = true;
 }
@@ -40,23 +44,33 @@ void RenderPipeline::Render(RenderView& view, RenderScene& scene, float deltaTim
 		if (runsInView)
 		{
 			const double stageStart = TimeUtils::GetSeconds();
+			const U32 drawCallsBefore = Rendering::Renderer::GetDrawCallCount();
+			// The stage's index is its GPU scope's id, so TakeStageStats finds its GPU time
+			Rendering::Renderer::BeginGPUScope(static_cast<U32>(stageIndex));
 			m_stages[stageIndex]->Render(context);
+			Rendering::Renderer::EndGPUScope();
 			m_stageTimes[stageIndex] += TimeUtils::GetSeconds() - stageStart;
+			m_stageDrawCalls[stageIndex] += Rendering::Renderer::GetDrawCallCount() - drawCallsBefore;
 		}
 	}
 }
 
-std::vector<RenderStageTime> RenderPipeline::TakeStageTimes()
+std::vector<RenderStageStats> RenderPipeline::TakeStageStats()
 {
-	std::vector<RenderStageTime> stageTimes;
-	stageTimes.reserve(m_compiled.ExecutionOrder.size());
+	const Rendering::RenderThreadStats renderThreadStats = Rendering::Renderer::GetRenderThreadStats();
+	const std::vector<double>& gpuTimes = renderThreadStats.GPUScopeTimesMS;
+
+	std::vector<RenderStageStats> stageStats;
+	stageStats.reserve(m_compiled.ExecutionOrder.size());
 	for (size_t stageIndex : m_compiled.ExecutionOrder)
 	{
-		stageTimes.push_back({ m_stages[stageIndex]->GetName(), m_stageTimes[stageIndex] * 1000.0 });
+		const double gpuTimeMS = stageIndex < gpuTimes.size() ? gpuTimes[stageIndex] : 0.0;
+		stageStats.push_back({ m_stages[stageIndex]->GetName(), m_stageTimes[stageIndex] * 1000.0, static_cast<double>(m_stageDrawCalls[stageIndex]), gpuTimeMS });
 		m_stageTimes[stageIndex] = 0.0;
+		m_stageDrawCalls[stageIndex] = 0;
 	}
 
-	return stageTimes;
+	return stageStats;
 }
 
 RenderWorkCounts RenderPipeline::TakeWorkCounts()

@@ -302,9 +302,17 @@ namespace Editor
 			ImGui::SeparatorText("Rendering");
 			ImGui::Text("%.0f draw calls a frame, not counting the UI", renderStats.DrawCalls);
 			ImGui::Text("%.2f ms of each frame recording the render stages:", renderStats.RecordTimeMS);
-			for (const RenderStageTime& stage : renderStats.Stages)
+			for (const RenderStageStats& stage : renderStats.Stages)
 			{
-				ImGui::BulletText("%.2f ms %s", stage.TimeMS, stage.Name.c_str());
+				// Most stages draw a handful of full-screen passes; the draw counts that matter are the scene's
+				if (stage.DrawCalls >= 0.5)
+				{
+					ImGui::BulletText("%.2f ms %s, %.0f draw calls, %.2f ms on the GPU", stage.TimeMS, stage.Name.c_str(), stage.DrawCalls, stage.GPUTimeMS);
+				}
+				else
+				{
+					ImGui::BulletText("%.2f ms %s, %.2f ms on the GPU", stage.TimeMS, stage.Name.c_str(), stage.GPUTimeMS);
+				}
 			}
 
 			// The scene's probe and shadow work: what objects and lights changing cost, and the probes' relighting
@@ -323,6 +331,8 @@ namespace Editor
 			ImGui::BulletText("%.2f ms running commands", std::max(0.0, renderThreadStats.BusyTimeMS - renderThreadStats.PresentTimeMS));
 			ImGui::BulletText("%.2f ms presenting", renderThreadStats.PresentTimeMS);
 			ImGui::Text("%.2f ms waiting for the main thread", std::max(0.0, stats.FrameTimeMS - renderThreadStats.BusyTimeMS));
+			// Long presents with vsync off mean the GPU is behind: the driver holds the swap until it catches up
+			ImGui::Text("%.2f ms of each frame on the GPU, up to presenting", renderThreadStats.GPUFrameTimeMS);
 			ImGui::Unindent();
 
 			ImGui::Spacing();

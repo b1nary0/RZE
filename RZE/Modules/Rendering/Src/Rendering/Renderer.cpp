@@ -89,6 +89,21 @@ namespace Rendering
 		m_renderThread.PushCommand(command);
 	}
 
+	void Renderer::BeginGPUScope(U32 id)
+	{
+		RenderCommand_BeginGPUScope* command = MemArena::AllocType<RenderCommand_BeginGPUScope>();
+		command->id = id;
+
+		m_renderThread.PushCommand(command);
+	}
+
+	void Renderer::EndGPUScope()
+	{
+		RenderCommand_EndGPUScope* command = MemArena::AllocType<RenderCommand_EndGPUScope>();
+
+		m_renderThread.PushCommand(command);
+	}
+
 	void Renderer::DevicePresent()
 	{
 		// After everything this frame draws, and before Present, which may discard the back buffer (flip model)

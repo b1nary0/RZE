@@ -2,6 +2,7 @@
 
 #include <Rendering/Driver/OpenGL/GLCommon.h>
 #include <Rendering/Driver/OpenGL/GLConstantBuffer.h>
+#include <Rendering/Driver/OpenGL/GLGPUTimestamps.h>
 #include <Rendering/Driver/OpenGL/GLIndexBuffer.h>
 #include <Rendering/Driver/OpenGL/GLShaderTypes.h>
 #include <Rendering/Driver/OpenGL/GLTextureBuffer2D.h>
@@ -281,6 +282,11 @@ namespace Rendering
 	std::shared_ptr<IComputeShader> GLDevice::CreateComputeShader()
 	{
 		return std::make_shared<GLComputeShader>(*this);
+	}
+
+	std::unique_ptr<IGPUTimestamps> GLDevice::CreateGPUTimestamps(U32 capacity)
+	{
+		return std::make_unique<GLGPUTimestamps>(capacity);
 	}
 
 	void GLDevice::DeleteLater(EObjectType type, U32 name)

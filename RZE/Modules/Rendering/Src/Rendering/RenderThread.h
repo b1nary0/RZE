@@ -7,6 +7,7 @@
 #include <thread>
 #include <vector>
 
+#include <Rendering/GPUTimer.h>
 #include <Rendering/RenderCommand.h>
 
 #include <Utils/PrimitiveDefs.h>
@@ -18,14 +19,25 @@ namespace Rendering
 	class IImGuiRenderer;
 	struct GFXDeviceOptions;
 
-	// The render thread's frames, averaged over a StatsWindow, for display. A frame runs from one present to the next;
-	// the frame time itself is the main thread's (FrameStats).
+	// The render thread's frames, averaged over a StatsWindow, for display, and the last frame alone, for measuring
+	// (FrameTimeCapture). A frame runs from one present to the next; the frame time itself is the main thread's
+	// (FrameStats).
 	struct RenderThreadStats
 	{
 		// Per frame, running commands, Present included; the rest of the frame is spent waiting for the main thread
 		double BusyTimeMS = 0.0;
 		// The part of BusyTimeMS spent in Present, which can block on the GPU or the display
 		double PresentTimeMS = 0.0;
+		// The same for the last frame the render thread presented
+		double LastFrameBusyTimeMS = 0.0;
+		double LastFramePresentTimeMS = 0.0;
+
+		// The GPU's time for a frame, from its first command to its last before presenting (GPUTimer), averaged over the
+		// frames read back in the window, and for the newest frame read back, which is a few frames old
+		double GPUFrameTimeMS = 0.0;
+		double LastFrameGPUTimeMS = 0.0;
+		// Each GPU scope's time a frame (Renderer::BeginGPUScope), by id, averaged the same way
+		std::vector<double> GPUScopeTimesMS;
 	};
 
 	class RenderThread
@@ -69,6 +81,8 @@ namespace Rendering
 		void ProcessCommands();
 		// Adds the batch of commands that started at batchStart to the current frame, which ends if the batch presented
 		void UpdateStats(double batchStart, bool hasPresented);
+		// A frame the GPU timer read back, into the window and the last frame's GPU time
+		void AddGPUFrame(const GPUFrameTimes& times);
 
 		// What each command does (RenderThreadCommands.cpp). ProcessCommands calls the one for its type.
 		// The frame
@@ -78,6 +92,8 @@ namespace Rendering
 		void Execute(RenderCommand_Begin& command);
 		void Execute(RenderCommand_End& command);
 		void Execute(RenderCommand_DevicePresent& command);
+		void Execute(RenderCommand_BeginGPUScope& command);
+		void Execute(RenderCommand_EndGPUScope& command);
 		void Execute(RenderCommand_HandleWindowResize& command);
 		void Execute(RenderCommand_SetSyncInterval& command);
 
@@ -186,8 +202,16 @@ namespace Rendering
 		StatsWindow m_statsWindow;
 		double m_windowBusyTime = 0.0;
 		double m_windowPresentTime = 0.0;
+		// The GPU frames read back in the stats window so far, their total time and their scopes' totals by id
+		U32 m_windowGPUFrames = 0;
+		double m_windowGPUTime = 0.0;
+		std::vector<double> m_windowGPUScopeTimes;
+		double m_lastGPUFrameTime = 0.0;
 
-		// Written by the render thread once per window, read from any thread
+		GPUTimer m_gpuTimer;
+
+		// Written by the render thread at every present (the last frame's) and once per window (the averages), read from
+		// any thread
 		RenderThreadStats m_stats;
 		mutable std::mutex m_statsMutex;
 	};
