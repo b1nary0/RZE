@@ -40,7 +40,7 @@ Rough edges the codebase is candid about (source comments, `#TODO`s), plus a few
 | 32 | A shader that doesn't compile crashes the app | Renderer | — | **Fixed** (11-05: the failed compile logs and leaves the shader null) |
 | 33 | The lit pixel shaders compile with an uninitialised-variable warning | Shaders | — | **Fixed** (10-24: single returns) |
 | 34 | Any light change re-renders every shadow map | Rendering | — | **Fixed** (10-25: per-light shadow caching) |
-| 35 | The sun's shadow map re-renders whenever any object changes | Rendering | Low | Open |
+| 35 | The sun's shadow map re-renders whenever any object changes | Rendering | — | **Fixed** (10-29: fitted to Static casters, Movable ones drawn over a copy) |
 | 36 | Wayland limits the custom title bar and the window | Windowing (Linux) | Low | Open, by design of Wayland |
 | 37 | RenderDoc can't capture the Linux build as it runs normally | Renderer (Linux) | Low | Open, worked around |
 | 38 | An EditorHarness screenshot stalls the Editor for about a second | Harness | Low | Open |
@@ -212,7 +212,7 @@ This entry used to say render targets leak too, with the Editor leaking its scen
 
 ## 32. A shader that doesn't compile crashes the app (fixed)
 
-**Fixed (11-05, `ce15cced`).** On DX11, `DX11VertexShader::Create` and `DX11PixelShader::Create` used to pass the compiled blob straight to `CreateVertexShader` / `CreatePixelShader`, so a failed compile, whose blob is null, crashed with an access violation. They now log fxc's errors (`[Error] Couldn't compile shader [...]`, through `LogCompileMessages`) and return, leaving the shader null, as `DX11ComputeShader` and the OpenGL backend do. On 11-08 four SMAA shaders failing at once (their includes) were logged and the Editor ran on and closed cleanly. Still open: the resource load doesn't fail, so a pass drawn with the null shader just writes no colour. With SMAA the default anti-aliasing, that left the whole scene view blank with nothing on screen saying why.
+**Fixed (11-05, `ce15cced`).** On DX11, `DX11VertexShader::Create` and `DX11PixelShader::Create` used to pass the compiled blob straight to `CreateVertexShader` / `CreatePixelShader`, so a failed compile, whose blob is null, crashed with an access violation. They now log fxc's errors (`[Error] Couldn't compile shader [...]`, through `LogCompileMessages`) and return, leaving the shader null, as `DX11ComputeShader` and the OpenGL backend do. On 11-08 four SMAA shaders failing at once (their includes) were logged and the Editor ran on and closed cleanly. Still open: the resource load doesn't fail, so a pass drawn with the null shader just writes no colour. With SMAA the default anti-aliasing, that left the whole scene view blank with nothing on screen saying why. On the other branch, `53a037bb` (10-27) made the same fix for both APIs, and also left empty a vertex shader whose inputs don't match its layout. The render thread now skips draws while the bound vertex shader is empty and dispatches while the bound compute shader is, since drivers can hang on them.
 
 ## 33. The lit pixel shaders compile with an uninitialised-variable warning
 
@@ -220,11 +220,13 @@ This entry used to say render targets leak too, with the Editor leaking its scen
 
 ## 34. Any light change re-renders every shadow map (fixed)
 
-**Fixed (10-25).** `ShadowRenderStage` used to re-render all of a scene's shadow maps whenever its revision changed, so moving one point light cost every shadowed light's passes. Each map now remembers the light and revision it was rendered at, and is rendered again only when its light's shadows move (`LightObject::GetShadowRevision`), its slot goes to another light, or a render object changes where it can see (`RenderScene::HaveObjectsChangedWithin`, from the scene's `SceneChangeLog`). See [Render-Stages.md](../04-Rendering/Render-Stages.md#shadowrenderstage). The limits are by design for now: only the first directional light and the first 8 point lights cast shadows, at 512² per cube face.
+**Fixed (10-25).** `ShadowRenderStage` used to re-render all of a scene's shadow maps whenever its revision changed, so moving one point light cost every shadowed light's passes. Each map now remembers the light and revision it was rendered at, and is rendered again only when its light's shadows move (`LightObject::GetShadowRevision`), its slot goes to another light, or a render object changes where it can see (from the scene's `SceneChangeLog`s; since 10-29, only the cube faces a change is in front of, with Static casters cached apart). See [Render-Stages.md](../04-Rendering/Render-Stages.md#shadowrenderstage). The limits are by design for now: only the first directional light and the first 8 point lights cast shadows, at 512² per cube face.
 
-## 35. The sun's shadow map re-renders whenever any object changes
+## 35. The sun's shadow map re-renders whenever any object changes (fixed)
 
-The directional map is fitted around every render object as seen from the light, so `ShadowRenderStage` renders it again whenever any object is added, removed, moved or re-meshed (`RenderScene::GetObjectsRevision`), wherever it is. In Sponza that's a 4096² pass over every caster each frame something moves. Caching it against changes elsewhere would need a fit that doesn't move with every object (e.g. one padded around the scene, re-fitted only when an object leaves it), or cascades that each cache their own region.
+**Fixed (10-29, `c395acde`).** The directional map was fitted around every render object as seen from the light, so `ShadowRenderStage` refitted it and redrew it with every caster whenever any object was added, removed, moved or re-meshed, wherever it was. It's now fitted to the **Static** casters alone (`ERenderMobility`), with 5% of their extent to spare, and kept until the light turns or a Static change leaves the fit (`BoundingBox::Contains`). A second map holds the Static casters, redrawn only when a Static change lands in the fit; the published map is that one copied, with the Movable casters drawn on top. In `RenderPerfTest` with its Movable Nanosuit swinging, no sun map is redrawn: 52 shadow draws a frame instead of 993, and the stage records in 0.42 ms instead of 6.71 (Debug). See [Render-Stages.md](../04-Rendering/Render-Stages.md#shadowrenderstage).
+
+**Limit, by design:** a Movable caster outside the Static fit casts no sun shadow. Cascades, each caching its own region, would lift it.
 
 ## 36. Wayland limits the custom title bar and the window
 

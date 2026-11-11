@@ -34,7 +34,7 @@ Assets feeding all this (meshes, materials, textures, shaders) are covered in [M
 
 1. **Lights and shadows.** Upload the scene's lights. Re-render only the shadow maps whose light, or part of the scene, changed: the sun's when anything moved, and a point light's cube when it or something near it moved (otherwise reuse them).
 2. **Depth and ambient occlusion.** Draw the visible objects' depth alone, then work out from it how much creases and corners hide each pixel from the light around it (GTAO, on compute shaders).
-3. **Indirect light.** Capture what's around the scene's irradiance and reflection probes when the scene changes, and relight a budget of them each frame with the current lights, so light bounces and glossy surfaces reflect their surroundings.
+3. **Indirect light.** Capture what's around the scene's irradiance and reflection probes when its Static objects change and have settled, and relight them with the current lights while their light is still changing, within budgets, so light bounces and glossy surfaces reflect their surroundings. Movable objects are lit by the probes but never captured into them.
 4. **Scene.** Draw the visible objects over that depth, lit by the lights and shadowed, with ambient light from the probes darkened by the ambient occlusion, into an HDR image.
 5. **Exposure and tonemapping.** Measure the image's average brightness, ease the exposure toward it, and squeeze HDR into displayable 8-bit colour with ACES. Then smooth jagged edges: SMAA by default, or FXAA.
 6. **Overlays.** Draw debug lines (bounds, camera frustums) on top, depth-tested against the scene.

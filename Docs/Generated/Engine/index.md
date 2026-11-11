@@ -153,6 +153,13 @@ timeline
                : Texture arrays and cube maps (Low-Level-Renderer-Module)
                : Point light range spheres, debug lines that show through walls (Editor-Panels)
     2026-10-25 : Shadow maps cached per light, SceneChangeLog (Render-Stages)
+    2026-10-27 : Static and Movable render objects, light change logs (Engine-Graphics-Layer)
+               : Probes captured again once what changed has settled, IrradianceProbeScheduler (Render-Stages)
+               : LightComponent Flicker (Built-In-Components)
+    2026-10-28 : Probes captured in instanced batches, inactive probes left unlit (Render-Stages)
+               : ReadTexture without stalling, DrawIndexedInstanced (Low-Level-Renderer-Module)
+    2026-10-29 : Probes relit only while their light is changing (Render-Stages)
+               : Shadow maps keep Static casters apart, sun map fitted to them (Render-Stages)
     2026-11-04 : Builds and runs on Linux, Makefiles from Sharpmake, CI for both (Building-And-Running)
                : SDL window, input and displays on both platforms (Windowing)
                : IGFXDevice RHI with DX11 and OpenGL 4.5 backends, HLSL translated to GLSL (Low-Level-Renderer-Module)
@@ -160,6 +167,7 @@ timeline
     2026-11-06 : SMAA beside FXAA, anti-aliasing in its own stage (Render-Stages)
                : Graphics settings page, drop-downs on every page (Status-Bar-And-Settings)
     2026-11-08 : Development (was Release) - optimized, with Debug's tools, the default build (Building-And-Running)
+               : OscillatorComponent for stress and test scenes (Built-In-Components)
                : Graphics validation by flag, per-function optimization switch (Debug-Services-And-Logging)
                : VS Code workspace for Linux (Building-And-Running)
     2026-11-10 : Selected objects are outlined, each on its own (Render-Stages, Editor-Panels)
@@ -183,6 +191,7 @@ timeline
 | Build | Editor's code is the `EditorLib` library; `UnitTests` (doctest) covers Editor and Engine code and runs in CI. | [Building-And-Running](01-GettingStarted/Building-And-Running.md#unit-tests), [Sharpmake-Project-Graph](09-BuildSystem/Sharpmake-Project-Graph.md) |
 | File browser | Load Scene, Save on a new scene and the inspector's asset paths open a modal browser of thumbnail tiles, with search and subfolders. The Win32 file dialogs are gone. | [Thumbnails-And-File-Browser](07-Editor/Thumbnails-And-File-Browser.md) |
 | Thumbnails | Scene and mesh thumbnails render **in the background** in a `HeadlessScene`: on save, on load, for a tile with none, or from Settings. They're in `ProjectData` and aren't tracked. | [Thumbnails-And-File-Browser](07-Editor/Thumbnails-And-File-Browser.md) |
+| Probes | Irradiance and reflection probes capture only Static objects (a render object can be Movable), batched and instanced, again only once a change has settled, and relight only while their light is changing, so an idle scene does no probe work. Shadow maps keep their Static casters apart, and the sun's map is fitted to them. Scene changes are logged by where they happened (Static, Movable, lights), and the status bar counts the work they cause. | [Render-Stages](04-Rendering/Render-Stages.md#irradiance-and-reflection-probes), [Engine-Graphics-Layer](04-Rendering/Engine-Graphics-Layer.md#scene-data) |
 | Render scenes | Each `GameScene` owns a `RenderScene` (objects, lights, debug lines, shadow maps); any view can render any scene. `ViewCapture` renders one to a PNG through `Renderer::ReadTexture`. | [Engine-Graphics-Layer](04-Rendering/Engine-Graphics-Layer.md#scene-data), [Low-Level-Renderer-Module](04-Rendering/Low-Level-Renderer-Module.md#reading-back-from-the-gpu-readtexel-readtexture-and-readbackbuffer) |
 | Background work | `Background` async operations tick after foreground ones with their own small budget, and their jobs never take every worker. Operations say their kind and whether they're a `SubStep` of another; an `AsyncOperationFilter` (Engine.ini's `[BackgroundTasks]`, Settings > Background Tasks) picks which progress displays show. Operations can log steps and warnings, time themselves, and be grouped as one (`AsyncOperationGroup`). | [Threading-And-Jobs](06-Platform-And-Infrastructure/Threading-And-Jobs.md#background-work), [Asset-Import-Runtime](05-AssetPipeline/Asset-Import-Runtime.md#async-operations) |
 | Resources | Loads in flight are shared between batches. A resource is destroyed as soon as its last handle goes: the render thread's commands hold what they still use, including the textures the UI draws. | [Asset-Import-Runtime](05-AssetPipeline/Asset-Import-Runtime.md#releasing-resources) |

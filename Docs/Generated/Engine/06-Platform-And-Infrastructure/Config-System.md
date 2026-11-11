@@ -16,7 +16,15 @@
 - `[Rendering]` — the main view's rendering, which `RZE_Engine::CreateAndInitializeRenderer()` sets once the `RenderEngine` is made:
   - `AntiAliasing` (`Off`, `FXAA` or `SMAA`) and `AntiAliasingQuality` (`Low`, `Medium`, `High` or `Ultra`; FXAA uses High for Ultra), together `GetAntiAliasing()`, an `AntiAliasingMode`. SMAA High by default ([Render-Stages.md](../04-Rendering/Render-Stages.md#antialiasingstage)).
   - `AmbientOcclusion` (`Off`, `Low`, `Medium` or `High`; `GetAmbientOcclusion()`), `GlobalIllumination` and `AutoExposure` (`0` or `1`).
-  - `ProbeTargetCount`, `ProbeCaptureDrawBudget` and `ProbeRelightBudget` (`GetGlobalIlluminationSettings()`; at least 1 each), which go to `RenderEngine::SetGlobalIlluminationSettings` ([Render-Stages.md](../04-Rendering/Render-Stages.md#irradianceprobestage)).
+  - The probes' work (`GetGlobalIlluminationSettings()`, a `GlobalIlluminationSettings`), which goes to `RenderEngine::SetGlobalIlluminationSettings` ([Render-Stages.md](../04-Rendering/Render-Stages.md#irradianceprobestage)):
+
+    | Key | Default | Limits | What it is |
+    |---|---|---|---|
+    | `ProbeTargetCount` | 4096 | at least 1 | About how many irradiance probes a scene's grid has, whatever its size |
+    | `ProbeCapturesPerFrame` | 64 | at least 1; more than 64, one batch's worth, captures 64 | Irradiance probes captured a frame, in one batch |
+    | `ProbeRelightBudget` | 512 | at least 1 | Irradiance probes relit a frame, of those that owe relights |
+    | `ProbeSettleRelights` | 8 | 1 to 255 | Times each probe is relit after its light changes, a bounce each, then not again until the next change |
+    | `ProbeRecaptureSettleFrames` | 8 | at least 0 | Frames a Static object must stay still before the irradiance and reflection probes around it are captured again |
   - Names are read in any case (`ReadEnumSetting`, from each enum's `EnumNames` table). A name that isn't one logs a warning listing the allowed ones and keeps the default; a missing key keeps it quietly.
 
 Loaded once during `RZE_Engine::Init()` via `LoadEngineConfig()` → `ResourceHandler::LoadResource<EngineConfig>()` — it goes through the exact same resource-loading path as meshes/textures ([Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md)), just with a config-file `IResource` implementation instead of a binary asset format.
@@ -47,10 +55,14 @@ AntiAliasingQuality=High
 AmbientOcclusion=Medium
 ; Indirect light from the scene's irradiance probes, 0 for the flat sky and ground ambient
 GlobalIllumination=1
-; About how many probes a scene gets, whatever its size; draws a frame for capturing them; probes relit a frame
+; About how many probes a scene gets, whatever its size; probes captured a frame (up to 64); probes relit a frame
 ProbeTargetCount=4096
-ProbeCaptureDrawBudget=4000
+ProbeCapturesPerFrame=64
 ProbeRelightBudget=512
+; Times each probe is relit after its light changes (a bounce each), then not again until the next change
+ProbeSettleRelights=8
+; Frames a Static object must stay still before the probes around it are captured again
+ProbeRecaptureSettleFrames=8
 ; Expose the main view to the scene's brightness, adapting over time; 0 for a fixed exposure of 1
 AutoExposure=1
 
