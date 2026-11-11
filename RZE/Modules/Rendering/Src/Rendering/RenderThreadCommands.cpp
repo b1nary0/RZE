@@ -360,8 +360,8 @@ namespace Rendering
 		m_device->ReadTexture(*command.texture.m_buffer, command.result);
 	}
 
-	void RenderThread::Execute(RenderCommand_ReadBackBuffer& command)
-	{
-		m_device->ReadBackBuffer(*command.result);
+	void RenderThread::Execute(RenderCommand_ReadBackBuffer& command)
+	{
+		m_device->ReadBackBuffer(*command.result);
 	}
 }
