@@ -151,8 +151,11 @@ namespace Rendering
 
 		void CreateBackBuffer(U32 width, U32 height);
 		void DestroyBackBuffer();
-		// Which way up the bound target is drawn (GLDevice's comment)
-		void SetIsBackBufferBound(bool isBackBufferBound);
+		// The only place a framebuffer is bound to draw into: binds it, sets which way up it's drawn (GLDevice's comment)
+		// and places the viewport last set for that way up
+		void BindTarget(U32 framebuffer, bool isBackBuffer);
+		// Places m_viewport on the bound target
+		void ApplyViewport();
 		// The engine's targets, each a framebuffer made the first time it's asked for and kept
 		U32 GetFramebuffer(const FramebufferKey& key);
 		void BindFramebuffer(const FramebufferKey& key);
@@ -182,6 +185,9 @@ namespace Rendering
 		U32 m_backBufferWidth = 0;
 		U32 m_backBufferHeight = 0;
 		bool m_isBackBufferBound = false;
+		// What SetViewport was last given, placed again whenever the target changes; nothing until it's first called
+		ViewportParams m_viewport;
+		bool m_hasViewport = false;
 
 		std::map<FramebufferKey, U32> m_framebuffers;
 

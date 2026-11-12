@@ -149,8 +149,6 @@ namespace Rendering
 			glDebugMessageCallback(&ReportDebugMessage, nullptr);
 		}
 
-		// D3D's conventions (GLDevice's comment); the back buffer is bound, below
-		SetIsBackBufferBound(false);
 		// D3D samples across a cube map's face edges
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 		// Rows read back as tightly as D3D's staging copies give them, and upload as tightly as D3D takes them (row
@@ -517,14 +515,30 @@ namespace Rendering
 		glNamedFramebufferRenderbuffer(m_backBufferFramebuffer, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_backBufferDepthStencil);
 		AssertExpr(glCheckNamedFramebufferStatus(m_backBufferFramebuffer, GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, m_backBufferFramebuffer);
-		SetIsBackBufferBound(true);
+		BindTarget(m_backBufferFramebuffer, true);
 	}
 
-	void GLDevice::SetIsBackBufferBound(bool isBackBufferBound)
+	void GLDevice::BindTarget(U32 framebuffer, bool isBackBuffer)
 	{
-		m_isBackBufferBound = isBackBufferBound;
-		glClipControl(isBackBufferBound ? GL_LOWER_LEFT : GL_UPPER_LEFT, GL_ZERO_TO_ONE);
+		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+		// Which way up it's drawn (GLDevice's comment), and the viewport where that puts it: D3D's viewport doesn't
+		// depend on the target, so one set before the target is bound has to hold for it too
+		m_isBackBufferBound = isBackBuffer;
+		glClipControl(isBackBuffer ? GL_LOWER_LEFT : GL_UPPER_LEFT, GL_ZERO_TO_ONE);
+		if (m_hasViewport)
+		{
+			ApplyViewport();
+		}
+	}
+
+	void GLDevice::ApplyViewport()
+	{
+		// TopLeftY counts down from the target's top. So does GL's y with the upper-left origin; on the back buffer, drawn
+		// GL's way up, it counts up from the bottom.
+		const float y = m_isBackBufferBound ? static_cast<float>(m_backBufferHeight) - m_viewport.TopLeftY - m_viewport.Height : m_viewport.TopLeftY;
+		glViewportIndexedf(0, m_viewport.TopLeftX, y, m_viewport.Width, m_viewport.Height);
+		glDepthRangeIndexed(0, m_viewport.MinDepth, m_viewport.MaxDepth);
 	}
 
 	void GLDevice::DestroyBackBuffer()
@@ -586,8 +600,7 @@ namespace Rendering
 
 	void GLDevice::BindFramebuffer(const FramebufferKey& key)
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, GetFramebuffer(key));
-		SetIsBackBufferBound(false);
+		BindTarget(GetFramebuffer(key), false);
 	}
 
 	void GLDevice::Present()
@@ -673,8 +686,7 @@ namespace Rendering
 	void GLDevice::ClearRenderTargets()
 	{
 		// Nothing bound, as D3D's OMSetRenderTargets with none
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		SetIsBackBufferBound(false);
+		BindTarget(0, false);
 	}
 
 	void GLDevice::SetRenderTargetBackBuffer()
@@ -683,8 +695,7 @@ namespace Rendering
 		glDisable(GL_SCISSOR_TEST);
 		glClearNamedFramebufferfv(m_backBufferFramebuffer, GL_COLOR, 0, k_backBufferClearColour);
 		glClearNamedFramebufferfi(m_backBufferFramebuffer, GL_DEPTH_STENCIL, 0, 1.0f, 0);
-		glBindFramebuffer(GL_FRAMEBUFFER, m_backBufferFramebuffer);
-		SetIsBackBufferBound(true);
+		BindTarget(m_backBufferFramebuffer, true);
 	}
 
 	void GLDevice::SetDepthTarget(ITextureBuffer2D& depthTexture, U32 slice)
@@ -775,11 +786,9 @@ namespace Rendering
 
 	void GLDevice::SetViewport(const ViewportParams& params)
 	{
-		// TopLeftY counts down from the target's top. So does GL's y with the upper-left origin; on the back buffer, drawn
-		// GL's way up, it counts up from the bottom.
-		const float y = m_isBackBufferBound ? static_cast<float>(m_backBufferHeight) - params.TopLeftY - params.Height : params.TopLeftY;
-		glViewportIndexedf(0, params.TopLeftX, y, params.Width, params.Height);
-		glDepthRangeIndexed(0, params.MinDepth, params.MaxDepth);
+		m_viewport = params;
+		m_hasViewport = true;
+		ApplyViewport();
 	}
 
 	void GLDevice::SetPrimitiveTopology(EPrimitiveTopology topology)
