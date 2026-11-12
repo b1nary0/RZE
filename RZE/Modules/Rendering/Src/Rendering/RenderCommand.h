@@ -34,6 +34,7 @@ namespace Rendering
 		SetSyncInterval,
 		BeginGPUScope,
 		EndGPUScope,
+		SetGPUStatistics,
 		CreateVertexBuffer = 500,
 		CreateIndexBuffer,
 		CreateConstantBuffer,
@@ -157,6 +158,13 @@ namespace Rendering
 		RenderCommand_SetSyncInterval() { type = RenderCommandType::SetSyncInterval; }
 
 		U32 interval = 0;
+	};
+
+	struct RenderCommand_SetGPUStatistics : RenderCommand
+	{
+		RenderCommand_SetGPUStatistics() { type = RenderCommandType::SetGPUStatistics; }
+
+		bool count = false;
 	};
 
 	struct RenderCommand_CreateVertexBuffer : RenderCommand

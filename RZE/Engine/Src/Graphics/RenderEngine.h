@@ -36,7 +36,10 @@ struct RenderStats
 	// Per frame, not counting the UI's
 	double DrawCalls = 0.0;
 	double Instances = 0.0;
-	// Whether the GPU counts pipeline statistics (Rendering::RenderThreadStats::HasGPUStatistics); zero without them
+	// Whether the GPU can count pipeline statistics, and whether GPUStatistics and the stages' come from counted frames
+	// (Rendering::RenderThreadStats); zero without them. They're counted only while something asks for them
+	// (RenderEngine::RequestGPUStatistics), or with -gpustats.
+	bool CanCountGPUStatistics = false;
 	bool HasGPUStatistics = false;
 	// Per frame, the render thread's average over its own stats window. Unlike DrawCalls, this has the UI's: the GPU
 	// counts everything a stage runs, and ImGuiRenderStage runs the UI.
@@ -126,12 +129,19 @@ public:
 	// The last frame that finished: the one before the frame being rendered. Main thread only.
 	const RenderFrameCounts& GetLastFrame() const { return m_lastFrame; }
 
+	// Has the GPU count pipeline statistics (RenderStats::GPUStatistics) while it's called, once a frame, e.g. while
+	// they're shown. They reach the stats a stats window or so after the first call. Main thread only.
+	void RequestGPUStatistics() { m_isGPUStatisticsRequested = true; }
+
 private:
 	void InternalAddRenderStage(IRenderStage* stage);
 	// Ends the frame so far as the next one starts rendering: it becomes the last frame, and is added to the stats window
 	void EndFrameCounts();
 	// Ends the stats window's frame as the next one starts rendering; the first frame only starts the window
 	void UpdateStats(double now);
+	// Turns the GPU's statistics on or off for the frame about to be recorded, as RequestGPUStatistics asked since the
+	// last frame, telling the render thread only when that changes
+	void ApplyGPUStatisticsRequest();
 
 private:
 	RenderScene* m_mainScene = nullptr;
@@ -152,6 +162,10 @@ private:
 	// The stats window so far
 	double m_windowRecordTime = 0.0;
 	Rendering::DrawCounts m_windowDraws;
+
+	// RequestGPUStatistics since the last frame, and what the render thread was last told
+	bool m_isGPUStatisticsRequested = false;
+	bool m_areGPUStatisticsOn = false;
 };
 
 template <typename TRenderStageType, typename... Args>

@@ -135,6 +135,14 @@ namespace Rendering
 		m_renderThread.PushCommand(command);
 	}
 
+	void Renderer::SetGPUStatistics(bool count)
+	{
+		RenderCommand_SetGPUStatistics* command = MemArena::AllocType<RenderCommand_SetGPUStatistics>();
+		command->count = count;
+
+		m_renderThread.PushCommand(command);
+	}
+
 	bool Renderer::WaitForPresentSlot(U32 timeoutMS)
 	{
 		return m_renderThread.WaitForPresentSlot(timeoutMS);

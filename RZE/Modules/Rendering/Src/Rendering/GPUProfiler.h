@@ -18,7 +18,7 @@ namespace Rendering
 	// test's own. Empty, or returning none, when there are none to count.
 	using GPUStatisticsFactory = std::function<std::unique_ptr<IGPUStatistics>(U32 capacity)>;
 
-	// One frame on the GPU (GPUProfiler): its times and what it counted
+	// One frame on the GPU (GPUProfiler): its times and, if it counted them, its statistics
 	struct GPUFrameProfile
 	{
 		// From the frame's first command to its last before presenting
@@ -27,7 +27,7 @@ namespace Rendering
 		// frame didn't time
 		std::vector<double> ScopeMS;
 
-		// Whether the statistics below were counted; false where the device has none
+		// Whether the statistics below were counted: false while they're off, and where the device has none
 		bool HasStatistics = false;
 		// Indexed and summed like ScopeMS
 		std::vector<GPUPipelineStatistics> ScopeStatistics;
@@ -39,6 +39,9 @@ namespace Rendering
 	// each scope through its pipeline statistics, the same way on every graphics API. A frame is read back a few frames
 	// later, once the GPU has finished it, so profiling never makes the render thread wait for the GPU. A frame the GPU is
 	// too far behind to have a free set for is skipped, and its times and counts both go. Render thread only.
+	//
+	// Counting costs GPU time (the driver drains the pipeline at each segment boundary), so it's off until
+	// SetCountStatistics turns it on, and the statistics queries are only made then.
 	//
 	// Statistics are counted in segments that start and end at scope boundaries, so scopes can nest though no two
 	// queries of a kind can be active at once: a scope's figures are the sum of the segments inside it. Nothing is
@@ -53,13 +56,18 @@ namespace Rendering
 		GPUProfiler& operator=(const GPUProfiler&) = delete;
 
 	public:
-		// Makes the queries, with the device attached to the calling thread. Statistics are optional.
+		// Makes the timestamps, with the device attached to the calling thread. Statistics are optional: without
+		// createStatistics, frames never count them.
 		void Initialize(const GPUTimestampsFactory& createTimestamps, const GPUStatisticsFactory& createStatistics);
-		// Destroys them, with the device still attached to the calling thread
+		// Destroys the queries, with the device still attached to the calling thread
 		void Release();
 
-		// Whether frames count pipeline statistics (Initialize made them)
-		bool HasStatistics() const { return m_hasStatistics; }
+		// Whether frames count pipeline statistics, from the next frame begun: a frame counts them throughout or not at
+		// all. The first time on, it makes every frame's statistics queries; if the device can't, it turns
+		// CanCountStatistics false and frames go uncounted.
+		void SetCountStatistics(bool count);
+		// False without a statistics factory, or once the device has failed to make them
+		bool CanCountStatistics() const { return m_canCountStatistics; }
 
 		// Before each batch of commands: starts a frame unless one is open
 		void BeginFrameIfNeeded();
@@ -82,6 +90,8 @@ namespace Rendering
 		static constexpr size_t k_frameCount = 4;
 
 	private:
+		// Every frame's statistics queries, or none (false) if the device can't make them all
+		bool MakeStatistics();
 		// Ends the open statistics segment, if there is one, and begins the next if a scope is still open
 		void SplitSegment(Frame& frame, bool beginNext);
 		void ReadFinishedFrames(GPUFrameProfile& outProfile, bool& outHasProfile);
@@ -93,7 +103,13 @@ namespace Rendering
 		// The oldest frame not read back yet, if any is pending
 		size_t m_oldest = 0;
 		bool m_isFrameOpen = false;
-		bool m_hasStatistics = false;
+
+		// Kept until the first frame counts, which calls it
+		GPUStatisticsFactory m_createStatistics;
+		bool m_canCountStatistics = false;
+		// What the next frame begun does: SetCountStatistics, and whether MakeStatistics made the queries
+		bool m_countStatistics = false;
+		bool m_hasStatisticsQueries = false;
 		// Kept to reuse their memory
 		std::vector<double> m_seconds;
 		std::vector<GPUPipelineStatistics> m_segments;

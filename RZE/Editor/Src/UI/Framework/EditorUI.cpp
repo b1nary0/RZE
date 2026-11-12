@@ -451,6 +451,26 @@ namespace Editor
 			return std::min(widestLabelWidth + padding, ImGui::GetContentRegionAvail().x * k_maxLabelColumnFraction);
 		}
 
+		void SetupFiguresColumn(const char* header, const char* widestText)
+		{
+			const float width = std::max(ImGui::CalcTextSize(header).x, ImGui::CalcTextSize(widestText).x);
+			ImGui::TableSetupColumn(header, ImGuiTableColumnFlags_WidthFixed, width);
+		}
+
+		void TextAlignedRight(const char* text, bool isDisabled)
+		{
+			const float textWidth = ImGui::CalcTextSize(text).x;
+			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, ImGui::GetContentRegionAvail().x - textWidth));
+			if (isDisabled)
+			{
+				ImGui::TextDisabled("%s", text);
+			}
+			else
+			{
+				ImGui::TextUnformatted(text);
+			}
+		}
+
 		bool BeginPropertyTable(const char* id, float labelColumnWidth)
 		{
 			if (!ImGui::BeginTable(id, 2, ImGuiTableFlags_None))

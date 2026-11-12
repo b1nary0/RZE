@@ -78,6 +78,7 @@ void RenderEngine::Render(const char* frameName)
 	const double renderStart = TimeUtils::GetSeconds();
 	EndFrameCounts();
 	UpdateStats(renderStart);
+	ApplyGPUStatisticsRequest();
 
 	Rendering::Renderer::BeginFrame(frameName);
 
@@ -211,6 +212,7 @@ void RenderEngine::UpdateStats(double now)
 
 	// Already per frame: the render thread averages them over its own window
 	const Rendering::RenderThreadStats renderThreadStats = Rendering::Renderer::GetRenderThreadStats();
+	m_stats.CanCountGPUStatistics = renderThreadStats.CanCountGPUStatistics;
 	m_stats.HasGPUStatistics = renderThreadStats.HasGPUStatistics;
 	m_stats.GPUStatistics = renderThreadStats.GPUFrameStatistics;
 
@@ -226,4 +228,15 @@ void RenderEngine::UpdateStats(double now)
 
 	m_windowRecordTime = 0.0;
 	m_windowDraws = Rendering::DrawCounts();
+}
+
+void RenderEngine::ApplyGPUStatisticsRequest()
+{
+	const bool isRequested = m_isGPUStatisticsRequested;
+	m_isGPUStatisticsRequested = false;
+	if (isRequested != m_areGPUStatisticsOn)
+	{
+		Rendering::Renderer::SetGPUStatistics(isRequested);
+		m_areGPUStatisticsOn = isRequested;
+	}
 }

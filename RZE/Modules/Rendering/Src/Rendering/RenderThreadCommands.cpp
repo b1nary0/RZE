@@ -80,6 +80,12 @@ namespace Rendering
 		m_device->SetSyncInterval(command.interval);
 	}
 
+	void RenderThread::Execute(RenderCommand_SetGPUStatistics& command)
+	{
+		// Off, the profiler has no way to make them; always on, nothing turns them off
+		m_gpuProfiler.SetCountStatistics(command.count || m_gpuStatisticsMode == EGPUStatisticsMode::Always);
+	}
+
 	void RenderThread::Execute(RenderCommand_CreateVertexBuffer& command)
 	{
 		command.bufferPtr->SetDynamic(command.isDynamic);

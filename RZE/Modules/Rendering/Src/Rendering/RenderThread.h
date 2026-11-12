@@ -18,6 +18,7 @@ namespace Rendering
 	class IGFXDevice;
 	class IImGuiRenderer;
 	struct GFXDeviceOptions;
+	enum class EGPUStatisticsMode;
 
 	// The render thread's frames, averaged over a StatsWindow, for display, and the last frame alone, for measuring
 	// (FrameTimeCapture). A frame runs from one present to the next; the frame time itself is the main thread's
@@ -39,11 +40,15 @@ namespace Rendering
 		// Each GPU scope's time a frame (Renderer::BeginGPUScope), by id, averaged the same way
 		std::vector<double> GPUScopeTimesMS;
 
-		// Whether the GPU's pipeline statistics are counted (GFXDeviceOptions::GPUStatistics, and a device that has them).
-		// Without them, the statistics below stay zero.
+		// Whether the GPU's pipeline statistics can be counted: not with EGPUStatisticsMode::Off, nor on a device that
+		// has none (known once they're first turned on)
+		bool CanCountGPUStatistics = false;
+		// Whether the window's averages below come from counted frames (Renderer::SetGPUStatistics, or
+		// EGPUStatisticsMode::Always). Without any, they're zero.
 		bool HasGPUStatistics = false;
-		// What the GPU counted a frame in each scope, by id, averaged like GPUScopeTimesMS; in the frame's scopes
-		// altogether (GPUFrameProfile::FrameStatistics), the same way; and in the newest frame read back's scopes
+		// What the GPU counted a frame in each scope, by id, averaged over the window's counted frames; in the frame's
+		// scopes altogether (GPUFrameProfile::FrameStatistics), the same way; and in the newest frame read back's scopes,
+		// zero if it wasn't counted
 		std::vector<GPUPipelineStatistics> GPUScopeStatistics;
 		GPUPipelineStatistics GPUFrameStatistics;
 		GPUPipelineStatistics LastFrameGPUStatistics;
@@ -105,6 +110,7 @@ namespace Rendering
 		void Execute(RenderCommand_EndGPUScope& command);
 		void Execute(RenderCommand_HandleWindowResize& command);
 		void Execute(RenderCommand_SetSyncInterval& command);
+		void Execute(RenderCommand_SetGPUStatistics& command);
 
 		// Resources
 		void Execute(RenderCommand_CreateVertexBuffer& command);
@@ -215,13 +221,16 @@ namespace Rendering
 		U32 m_windowGPUFrames = 0;
 		double m_windowGPUTime = 0.0;
 		std::vector<double> m_windowGPUScopeTimes;
-		// The statistics the same way: every frame read back has them or none does (GPUProfiler)
+		// The statistics the same way, over the frames that counted them
+		U32 m_windowGPUStatisticsFrames = 0;
 		std::vector<GPUPipelineStatistics> m_windowGPUScopeStatistics;
 		GPUPipelineStatistics m_windowGPUFrameStatistics;
 		double m_lastGPUFrameTime = 0.0;
 		GPUPipelineStatistics m_lastGPUFrameStatistics;
 
 		GPUProfiler m_gpuProfiler;
+		// GFXDeviceOptions::GPUStatistics. Set before the render thread starts, then read only by it.
+		EGPUStatisticsMode m_gpuStatisticsMode{};
 		// What m_gpuProfiler reads back at each present, kept so its vectors keep their memory
 		GPUFrameProfile m_gpuFrameProfile;
 

@@ -1,23 +1,17 @@
 #include <UI/StatusBar.h>
 
+#include <UI/FrameStatsView.h>
 #include <UI/Framework/EditorContext.h>
 #include <UI/Framework/EditorUI.h>
 #include <UI/Panels/TaskHistoryPanel.h>
 #include <UI/TaskColours.h>
 #include <UI/TaskTracker.h>
 
-#include <RZE.h>
-
 #include <EngineCore/Async/AsyncOperationManager.h>
-#include <EngineCore/Timing/FramePacer.h>
-
-#include <Graphics/RenderEngine.h>
 
 #include <Rendering/MemArena.h>
-#include <Rendering/Renderer.h>
 
 #include <Utils/Memory/MemoryUtils.h>
-#include <Utils/StatsWindow.h>
 #include <Utils/TimeUtils.h>
 
 #include <imgui/imgui_internal.h> // BeginViewportSideBar, RenderTextEllipsis
@@ -39,8 +33,8 @@ namespace
 	constexpr float k_readyWidth = 120.0f;
 	// Room for the widest it gets in practice, e.g. 1234.00 KB / 16.00 MB with a peak of 12345 KB
 	constexpr float k_renderMemoryWidth = 400.0f;
-	// Room for the widest it gets in practice, e.g. 16.7 ms, 240 FPS, 12.5 ms idle and 12.5 ms rendering
-	constexpr float k_frameStatsWidth = 340.0f;
+	// Room for FrameStatsView's line, with a figure or two wider than its slots
+	constexpr float k_frameStatsWidth = 360.0f;
 	// The tasks box; also the width of the hover panel and the task list above it
 	constexpr float k_tasksBoxWidth = 240.0f;
 	// The circle left of the box that says how the tasks are doing, at a glance
@@ -277,13 +271,7 @@ namespace Editor
 
 	void StatusBar::DrawFrameStats(const ImVec2& min, const ImVec2& max) const
 	{
-		const FrameStats& stats = RZE().GetFramePacer().GetStats();
-		const RenderStats& renderStats = RZE().GetRenderEngine().GetStats();
-		const Rendering::RenderThreadStats renderThreadStats = Rendering::Renderer::GetRenderThreadStats();
-
-		char text[128];
-		snprintf(text, sizeof(text), "%.1f ms \xC2\xB7 %.0f FPS \xC2\xB7 idle %.1f ms \xC2\xB7 render %.1f ms", stats.FrameTimeMS, stats.FramesPerSecond, stats.IdleTimeMS, renderThreadStats.BusyTimeMS);
-		ImGui::GetWindowDrawList()->AddText(ImVec2(min.x, GetTextTop(min, max)), ImGui::GetColorU32(ImGuiCol_TextDisabled), text);
+		FrameStatsView::DrawLine(ImVec2(min.x, GetTextTop(min, max)));
 
 		ImGui::SetCursorScreenPos(min);
 		ImGui::InvisibleButton("##FrameStats", ImVec2(max.x - min.x, max.y - min.y));
@@ -292,51 +280,7 @@ namespace Editor
 			// Just above the bar, lined up with the stats, like the tasks' hover panel rather than following the mouse
 			ImGui::SetNextWindowPos(ImVec2(min.x, min.y - k_panelGap), ImGuiCond_Always, ImVec2(0.0f, 1.0f));
 			ImGui::BeginTooltip();
-			ImGui::SeparatorText("Main thread");
-			ImGui::Text("%.2f ms a frame, %.1f frames a second", stats.FrameTimeMS, stats.FramesPerSecond);
-			ImGui::Text("The UI updates %.1f times a second", stats.UIFramesPerSecond);
-			ImGui::Text("%.2f ms of each frame idle:", stats.IdleTimeMS);
-			ImGui::BulletText("%.2f ms on tasks", stats.IdleWorkMS);
-			ImGui::BulletText("%.2f ms waiting for the next frame", std::max(0.0, stats.IdleTimeMS - stats.IdleWorkMS));
-
-			ImGui::SeparatorText("Rendering");
-			ImGui::Text("%.0f draw calls a frame, not counting the UI", renderStats.DrawCalls);
-			ImGui::Text("%.2f ms of each frame recording the render stages:", renderStats.RecordTimeMS);
-			for (const RenderStageStats& stage : renderStats.Stages)
-			{
-				// Most stages draw a handful of full-screen passes; the draw counts that matter are the scene's
-				if (stage.DrawCalls >= 0.5)
-				{
-					ImGui::BulletText("%.2f ms %s, %.0f draw calls, %.2f ms on the GPU", stage.TimeMS, stage.Name.c_str(), stage.DrawCalls, stage.GPUTimeMS);
-				}
-				else
-				{
-					ImGui::BulletText("%.2f ms %s, %.2f ms on the GPU", stage.TimeMS, stage.Name.c_str(), stage.GPUTimeMS);
-				}
-			}
-
-			// The scene's probe and shadow work: what objects and lights changing cost, and the probes' relighting
-			const RenderWorkCounts& work = renderStats.Work;
-			ImGui::Indent();
-			ImGui::SeparatorText("Scene updates, a frame");
-			ImGui::Text("Irradiance probes: %.1f captured (%.0f draws), %.0f relit", work.IrradianceProbesCaptured, work.IrradianceCaptureDraws, work.IrradianceProbesRelit);
-			ImGui::Text("Reflection probes: %.2f captured (%.0f draws), %.2f relit", work.ReflectionProbesCaptured, work.ReflectionCaptureDraws, work.ReflectionProbesRelit);
-			ImGui::Text("Shadows: %.2f sun maps, %.2f point light faces (%.0f draws)", work.SunShadowMapsRendered, work.PointShadowFacesRendered, work.ShadowDraws);
-			ImGui::Unindent();
-
-			// Part of rendering, so it sits under it
-			ImGui::Indent();
-			ImGui::SeparatorText("Render thread");
-			ImGui::Text("%.2f ms of each frame busy:", renderThreadStats.BusyTimeMS);
-			ImGui::BulletText("%.2f ms running commands", std::max(0.0, renderThreadStats.BusyTimeMS - renderThreadStats.PresentTimeMS));
-			ImGui::BulletText("%.2f ms presenting", renderThreadStats.PresentTimeMS);
-			ImGui::Text("%.2f ms waiting for the main thread", std::max(0.0, stats.FrameTimeMS - renderThreadStats.BusyTimeMS));
-			// Long presents with vsync off mean the GPU is behind: the driver holds the swap until it catches up
-			ImGui::Text("%.2f ms of each frame on the GPU, up to presenting", renderThreadStats.GPUFrameTimeMS);
-			ImGui::Unindent();
-
-			ImGui::Spacing();
-			ImGui::TextDisabled("Averaged over %.1f s. Frames only have idle time with vsync or a frame rate cap.", StatsWindow::k_windowSeconds);
+			FrameStatsView::DrawDetails();
 			ImGui::EndTooltip();
 		}
 	}

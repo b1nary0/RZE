@@ -2,26 +2,17 @@
 
 #include <algorithm>
 #include <cctype>
-#include <cstdio>
-#include <cstring>
+#include <cstddef>
 #include <string>
 #include <string_view>
-#include <vector>
 
+// An exception to "no function bodies in headers" (CLAUDE.md): the one-expression helpers below stay here, where they
+// can be inlined into the per-item loops that call them (filters, searches, file-name matching), and so does the
+// template. Anything longer goes in StringUtils.cpp.
 struct StringUtils
 {
 	// Copies source into the buffer, cut short if it doesn't fit, and always null-terminated (strncpy_s with _TRUNCATE)
-	static void CopyTruncated(char* destination, size_t destinationSize, std::string_view source)
-	{
-		if (destinationSize == 0)
-		{
-			return;
-		}
-
-		const size_t count = std::min(source.size(), destinationSize - 1);
-		std::memcpy(destination, source.data(), count);
-		destination[count] = '\0';
-	}
+	static void CopyTruncated(char* destination, size_t destinationSize, std::string_view source);
 
 	template <size_t Size>
 	static void CopyTruncated(char (&destination)[Size], std::string_view source)
@@ -29,20 +20,8 @@ struct StringUtils
 		CopyTruncated(destination, Size, source);
 	}
 
-	static std::string ExtractFileNameFromPath(const std::string filePath)
-	{
-		const char* const delim = "/\\";
-
-		const size_t index = filePath.find_last_of(delim);
-
-		if (index == std::string::npos)
-		{
-			return filePath;
-		}
-
-		const std::string fileName = filePath.substr(index + 1);
-		return fileName;
-	}
+	// After the last / or \\, or all of it if there's neither
+	static std::string ExtractFileNameFromPath(const std::string& filePath);
 
 	// ASCII only: other characters are left as they are
 	static std::string ToLower(std::string text)
@@ -82,10 +61,9 @@ struct StringUtils
 	}
 
 	// Without the spaces and tabs at either end
-	static std::string Trim(const std::string& text)
-	{
-		const size_t first = text.find_first_not_of(" \t");
-		const size_t last = text.find_last_not_of(" \t");
-		return first == std::string::npos ? std::string() : text.substr(first, last - first + 1);
-	}
+	static std::string Trim(const std::string& text);
+
+	// A count to 3 significant figures, with K, M, G or T past 999: "999", "1.00K", "12.3K", "362K", "13.8M". Below
+	// 1000, to the nearest whole number. For counts shown where their width shouldn't change much, such as stats.
+	static std::string FormatCount(double count);
 };

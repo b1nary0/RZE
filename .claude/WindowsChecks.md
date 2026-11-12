@@ -277,8 +277,20 @@ Things to know on this machine (2026-11-10):
   less `Walker_Glas`, 212), `trianglesInView` equal to `triangles` (framed: all in view), `verticesShaded` about 1.5 a
   triangle (vertex reuse, which varies by driver: report it, don't fail on it), forward `pixelsShaded` a fraction of
   PostProcessRenderStage's (3 full-viewport passes). None of the four columns zero in those stages. 4: the same without
-  `-gpustats`: the log says "GPU pipeline statistics are off (-gpustats turns them on)" and the four columns are 0.
-  Report run 3's and run 4's mean `gpuMs` (Linux GL: counting adds ~0.08 ms on Sponza, +9.8%; it decided the default). 5: `close` code 0, and with `-gfxliveobjects` (Debug) no `ID3D11Query` outlives shutdown.
+  `-gpustats` (on demand since 1c, so nothing counts in a capture): the four columns are 0. Report run 3's and run 4's
+  mean `gpuMs` (Linux GL: counting adds ~0.08 ms on Sponza, +9.8%; it decided the default). With `-gpustats 0` the log
+  says "GPU pipeline statistics are off (-gpustats 0)". 5: `close` code 0, and with `-gfxliveobjects` (Debug) no `ID3D11Query` outlives shutdown.
+
+- **A41. Frame stats in tables, GPU counts on demand** (mesh pass performance Step 1c: `FrameStatsView`,
+  `RenderCommand_SetGPUStatistics`, `StringUtils.cpp`). Files added, so run `GenerateSolutions.bat` first. 1: A1's
+  three builds. `StringUtils.h` no longer includes `<cstdio>`, `<cstring>` or `<vector>`, so a Windows-only file that
+  leaned on it for those fails here (add the include to that file); A2's counts (2 new `GPUProfiler` cases, 3 new
+  `StringUtils` cases). 2: Debug Editor (validation on) on `Sponza.scene`: hover the frame stats in the status bar.
+  The GPU columns show "…" for about half a second, then counts (forward triangles about 362K from the scene camera);
+  "…" and "—" are drawn, not boxes or "?". Move off, wait, hover again: counts come back. No `D3D11 (` message about a
+  query. 3: while hovering, the columns and the tooltip's edges don't move as the figures change (Linux: every column's
+  right edge the same to the pixel across 3 shots a second apart); the status bar's line keeps its words in place.
+  4: `close` code 0; with `-gfxliveobjects` no `ID3D11Query` outlives shutdown after a hover (the queries are made then).
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 

@@ -147,6 +147,13 @@ namespace Editor
 		// values keep at least half the space
 		float CalcLabelColumnWidth(float widestLabelWidth);
 
+		// A table column for figures, between ImGui::BeginTable and the first row: fixed as wide as the wider of header and
+		// widestText (e.g. "000.00"), so figures that change don't move it or the columns after it
+		void SetupFiguresColumn(const char* header, const char* widestText);
+		// text against the right edge of the current table cell, so figures line up on their last digit; greyed out
+		// (ImGuiCol_TextDisabled) for headers and units
+		void TextAlignedRight(const char* text, bool isDisabled = false);
+
 		// Pair with EndPropertyTable if it returns true
 		bool BeginPropertyTable(const char* id, float labelColumnWidth);
 		void EndPropertyTable();

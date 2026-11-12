@@ -22,6 +22,18 @@ namespace Rendering
 	struct TexelReadback;
 	struct TextureReadback;
 
+	// When the render thread counts the GPU's pipeline statistics (GPUProfiler). Counting costs GPU time at every scope
+	// boundary, where the driver drains the pipeline to count exactly, so it's done only while something shows them.
+	enum class EGPUStatisticsMode
+	{
+		// Never: the device never makes the queries
+		Off,
+		// While Renderer::SetGPUStatistics has them on. The queries are made the first time.
+		OnDemand,
+		// Every frame, e.g. for a capture's counts
+		Always
+	};
+
 	// How IGFXDevice::Initialize makes the device
 	struct GFXDeviceOptions
 	{
@@ -31,10 +43,9 @@ namespace Rendering
 		// At shutdown, once the device has released its own objects, it logs every API object still alive: what the
 		// engine never released. Needs Validate. D3D11 only: OpenGL has no such report.
 		bool ReportLiveObjects = false;
-		// The render thread counts the GPU's pipeline statistics in each GPU scope (GPUProfiler), where the API has them.
-		// Read by the render thread, not the device: off, the device never makes the queries. Off by default: counting
-		// costs GPU time at every scope boundary (the driver drains the pipeline to count exactly).
-		bool GPUStatistics = false;
+		// When the render thread counts the GPU's pipeline statistics in each GPU scope, where the API has them. Read by
+		// the render thread, not the device.
+		EGPUStatisticsMode GPUStatistics = EGPUStatisticsMode::OnDemand;
 	};
 
 	// A graphics API, as the render thread uses it: the device and what's bound to it. One per process, made by

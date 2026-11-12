@@ -50,15 +50,27 @@ namespace
 		return enabled != 0;
 	}
 
+	// -gpustats (or -gpustats 1): the GPU counts pipeline statistics every frame, e.g. for a capture's triangle counts.
+	// -gpustats 0: never. Without either, only while something shows them (Rendering::EGPUStatisticsMode::OnDemand):
+	// counting costs GPU time, about 0.08 ms a frame on Sponza (NVIDIA, GL), which would skew every frame-time
+	// measurement.
+	Rendering::EGPUStatisticsMode ReadGPUStatisticsMode()
+	{
+		std::string_view value;
+		if (!CmdLine::Arguments::Get("-gpustats", value))
+		{
+			return Rendering::EGPUStatisticsMode::OnDemand;
+		}
+		return ReadSwitch("-gpustats", true) ? Rendering::EGPUStatisticsMode::Always : Rendering::EGPUStatisticsMode::Off;
+	}
+
 	// How the renderer's device is made (DebugConfig.h). Validation is Debug's default, or -gfxvalidation (on) and
 	// -gfxvalidation 0 (off). -gfxliveobjects logs the graphics objects still alive at shutdown; the report comes from
-	// the validation layer, so it turns validation on too. -gpustats (or -gpustats 1) has the GPU count pipeline statistics
-	// in every configuration, e.g. for a capture's triangle counts. Off by default: counting them costs GPU time, about
-	// 0.08 ms a frame on Sponza (NVIDIA, GL), which would skew every frame-time measurement.
+	// the validation layer, so it turns validation on too. -gpustats works in every configuration (ReadGPUStatisticsMode).
 	Rendering::GFXDeviceOptions GetGraphicsDeviceOptions()
 	{
 		Rendering::GFXDeviceOptions options;
-		options.GPUStatistics = ReadSwitch("-gpustats", false);
+		options.GPUStatistics = ReadGPUStatisticsMode();
 #ifdef RZE_GFX_VALIDATION_AVAILABLE
 #ifdef RZE_GFX_VALIDATION_BY_DEFAULT
 		const bool validateByDefault = true;

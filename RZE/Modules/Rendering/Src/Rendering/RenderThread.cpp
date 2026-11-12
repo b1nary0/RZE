@@ -37,28 +37,26 @@ namespace Rendering
 
 		// The render thread uses the device from here on
 		m_device->DetachFromCurrentThread();
-		const bool countGPUStatistics = deviceOptions.GPUStatistics;
-		auto threadExec = [this, countGPUStatistics]()
+		// Before the thread starts, which makes it visible there
+		m_gpuStatisticsMode = deviceOptions.GPUStatistics;
+		auto threadExec = [this]()
 			{
 				OPTICK_THREAD("Render Thread");
 				m_device->AttachToCurrentThread();
 				GPUStatisticsFactory createStatistics;
-				if (countGPUStatistics)
+				if (m_gpuStatisticsMode == EGPUStatisticsMode::Off)
+				{
+					RZE_LOG("GPU pipeline statistics are off (-gpustats 0)");
+				}
+				else
 				{
 					createStatistics = [this](U32 capacity) { return m_device->CreateGPUStatistics(capacity); };
 				}
 				m_gpuProfiler.Initialize([this](U32 capacity) { return m_device->CreateGPUTimestamps(capacity); }, createStatistics);
-				if (!countGPUStatistics)
-				{
-					RZE_LOG("GPU pipeline statistics are off (-gpustats turns them on)");
-				}
-				else if (!m_gpuProfiler.HasStatistics())
-				{
-					RZE_LOG("GPU pipeline statistics: the graphics driver doesn't count them");
-				}
+				m_gpuProfiler.SetCountStatistics(m_gpuStatisticsMode == EGPUStatisticsMode::Always);
 				{
 					std::lock_guard lock(m_statsMutex);
-					m_stats.HasGPUStatistics = m_gpuProfiler.HasStatistics();
+					m_stats.CanCountGPUStatistics = m_gpuProfiler.CanCountStatistics();
 				}
 				bool isRunning = true;
 				while (isRunning)
@@ -214,6 +212,7 @@ namespace Rendering
 			case RenderCommandType::EndGPUScope: Execute(static_cast<RenderCommand_EndGPUScope&>(*command)); break;
 			case RenderCommandType::HandleWindowResize: Execute(static_cast<RenderCommand_HandleWindowResize&>(*command)); break;
 			case RenderCommandType::SetSyncInterval: Execute(static_cast<RenderCommand_SetSyncInterval&>(*command)); break;
+			case RenderCommandType::SetGPUStatistics: Execute(static_cast<RenderCommand_SetGPUStatistics&>(*command)); break;
 			case RenderCommandType::CreateVertexBuffer: Execute(static_cast<RenderCommand_CreateVertexBuffer&>(*command)); break;
 			case RenderCommandType::CreateIndexBuffer: Execute(static_cast<RenderCommand_CreateIndexBuffer&>(*command)); break;
 			case RenderCommandType::CreateConstantBuffer: Execute(static_cast<RenderCommand_CreateConstantBuffer&>(*command)); break;
@@ -320,12 +319,16 @@ namespace Rendering
 				{
 					m_stats.GPUScopeTimesMS[id] = m_windowGPUScopeTimes[id] / gpuFrames;
 				}
+				// Per frame that counted them: they may have been on for only part of the window
+				m_stats.CanCountGPUStatistics = m_gpuProfiler.CanCountStatistics();
+				m_stats.HasGPUStatistics = m_windowGPUStatisticsFrames > 0;
+				const double statisticsScale = 1.0 / static_cast<double>(std::max<U32>(m_windowGPUStatisticsFrames, 1));
 				m_stats.GPUScopeStatistics.resize(m_windowGPUScopeStatistics.size());
 				for (size_t id = 0; id < m_windowGPUScopeStatistics.size(); ++id)
 				{
-					m_stats.GPUScopeStatistics[id] = m_windowGPUScopeStatistics[id] * (1.0 / gpuFrames);
+					m_stats.GPUScopeStatistics[id] = m_windowGPUScopeStatistics[id] * statisticsScale;
 				}
-				m_stats.GPUFrameStatistics = m_windowGPUFrameStatistics * (1.0 / gpuFrames);
+				m_stats.GPUFrameStatistics = m_windowGPUFrameStatistics * statisticsScale;
 			}
 		}
 		m_frameBusyTime = 0.0;
@@ -338,6 +341,7 @@ namespace Rendering
 			m_windowGPUFrames = 0;
 			m_windowGPUTime = 0.0;
 			std::fill(m_windowGPUScopeTimes.begin(), m_windowGPUScopeTimes.end(), 0.0);
+			m_windowGPUStatisticsFrames = 0;
 			std::fill(m_windowGPUScopeStatistics.begin(), m_windowGPUScopeStatistics.end(), GPUPipelineStatistics());
 			m_windowGPUFrameStatistics = GPUPipelineStatistics();
 		}
@@ -369,6 +373,7 @@ namespace Rendering
 		{
 			return;
 		}
+		++m_windowGPUStatisticsFrames;
 		if (m_windowGPUScopeStatistics.size() < profile.ScopeStatistics.size())
 		{
 			m_windowGPUScopeStatistics.resize(profile.ScopeStatistics.size());

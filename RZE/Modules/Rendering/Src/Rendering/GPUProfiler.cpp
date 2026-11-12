@@ -26,13 +26,15 @@ namespace Rendering
 		};
 
 		std::unique_ptr<IGPUTimestamps> Timestamps;
-		// None when frames aren't counted
+		// None until the first frame counts statistics (SetCountStatistics)
 		std::unique_ptr<IGPUStatistics> Statistics;
 		std::vector<Scope> Scopes;
 		// Indices into Scopes of the scopes begun and not yet ended, innermost last
 		std::vector<U32> OpenScopes;
 		// Timestamps written
 		U32 Count = 0;
+		// Whether this frame counts statistics, fixed as it begins
+		bool CountsStatistics = false;
 		// Statistics segments begun, and whether the last is still open
 		U32 SegmentCount = 0;
 		bool IsSegmentOpen = false;
@@ -49,22 +51,36 @@ namespace Rendering
 		{
 			frame = std::make_unique<Frame>();
 			frame->Timestamps = createTimestamps(k_capacity);
-			if (createStatistics)
-			{
-				frame->Statistics = createStatistics(k_capacity);
-			}
 		}
+		m_createStatistics = createStatistics;
+		m_canCountStatistics = static_cast<bool>(m_createStatistics);
+	}
 
-		// Every frame counts or none does, so the averages never mix counted and uncounted frames
-		m_hasStatistics = std::all_of(m_frames.begin(), m_frames.end(),
+	void GPUProfiler::SetCountStatistics(bool count)
+	{
+		m_countStatistics = count;
+	}
+
+	bool GPUProfiler::MakeStatistics()
+	{
+		// Every frame or none, so any frame can count once they're on
+		for (std::unique_ptr<Frame>& frame : m_frames)
+		{
+			frame->Statistics = m_createStatistics(k_capacity);
+		}
+		const bool hasMadeAll = std::all_of(m_frames.begin(), m_frames.end(),
 			[](const std::unique_ptr<Frame>& frame) { return frame->Statistics != nullptr; });
-		if (!m_hasStatistics)
+		if (!hasMadeAll)
 		{
 			for (std::unique_ptr<Frame>& frame : m_frames)
 			{
 				frame->Statistics.reset();
 			}
+			RZE_LOG("GPU pipeline statistics: the graphics driver doesn't count them");
 		}
+		// Not needed again either way
+		m_createStatistics = nullptr;
+		return hasMadeAll;
 	}
 
 	void GPUProfiler::Release()
@@ -74,7 +90,10 @@ namespace Rendering
 			frame.reset();
 		}
 		m_isFrameOpen = false;
-		m_hasStatistics = false;
+		m_createStatistics = nullptr;
+		m_canCountStatistics = false;
+		m_countStatistics = false;
+		m_hasStatisticsQueries = false;
 	}
 
 	void GPUProfiler::BeginFrameIfNeeded()
@@ -96,7 +115,16 @@ namespace Rendering
 		frame.Timestamps->Begin();
 		frame.Timestamps->Write(0);
 		frame.Count = 1;
-		if (frame.Statistics != nullptr)
+
+		// The queries are made here, not in Initialize, so a run that never counts never has them. Frames still pending
+		// get theirs too, unused until they next begin.
+		if (m_countStatistics && !m_hasStatisticsQueries && m_canCountStatistics)
+		{
+			m_hasStatisticsQueries = MakeStatistics();
+			m_canCountStatistics = m_hasStatisticsQueries;
+		}
+		frame.CountsStatistics = m_countStatistics && m_hasStatisticsQueries;
+		if (frame.CountsStatistics)
 		{
 			frame.Statistics->Begin();
 		}
@@ -161,7 +189,7 @@ namespace Rendering
 
 	void GPUProfiler::SplitSegment(Frame& frame, bool beginNext)
 	{
-		if (frame.Statistics == nullptr)
+		if (!frame.CountsStatistics)
 		{
 			return;
 		}
@@ -191,7 +219,7 @@ namespace Rendering
 			frame.Timestamps->Write(frame.Count);
 			++frame.Count;
 			frame.Timestamps->End();
-			if (frame.Statistics != nullptr)
+			if (frame.CountsStatistics)
 			{
 				// Only open here if a scope was left open, which the assert above reports
 				SplitSegment(frame, false);
@@ -221,7 +249,7 @@ namespace Rendering
 				return;
 			}
 			EGPUQueryReadResult statisticsResult = EGPUQueryReadResult::Ready;
-			if (frame.Statistics != nullptr)
+			if (frame.CountsStatistics)
 			{
 				statisticsResult = frame.Statistics->Read(frame.SegmentCount, m_segments);
 				if (statisticsResult == EGPUQueryReadResult::NotReady)
@@ -239,7 +267,7 @@ namespace Rendering
 			}
 
 			outProfile.FrameMS = m_seconds[frame.Count - 1] * 1000.0;
-			outProfile.HasStatistics = frame.Statistics != nullptr;
+			outProfile.HasStatistics = frame.CountsStatistics;
 			std::fill(outProfile.ScopeMS.begin(), outProfile.ScopeMS.end(), 0.0);
 			std::fill(outProfile.ScopeStatistics.begin(), outProfile.ScopeStatistics.end(), GPUPipelineStatistics());
 			for (const Frame::Scope& scope : frame.Scopes)

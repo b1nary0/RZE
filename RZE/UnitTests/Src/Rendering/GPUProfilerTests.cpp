@@ -27,6 +27,8 @@ namespace
 		// Frames whose statistics aren't ready even once the frame has finished, and frames whose statistics can't be read
 		std::set<U32> LateStatisticsFrames;
 		std::set<U32> InvalidStatisticsFrames;
+		// FakeStatistics made, and their frames begun
+		U32 StatisticsMade = 0;
 		U32 StatisticsBegins = 0;
 		U32 SegmentsBegun = 0;
 		// Set by a segment begun while another is open, or past the capacity
@@ -111,6 +113,7 @@ namespace
 			: m_gpu(gpu)
 			, m_segments(capacity)
 		{
+			++m_gpu.StatisticsMade;
 		}
 
 		void Begin() override
@@ -342,7 +345,8 @@ TEST_CASE("Each scope counts what the GPU did inside it, and nothing between sco
 	FakeGPU gpu;
 	Rendering::GPUProfiler profiler;
 	profiler.Initialize(MakeFactory(gpu), MakeStatisticsFactory(gpu));
-	REQUIRE(profiler.HasStatistics());
+	profiler.SetCountStatistics(true);
+	REQUIRE(profiler.CanCountStatistics());
 
 	profiler.BeginFrameIfNeeded();
 	gpu.Draw(1000.0);
@@ -380,6 +384,7 @@ TEST_CASE("A nested scope's counts are part of the scope around it, and segments
 	FakeGPU gpu;
 	Rendering::GPUProfiler profiler;
 	profiler.Initialize(MakeFactory(gpu), MakeStatisticsFactory(gpu));
+	profiler.SetCountStatistics(true);
 
 	profiler.BeginFrameIfNeeded();
 	profiler.BeginScope(0);
@@ -412,6 +417,7 @@ TEST_CASE("A frame whose statistics aren't ready waits for them, though its time
 	FakeGPU gpu;
 	Rendering::GPUProfiler profiler;
 	profiler.Initialize(MakeFactory(gpu), MakeStatisticsFactory(gpu));
+	profiler.SetCountStatistics(true);
 
 	profiler.BeginFrameIfNeeded();
 	profiler.BeginScope(0);
@@ -436,6 +442,7 @@ TEST_CASE("A frame whose statistics can't be read is skipped, times and all")
 	FakeGPU gpu;
 	Rendering::GPUProfiler profiler;
 	profiler.Initialize(MakeFactory(gpu), MakeStatisticsFactory(gpu));
+	profiler.SetCountStatistics(true);
 
 	Rendering::GPUFrameProfile profile;
 	CHECK_FALSE(RunEmptyFrame(profiler, gpu, 1.0, profile));
@@ -454,11 +461,13 @@ TEST_CASE("Without statistics, frames are timed as before and report none")
 {
 	FakeGPU gpu;
 	Rendering::GPUProfiler profiler;
-	// A device that can't count them
+	// A device that can't count them, which the profiler only finds out by trying
 	profiler.Initialize(MakeFactory(gpu), [](U32) { return std::unique_ptr<Rendering::IGPUStatistics>(); });
-	CHECK_FALSE(profiler.HasStatistics());
+	CHECK(profiler.CanCountStatistics());
+	profiler.SetCountStatistics(true);
 
 	profiler.BeginFrameIfNeeded();
+	CHECK_FALSE(profiler.CanCountStatistics());
 	profiler.BeginScope(0);
 	gpu.Clock = 2.0;
 	gpu.Draw(9.0);
@@ -481,6 +490,7 @@ TEST_CASE("Frames skipped while the GPU is behind are skipped for statistics too
 	FakeGPU gpu;
 	Rendering::GPUProfiler profiler;
 	profiler.Initialize(MakeFactory(gpu), MakeStatisticsFactory(gpu));
+	profiler.SetCountStatistics(true);
 
 	Rendering::GPUFrameProfile profile;
 	for (size_t frame = 0; frame <= Rendering::GPUProfiler::k_frameCount; ++frame)
@@ -504,6 +514,7 @@ TEST_CASE("A scope that doesn't fit is counted in the scope around it, and segme
 	FakeGPU gpu;
 	Rendering::GPUProfiler profiler;
 	profiler.Initialize(MakeFactory(gpu), MakeStatisticsFactory(gpu));
+	profiler.SetCountStatistics(true);
 
 	profiler.BeginFrameIfNeeded();
 	profiler.BeginScope(0);
@@ -531,6 +542,108 @@ TEST_CASE("A scope that doesn't fit is counted in the scope around it, and segme
 	const U32 profiledInner = (Rendering::GPUProfiler::k_capacity - 4) / 2;
 	REQUIRE(profile.ScopeStatistics.size() == profiledInner + 1);
 	CHECK(profile.ScopeStatistics.back().TrianglesSubmitted == doctest::Approx(1.0));
+
+	profiler.Release();
+}
+
+TEST_CASE("Statistics are made the first time they're turned on, and counting starts and stops as frames begin")
+{
+	FakeGPU gpu;
+	Rendering::GPUProfiler profiler;
+	profiler.Initialize(MakeFactory(gpu), MakeStatisticsFactory(gpu));
+	CHECK(profiler.CanCountStatistics());
+
+	// Frame 0, off: nothing made or counted
+	Rendering::GPUFrameProfile profile;
+	profiler.BeginFrameIfNeeded();
+	profiler.BeginScope(0);
+	gpu.Draw(1.0);
+	profiler.EndScope();
+	CHECK_FALSE(profiler.EndFrame(profile));
+	CHECK(gpu.StatisticsMade == 0);
+
+	// Frame 1, turned on once it has begun: it stays uncounted
+	profiler.BeginFrameIfNeeded();
+	profiler.SetCountStatistics(true);
+	profiler.BeginScope(0);
+	gpu.Draw(2.0);
+	profiler.EndScope();
+	CHECK_FALSE(profiler.EndFrame(profile));
+	CHECK(gpu.StatisticsMade == 0);
+	CHECK(gpu.SegmentsBegun == 0);
+
+	// Frame 2 counts, made for every frame at once; turned off partway, it counts throughout
+	profiler.BeginFrameIfNeeded();
+	CHECK(gpu.StatisticsMade == Rendering::GPUProfiler::k_frameCount);
+	profiler.BeginScope(0);
+	gpu.Draw(4.0);
+	profiler.SetCountStatistics(false);
+	profiler.EndScope();
+	CHECK_FALSE(profiler.EndFrame(profile));
+
+	// Frame 3, off again
+	gpu.FinishedFrames = 1;
+	profiler.BeginFrameIfNeeded();
+	profiler.BeginScope(0);
+	gpu.Draw(8.0);
+	profiler.EndScope();
+	REQUIRE(profiler.EndFrame(profile));
+	CHECK_FALSE(profile.HasStatistics);
+	CHECK(profile.FrameStatistics.TrianglesSubmitted == 0.0);
+
+	gpu.FinishedFrames = 2;
+	REQUIRE(RunEmptyFrame(profiler, gpu, 1.0, profile));
+	CHECK_FALSE(profile.HasStatistics);
+
+	gpu.FinishedFrames = 3;
+	REQUIRE(RunEmptyFrame(profiler, gpu, 1.0, profile));
+	REQUIRE(profile.HasStatistics);
+	CHECK(profile.ScopeStatistics[0].TrianglesSubmitted == doctest::Approx(4.0));
+	CHECK(profile.FrameStatistics.TrianglesSubmitted == doctest::Approx(4.0));
+
+	gpu.FinishedFrames = 4;
+	REQUIRE(RunEmptyFrame(profiler, gpu, 1.0, profile));
+	CHECK_FALSE(profile.HasStatistics);
+	CHECK(gpu.StatisticsBegins == 1);
+	CHECK(gpu.SegmentsBegun == 1);
+
+	// On again: counts, and nothing is made twice
+	profiler.SetCountStatistics(true);
+	profiler.BeginFrameIfNeeded();
+	profiler.BeginScope(0);
+	gpu.Draw(16.0);
+	profiler.EndScope();
+	profiler.EndFrame(profile);
+	gpu.FinishedFrames = 100;
+	// The newest read back is that frame: this one's set is still pending, so it's skipped
+	REQUIRE(RunEmptyFrame(profiler, gpu, 1.0, profile));
+	REQUIRE(profile.HasStatistics);
+	CHECK(profile.FrameStatistics.TrianglesSubmitted == doctest::Approx(16.0));
+	CHECK(gpu.StatisticsMade == Rendering::GPUProfiler::k_frameCount);
+	CHECK(gpu.StatisticsBegins == 2);
+
+	profiler.Release();
+}
+
+TEST_CASE("Without a statistics factory, turning statistics on does nothing")
+{
+	FakeGPU gpu;
+	Rendering::GPUProfiler profiler;
+	// EGPUStatisticsMode::Off
+	profiler.Initialize(MakeFactory(gpu), nullptr);
+	CHECK_FALSE(profiler.CanCountStatistics());
+	profiler.SetCountStatistics(true);
+
+	profiler.BeginFrameIfNeeded();
+	profiler.BeginScope(0);
+	gpu.Draw(1.0);
+	profiler.EndScope();
+	Rendering::GPUFrameProfile profile;
+	CHECK_FALSE(profiler.EndFrame(profile));
+	gpu.FinishedFrames = 1;
+	REQUIRE(RunEmptyFrame(profiler, gpu, 1.0, profile));
+	CHECK_FALSE(profile.HasStatistics);
+	CHECK(gpu.SegmentsBegun == 0);
 
 	profiler.Release();
 }

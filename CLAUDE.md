@@ -29,6 +29,9 @@ driving the editor are covered by the `run-rze` skill (`.claude/skills/run-rze/`
 - **No function bodies in headers**, except simple returns (getters) and trivial setters. Constructors with work,
   loops, forwarding with logic and helpers go in a .cpp, and so do "header-only for testability" modules: unit tests
   link Engine.lib, so testable logic can live in an Engine .cpp.
+  Exception: `Utils/StringUtils.h` keeps its one-expression helpers (case-insensitive compares, `ToLower`/`ToUpper`)
+  and its template in the header, as candidates for inlining into the per-item loops that call them. Everything longer
+  in it goes in `StringUtils.cpp`.
 - **Sink parameters:** never take a parameter by value and `std::move` it. Handed-over containers, handles and
   move-only types are `T&&`. A `std::shared_ptr` or a string the caller keeps is `const T&` and copied.
 - **No `auto` for plain types** such as an index or a value a helper returns: write the type out. If it's long, alias it
