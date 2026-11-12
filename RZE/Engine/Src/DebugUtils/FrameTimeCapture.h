@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Rendering/Driver/GPUStatistics.h>
+
 #include <Utils/PrimitiveDefs.h>
 
 #include <string>
@@ -24,14 +26,19 @@ struct FrameTimeSample
 	float GPUMS = 0.0f;
 	// Not counting the UI's
 	U32 DrawCalls = 0;
+	U32 Instances = 0;
+	// What the GPU counted in the frame GPUMS is for (Rendering::RenderThreadStats): unlike DrawCalls, with the UI's
+	// (ImGuiRenderStage). Zero without them.
+	Rendering::GPUPipelineStatistics GPUStatistics;
 };
 
 // Records every frame's timings for A/B performance comparisons, enabled from the command line:
 //   -perfcapture <file>      where to write the samples: a header line, then one line per frame with
 //                            FrameTimeSample's values
-//                            (frameMs,updateMs,recordMs,renderBusyMs,renderPresentMs,gpuMs,drawCalls). Beside it,
-//                            <file>.stages.csv has each render stage's record time, draw calls and GPU time a frame,
-//                            averaged over the capture.
+//                            (frameMs,updateMs,recordMs,renderBusyMs,renderPresentMs,gpuMs,drawCalls,instances,
+//                            triangles,verticesShaded,trianglesInView,pixelsShaded). Beside it, <file>.stages.csv has
+//                            each render stage's record time, draws, GPU time and GPU statistics a frame, averaged over
+//                            the capture. The GPU statistics are zero unless -gpustats is given, or with a driver that can't count them.
 //   -perfwarmup <seconds>    how long to wait before recording, e.g. for the scene to load (default 10)
 //   -perfduration <seconds>  how long to record (default 15)
 // When the duration is up the samples are written and the engine exits. A capture turns frame pacing off (vsync and
@@ -64,7 +71,9 @@ private:
 		std::string Name;
 		double TimeMS = 0.0;
 		double DrawCalls = 0.0;
+		double Instances = 0.0;
 		double GPUTimeMS = 0.0;
+		Rendering::GPUPipelineStatistics GPUStatistics;
 	};
 
 	bool m_isEnabled = false;

@@ -36,7 +36,6 @@ namespace
 	// widths from the frame before.
 	constexpr int k_firstFrameCount = 3;
 
-#ifdef RZE_GFX_VALIDATION_AVAILABLE
 	// -name turns a switch on and -name 0 off; without either, it keeps defaultValue
 	bool ReadSwitch(const char* name, bool defaultValue)
 	{
@@ -50,14 +49,16 @@ namespace
 		CmdLine::Arguments::GetInt(name, enabled);
 		return enabled != 0;
 	}
-#endif
 
 	// How the renderer's device is made (DebugConfig.h). Validation is Debug's default, or -gfxvalidation (on) and
 	// -gfxvalidation 0 (off). -gfxliveobjects logs the graphics objects still alive at shutdown; the report comes from
-	// the validation layer, so it turns validation on too.
+	// the validation layer, so it turns validation on too. -gpustats (or -gpustats 1) has the GPU count pipeline statistics
+	// in every configuration, e.g. for a capture's triangle counts. Off by default: counting them costs GPU time, about
+	// 0.08 ms a frame on Sponza (NVIDIA, GL), which would skew every frame-time measurement.
 	Rendering::GFXDeviceOptions GetGraphicsDeviceOptions()
 	{
 		Rendering::GFXDeviceOptions options;
+		options.GPUStatistics = ReadSwitch("-gpustats", false);
 #ifdef RZE_GFX_VALIDATION_AVAILABLE
 #ifdef RZE_GFX_VALIDATION_BY_DEFAULT
 		const bool validateByDefault = true;
@@ -171,6 +172,9 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 				sample.RenderThreadPresentMS = static_cast<float>(renderThreadStats.LastFramePresentTimeMS);
 				sample.GPUMS = static_cast<float>(renderThreadStats.LastFrameGPUTimeMS);
 				sample.DrawCalls = renderFrame.DrawCalls;
+				sample.Instances = renderFrame.Instances;
+				// The same frame as GPUMS
+				sample.GPUStatistics = renderThreadStats.LastFrameGPUStatistics;
 				if (m_frameTimeCapture.AddFrame(frameStart, sample, m_renderEngine->GetStats()))
 				{
 					break;

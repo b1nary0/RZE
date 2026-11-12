@@ -18,7 +18,7 @@ void RenderPipeline::AddStage(std::unique_ptr<IRenderStage> stage)
 	stage->Initialize();
 	m_stages.push_back(std::move(stage));
 	m_stageTimes.push_back(0.0);
-	m_stageDrawCalls.push_back(0);
+	m_stageDrawCounts.push_back(Rendering::DrawCounts());
 	m_isDirty = true;
 }
 
@@ -26,7 +26,7 @@ void RenderPipeline::Clear()
 {
 	m_stages.clear();
 	m_stageTimes.clear();
-	m_stageDrawCalls.clear();
+	m_stageDrawCounts.clear();
 	m_compiled = CompiledRenderPipeline();
 	m_isDirty = true;
 }
@@ -44,13 +44,13 @@ void RenderPipeline::Render(RenderView& view, RenderScene& scene, float deltaTim
 		if (runsInView)
 		{
 			const double stageStart = TimeUtils::GetSeconds();
-			const U32 drawCallsBefore = Rendering::Renderer::GetDrawCallCount();
+			const Rendering::DrawCounts drawsBefore = Rendering::Renderer::GetDrawCounts();
 			// The stage's index is its GPU scope's id, so TakeStageStats finds its GPU time
 			Rendering::Renderer::BeginGPUScope(static_cast<U32>(stageIndex));
 			m_stages[stageIndex]->Render(context);
 			Rendering::Renderer::EndGPUScope();
 			m_stageTimes[stageIndex] += TimeUtils::GetSeconds() - stageStart;
-			m_stageDrawCalls[stageIndex] += Rendering::Renderer::GetDrawCallCount() - drawCallsBefore;
+			m_stageDrawCounts[stageIndex] += Rendering::Renderer::GetDrawCounts() - drawsBefore;
 		}
 	}
 }
@@ -59,15 +59,25 @@ std::vector<RenderStageStats> RenderPipeline::TakeStageStats()
 {
 	const Rendering::RenderThreadStats renderThreadStats = Rendering::Renderer::GetRenderThreadStats();
 	const std::vector<double>& gpuTimes = renderThreadStats.GPUScopeTimesMS;
+	const std::vector<Rendering::GPUPipelineStatistics>& gpuStatistics = renderThreadStats.GPUScopeStatistics;
 
 	std::vector<RenderStageStats> stageStats;
 	stageStats.reserve(m_compiled.ExecutionOrder.size());
 	for (size_t stageIndex : m_compiled.ExecutionOrder)
 	{
-		const double gpuTimeMS = stageIndex < gpuTimes.size() ? gpuTimes[stageIndex] : 0.0;
-		stageStats.push_back({ m_stages[stageIndex]->GetName(), m_stageTimes[stageIndex] * 1000.0, static_cast<double>(m_stageDrawCalls[stageIndex]), gpuTimeMS });
+		RenderStageStats stats;
+		stats.Name = m_stages[stageIndex]->GetName();
+		stats.TimeMS = m_stageTimes[stageIndex] * 1000.0;
+		stats.DrawCalls = static_cast<double>(m_stageDrawCounts[stageIndex].DrawCalls);
+		stats.Instances = static_cast<double>(m_stageDrawCounts[stageIndex].Instances);
+		stats.GPUTimeMS = stageIndex < gpuTimes.size() ? gpuTimes[stageIndex] : 0.0;
+		if (stageIndex < gpuStatistics.size())
+		{
+			stats.GPUStatistics = gpuStatistics[stageIndex];
+		}
+		stageStats.push_back(std::move(stats));
 		m_stageTimes[stageIndex] = 0.0;
-		m_stageDrawCalls[stageIndex] = 0;
+		m_stageDrawCounts[stageIndex] = Rendering::DrawCounts();
 	}
 
 	return stageStats;

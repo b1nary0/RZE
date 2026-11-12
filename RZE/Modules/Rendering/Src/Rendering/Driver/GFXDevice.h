@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Rendering/RenderingDefines.h>
+#include <Rendering/Driver/GPUStatistics.h>
 #include <Rendering/Driver/GPUTimestamps.h>
 
 #include <Utils/PrimitiveDefs.h>
@@ -30,6 +31,10 @@ namespace Rendering
 		// At shutdown, once the device has released its own objects, it logs every API object still alive: what the
 		// engine never released. Needs Validate. D3D11 only: OpenGL has no such report.
 		bool ReportLiveObjects = false;
+		// The render thread counts the GPU's pipeline statistics in each GPU scope (GPUProfiler), where the API has them.
+		// Read by the render thread, not the device: off, the device never makes the queries. Off by default: counting
+		// costs GPU time at every scope boundary (the driver drains the pipeline to count exactly).
+		bool GPUStatistics = false;
 	};
 
 	// A graphics API, as the render thread uses it: the device and what's bound to it. One per process, made by
@@ -63,9 +68,12 @@ namespace Rendering
 		virtual std::shared_ptr<IVertexShader> CreateVertexShader() = 0;
 		virtual std::shared_ptr<IPixelShader> CreatePixelShader() = 0;
 		virtual std::shared_ptr<IComputeShader> CreateComputeShader() = 0;
-		// Unlike the others, made and used on the render thread alone (GPUTimer); capacity is how many timestamps a
+		// Unlike the others, made and used on the render thread alone (GPUProfiler); capacity is how many timestamps a
 		// frame can write
 		virtual std::unique_ptr<IGPUTimestamps> CreateGPUTimestamps(U32 capacity) = 0;
+		// The same for pipeline statistics, with room for capacity segments a frame. None where the API or driver can't
+		// count them (OpenGL without ARB_pipeline_statistics_query).
+		virtual std::unique_ptr<IGPUStatistics> CreateGPUStatistics(U32 capacity) = 0;
 
 		// The frame
 		virtual void Present() = 0;

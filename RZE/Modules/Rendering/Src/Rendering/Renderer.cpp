@@ -27,7 +27,7 @@ namespace Rendering
 	std::shared_ptr<UIFrameData> Renderer::m_uiFrameData;
 	int Renderer::m_uiFrameNumber = -1;
 	std::vector<TextureBuffer2DHandle> Renderer::m_uiTextures;
-	U32 Renderer::m_drawCallCount = 0;
+	DrawCounts Renderer::m_drawCounts;
 	std::vector<std::shared_ptr<TextureReadback>> Renderer::m_backBufferReadbacks;
 
 	inline void* AllocateCommandData(void* src, size_t dataTypeSize, size_t count)
@@ -145,11 +145,11 @@ namespace Rendering
 		return m_renderThread.GetStats();
 	}
 
-	U32 Renderer::TakeDrawCallCount()
+	DrawCounts Renderer::TakeDrawCounts()
 	{
-		const U32 count = m_drawCallCount;
-		m_drawCallCount = 0;
-		return count;
+		const DrawCounts counts = m_drawCounts;
+		m_drawCounts = DrawCounts();
+		return counts;
 	}
 
 	void Renderer::HandleWindowResize(const Vector2D& newSize)
@@ -662,7 +662,8 @@ namespace Rendering
 		command->count = count;
 
 		m_renderThread.PushCommand(command);
-		++m_drawCallCount;
+		++m_drawCounts.DrawCalls;
+		++m_drawCounts.Instances;
 	}
 
 	void Renderer::DrawIndexed(const IndexBufferHandle& indexBuffer)
@@ -671,7 +672,8 @@ namespace Rendering
 		command->indexBuffer = indexBuffer;
 
 		m_renderThread.PushCommand(command);
-		++m_drawCallCount;
+		++m_drawCounts.DrawCalls;
+		++m_drawCounts.Instances;
 	}
 
 	void Renderer::DrawIndexedInstanced(const IndexBufferHandle& indexBuffer, U32 instanceCount, U32 startInstance)
@@ -682,7 +684,8 @@ namespace Rendering
 		command->startInstance = startInstance;
 
 		m_renderThread.PushCommand(command);
-		++m_drawCallCount;
+		++m_drawCounts.DrawCalls;
+		m_drawCounts.Instances += instanceCount;
 	}
 
 	void Renderer::DrawFullScreenQuad()
@@ -690,7 +693,8 @@ namespace Rendering
 		RenderCommand_DrawFullScreenQuad* command = MemArena::AllocType<RenderCommand_DrawFullScreenQuad>();
 
 		m_renderThread.PushCommand(command);
-		++m_drawCallCount;
+		++m_drawCounts.DrawCalls;
+		++m_drawCounts.Instances;
 	}
 
 	void Renderer::SetComputeShader(const ComputeShaderHandle& computeShader)

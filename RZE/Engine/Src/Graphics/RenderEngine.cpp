@@ -187,10 +187,12 @@ void RenderEngine::InternalAddRenderStage(IRenderStage* stage)
 void RenderEngine::EndFrameCounts()
 {
 	m_lastFrame.RecordTimeMS = m_frameRecordTime * 1000.0;
-	m_lastFrame.DrawCalls = Rendering::Renderer::TakeDrawCallCount();
+	const Rendering::DrawCounts frameDraws = Rendering::Renderer::TakeDrawCounts();
+	m_lastFrame.DrawCalls = frameDraws.DrawCalls;
+	m_lastFrame.Instances = frameDraws.Instances;
 
 	m_windowRecordTime += m_frameRecordTime;
-	m_windowDrawCalls += m_lastFrame.DrawCalls;
+	m_windowDraws += frameDraws;
 	m_frameRecordTime = 0.0;
 }
 
@@ -203,15 +205,25 @@ void RenderEngine::UpdateStats(double now)
 
 	// The stage stats build up over the window, so they're taken once at its end
 	m_stats.RecordTimeMS = m_statsWindow.PerFrame(m_windowRecordTime) * 1000.0;
-	m_stats.DrawCalls = m_statsWindow.PerFrame(static_cast<double>(m_windowDrawCalls));
+	m_stats.DrawCalls = m_statsWindow.PerFrame(static_cast<double>(m_windowDraws.DrawCalls));
+	m_stats.Instances = m_statsWindow.PerFrame(static_cast<double>(m_windowDraws.Instances));
 	m_stats.Work = PerFrame(m_statsWindow, m_pipeline->TakeWorkCounts());
 
+	// Already per frame: the render thread averages them over its own window
+	const Rendering::RenderThreadStats renderThreadStats = Rendering::Renderer::GetRenderThreadStats();
+	m_stats.HasGPUStatistics = renderThreadStats.HasGPUStatistics;
+	m_stats.GPUStatistics = renderThreadStats.GPUFrameStatistics;
+
 	m_stats.Stages.clear();
-	for (const RenderStageStats& stageStats : m_pipeline->TakeStageStats())
+	for (RenderStageStats& stageStats : m_pipeline->TakeStageStats())
 	{
-		m_stats.Stages.push_back({ stageStats.Name, m_statsWindow.PerFrame(stageStats.TimeMS), m_statsWindow.PerFrame(stageStats.DrawCalls), stageStats.GPUTimeMS });
+		// The time and draws are totals over this window; the GPU's figures are already per frame
+		stageStats.TimeMS = m_statsWindow.PerFrame(stageStats.TimeMS);
+		stageStats.DrawCalls = m_statsWindow.PerFrame(stageStats.DrawCalls);
+		stageStats.Instances = m_statsWindow.PerFrame(stageStats.Instances);
+		m_stats.Stages.push_back(std::move(stageStats));
 	}
 
 	m_windowRecordTime = 0.0;
-	m_windowDrawCalls = 0;
+	m_windowDraws = Rendering::DrawCounts();
 }

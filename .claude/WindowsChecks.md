@@ -266,6 +266,19 @@ Things to know on this machine (2026-11-10):
   through `ProbeCapture`'s new buffer). 4: the status bar's forward draws on framed RenderPerfTest: 912 → 28
   (Linux). 5: by hand, change a pillar's Tint and Shininess in the inspector: it changes at once, and resetting the
   override puts it back; picking and the selection outline still work on it.
+- **A40. GPU pipeline statistics per stage** (mesh pass performance Step 1b: `DX11GPUStatistics`, one
+  `D3D11_QUERY_PIPELINE_STATISTICS` a segment; `GPUTimer` became `GPUProfiler`; `-gpustats`, off by default). Files added and
+  renamed, so run `GenerateSolutions.bat` first. 1: A1's three builds, **`DX11GPUStatistics.cpp` compiled for the
+  first time here** (Linux can't build it); A2's counts (7 new `GPUProfiler` cases). 2: Debug harness (validation on)
+  on `Sponza.scene` and `RenderPerfTest.scene`, 20 s: no `D3D11 (` error or warning about a query (Begin while
+  active, End without Begin, GetData on a query that never began). 3: Development, `-framescene -vsync 0
+  -gpustats -perfcapture <file> -perfwarmup 20 -perfduration 5` on `Sponza.scene`: in `<file>.stages.csv`, ForwardRenderStage
+  `triangles` **361805** (Linux GL, exactly the sum of Sponza's index counts / 3), DepthPrepassStage 361593 (forward
+  less `Walker_Glas`, 212), `trianglesInView` equal to `triangles` (framed: all in view), `verticesShaded` about 1.5 a
+  triangle (vertex reuse, which varies by driver: report it, don't fail on it), forward `pixelsShaded` a fraction of
+  PostProcessRenderStage's (3 full-viewport passes). None of the four columns zero in those stages. 4: the same without
+  `-gpustats`: the log says "GPU pipeline statistics are off (-gpustats turns them on)" and the four columns are 0.
+  Report run 3's and run 4's mean `gpuMs` (Linux GL: counting adds ~0.08 ms on Sponza, +9.8%; it decided the default). 5: `close` code 0, and with `-gfxliveobjects` (Debug) no `ID3D11Query` outlives shutdown.
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 

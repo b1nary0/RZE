@@ -17,7 +17,7 @@ namespace Rendering
 		void Begin() override;
 		void Write(U32 index) override;
 		void End() override;
-		EGPUTimestampsReadResult Read(U32 count, std::vector<double>& outSeconds) override;
+		EGPUQueryReadResult Read(U32 count, std::vector<double>& outSeconds) override;
 
 	private:
 		std::vector<U32> m_queries;

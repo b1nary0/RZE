@@ -6,6 +6,21 @@
 
 #include <algorithm>
 #include <fstream>
+#include <iomanip>
+
+namespace
+{
+	// GPUPipelineStatistics' columns, in WriteStatistics' order
+	constexpr const char* k_statisticsHeader = "triangles,verticesShaded,trianglesInView,pixelsShaded";
+
+	void WriteStatistics(std::ofstream& file, const Rendering::GPUPipelineStatistics& statistics)
+	{
+		// Whole numbers, however large: the stream's default precision would write 1.2e+06
+		file << std::fixed << std::setprecision(0)
+			<< statistics.TrianglesSubmitted << ',' << statistics.VerticesShaded << ',' << statistics.TrianglesInView << ','
+			<< statistics.PixelsShaded << std::defaultfloat << std::setprecision(6);
+	}
+}
 
 void FrameTimeCapture::Initialize()
 {
@@ -54,14 +69,18 @@ bool FrameTimeCapture::AddFrame(double elapsedSeconds, const FrameTimeSample& sa
 			m_stageFrameCount = 0;
 			for (const RenderStageStats& stage : renderStats.Stages)
 			{
-				m_stageTotals.push_back({ stage.Name, 0.0, 0.0, 0.0 });
+				StageTotals totals;
+				totals.Name = stage.Name;
+				m_stageTotals.push_back(std::move(totals));
 			}
 		}
 		for (size_t index = 0; index < m_stageTotals.size(); ++index)
 		{
 			m_stageTotals[index].TimeMS += renderStats.Stages[index].TimeMS;
 			m_stageTotals[index].DrawCalls += renderStats.Stages[index].DrawCalls;
+			m_stageTotals[index].Instances += renderStats.Stages[index].Instances;
 			m_stageTotals[index].GPUTimeMS += renderStats.Stages[index].GPUTimeMS;
+			m_stageTotals[index].GPUStatistics += renderStats.Stages[index].GPUStatistics;
 		}
 		++m_stageFrameCount;
 		return false;
@@ -82,11 +101,13 @@ void FrameTimeCapture::Write() const
 		return;
 	}
 
-	file << "frameMs,updateMs,recordMs,renderBusyMs,renderPresentMs,gpuMs,drawCalls\n";
+	file << "frameMs,updateMs,recordMs,renderBusyMs,renderPresentMs,gpuMs,drawCalls,instances," << k_statisticsHeader << '\n';
 	for (const FrameTimeSample& sample : m_samples)
 	{
 		file << sample.FrameMS << ',' << sample.UpdateMS << ',' << sample.RecordMS << ',' << sample.RenderThreadBusyMS << ','
-			<< sample.RenderThreadPresentMS << ',' << sample.GPUMS << ',' << sample.DrawCalls << '\n';
+			<< sample.RenderThreadPresentMS << ',' << sample.GPUMS << ',' << sample.DrawCalls << ',' << sample.Instances << ',';
+		WriteStatistics(file, sample.GPUStatistics);
+		file << '\n';
 	}
 }
 
@@ -102,9 +123,12 @@ void FrameTimeCapture::WriteStages() const
 
 	// Averages of averages: each frame added RenderStats' figures, which are per frame over its stats window
 	const double frameCount = static_cast<double>(std::max<size_t>(m_stageFrameCount, 1));
-	file << "stage,timeMs,drawCalls,gpuMs\n";
+	file << "stage,timeMs,drawCalls,gpuMs,instances," << k_statisticsHeader << '\n';
 	for (const StageTotals& totals : m_stageTotals)
 	{
-		file << totals.Name << ',' << totals.TimeMS / frameCount << ',' << totals.DrawCalls / frameCount << ',' << totals.GPUTimeMS / frameCount << '\n';
+		file << totals.Name << ',' << totals.TimeMS / frameCount << ',' << totals.DrawCalls / frameCount << ',' << totals.GPUTimeMS / frameCount << ','
+			<< totals.Instances / frameCount << ',';
+		WriteStatistics(file, totals.GPUStatistics * (1.0 / frameCount));
+		file << '\n';
 	}
 }

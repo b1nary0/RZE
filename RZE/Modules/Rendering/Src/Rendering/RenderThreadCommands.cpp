@@ -46,12 +46,12 @@ namespace Rendering
 
 	void RenderThread::Execute(RenderCommand_BeginGPUScope& command)
 	{
-		m_gpuTimer.BeginScope(command.id);
+		m_gpuProfiler.BeginScope(command.id);
 	}
 
 	void RenderThread::Execute(RenderCommand_EndGPUScope&)
 	{
-		m_gpuTimer.EndScope();
+		m_gpuProfiler.EndScope();
 	}
 
 	void RenderThread::Execute(RenderCommand_DevicePresent&)
@@ -59,10 +59,9 @@ namespace Rendering
 		OPTICK_EVENT("Device Present");
 
 		// Before Present: GL's copy of the back buffer to the window, inside Present, isn't in the frame's GPU time
-		GPUFrameTimes gpuTimes;
-		if (m_gpuTimer.EndFrame(gpuTimes))
+		if (m_gpuProfiler.EndFrame(m_gpuFrameProfile))
 		{
-			AddGPUFrame(gpuTimes);
+			AddGPUFrame(m_gpuFrameProfile);
 		}
 
 		const double presentStart = TimeUtils::GetSeconds();

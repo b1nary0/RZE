@@ -31,10 +31,16 @@ struct RenderStats
 {
 	// Per frame, recording every view's render stages
 	double RecordTimeMS = 0.0;
-	// Each stage's part of RecordTimeMS and DrawCalls per frame, in the order they run
+	// Each stage's part of RecordTimeMS, DrawCalls, Instances and GPUStatistics per frame, in the order they run
 	std::vector<RenderStageStats> Stages;
 	// Per frame, not counting the UI's
 	double DrawCalls = 0.0;
+	double Instances = 0.0;
+	// Whether the GPU counts pipeline statistics (Rendering::RenderThreadStats::HasGPUStatistics); zero without them
+	bool HasGPUStatistics = false;
+	// Per frame, the render thread's average over its own stats window. Unlike DrawCalls, this has the UI's: the GPU
+	// counts everything a stage runs, and ImGuiRenderStage runs the UI.
+	Rendering::GPUPipelineStatistics GPUStatistics;
 	// Per frame: the probe captures and relights and the shadow maps that scene changes caused
 	RenderWorkCounts Work;
 };
@@ -46,6 +52,7 @@ struct RenderFrameCounts
 	double RecordTimeMS = 0.0;
 	// Not counting the UI's
 	U32 DrawCalls = 0;
+	U32 Instances = 0;
 };
 
 class RenderEngine
@@ -144,7 +151,7 @@ private:
 	StatsWindow m_statsWindow;
 	// The stats window so far
 	double m_windowRecordTime = 0.0;
-	U32 m_windowDrawCalls = 0;
+	Rendering::DrawCounts m_windowDraws;
 };
 
 template <typename TRenderStageType, typename... Args>

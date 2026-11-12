@@ -7,7 +7,7 @@
 #include <thread>
 #include <vector>
 
-#include <Rendering/GPUTimer.h>
+#include <Rendering/GPUProfiler.h>
 #include <Rendering/RenderCommand.h>
 
 #include <Utils/PrimitiveDefs.h>
@@ -32,12 +32,21 @@ namespace Rendering
 		double LastFrameBusyTimeMS = 0.0;
 		double LastFramePresentTimeMS = 0.0;
 
-		// The GPU's time for a frame, from its first command to its last before presenting (GPUTimer), averaged over the
-		// frames read back in the window, and for the newest frame read back, which is a few frames old
+		// The GPU's time for a frame, from its first command to its last before presenting (GPUProfiler), averaged over
+		// the frames read back in the window, and for the newest frame read back, which is a few frames old
 		double GPUFrameTimeMS = 0.0;
 		double LastFrameGPUTimeMS = 0.0;
 		// Each GPU scope's time a frame (Renderer::BeginGPUScope), by id, averaged the same way
 		std::vector<double> GPUScopeTimesMS;
+
+		// Whether the GPU's pipeline statistics are counted (GFXDeviceOptions::GPUStatistics, and a device that has them).
+		// Without them, the statistics below stay zero.
+		bool HasGPUStatistics = false;
+		// What the GPU counted a frame in each scope, by id, averaged like GPUScopeTimesMS; in the frame's scopes
+		// altogether (GPUFrameProfile::FrameStatistics), the same way; and in the newest frame read back's scopes
+		std::vector<GPUPipelineStatistics> GPUScopeStatistics;
+		GPUPipelineStatistics GPUFrameStatistics;
+		GPUPipelineStatistics LastFrameGPUStatistics;
 	};
 
 	class RenderThread
@@ -82,7 +91,7 @@ namespace Rendering
 		// Adds the batch of commands that started at batchStart to the current frame, which ends if the batch presented
 		void UpdateStats(double batchStart, bool hasPresented);
 		// A frame the GPU timer read back, into the window and the last frame's GPU time
-		void AddGPUFrame(const GPUFrameTimes& times);
+		void AddGPUFrame(const GPUFrameProfile& profile);
 
 		// What each command does (RenderThreadCommands.cpp). ProcessCommands calls the one for its type.
 		// The frame
@@ -206,9 +215,15 @@ namespace Rendering
 		U32 m_windowGPUFrames = 0;
 		double m_windowGPUTime = 0.0;
 		std::vector<double> m_windowGPUScopeTimes;
+		// The statistics the same way: every frame read back has them or none does (GPUProfiler)
+		std::vector<GPUPipelineStatistics> m_windowGPUScopeStatistics;
+		GPUPipelineStatistics m_windowGPUFrameStatistics;
 		double m_lastGPUFrameTime = 0.0;
+		GPUPipelineStatistics m_lastGPUFrameStatistics;
 
-		GPUTimer m_gpuTimer;
+		GPUProfiler m_gpuProfiler;
+		// What m_gpuProfiler reads back at each present, kept so its vectors keep their memory
+		GPUFrameProfile m_gpuFrameProfile;
 
 		// Written by the render thread at every present (the last frame's) and once per window (the averages), read from
 		// any thread

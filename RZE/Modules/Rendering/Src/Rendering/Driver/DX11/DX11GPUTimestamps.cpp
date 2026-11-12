@@ -60,7 +60,7 @@ namespace Rendering
 		m_device.GetDeviceContext().End(m_disjoint);
 	}
 
-	EGPUTimestampsReadResult DX11GPUTimestamps::Read(U32 count, std::vector<double>& outSeconds)
+	EGPUQueryReadResult DX11GPUTimestamps::Read(U32 count, std::vector<double>& outSeconds)
 	{
 		AssertExpr(count > 0 && count <= m_timestamps.size());
 		ID3D11DeviceContext& context = m_device.GetDeviceContext();
@@ -69,11 +69,11 @@ namespace Rendering
 		D3D11_QUERY_DATA_TIMESTAMP_DISJOINT disjoint = {};
 		if (context.GetData(m_disjoint, &disjoint, sizeof(disjoint), D3D11_ASYNC_GETDATA_DONOTFLUSH) != S_OK)
 		{
-			return EGPUTimestampsReadResult::NotReady;
+			return EGPUQueryReadResult::NotReady;
 		}
 		if (disjoint.Disjoint || disjoint.Frequency == 0)
 		{
-			return EGPUTimestampsReadResult::Invalid;
+			return EGPUQueryReadResult::Invalid;
 		}
 
 		outSeconds.resize(count);
@@ -84,7 +84,7 @@ namespace Rendering
 			// Done with the frame, so done with its timestamps too; a missing one means it can't be read
 			if (context.GetData(m_timestamps[index], &ticks, sizeof(ticks), D3D11_ASYNC_GETDATA_DONOTFLUSH) != S_OK)
 			{
-				return EGPUTimestampsReadResult::Invalid;
+				return EGPUQueryReadResult::Invalid;
 			}
 			if (index == 0)
 			{
@@ -92,6 +92,6 @@ namespace Rendering
 			}
 			outSeconds[index] = static_cast<double>(ticks - first) / static_cast<double>(disjoint.Frequency);
 		}
-		return EGPUTimestampsReadResult::Ready;
+		return EGPUQueryReadResult::Ready;
 	}
 }

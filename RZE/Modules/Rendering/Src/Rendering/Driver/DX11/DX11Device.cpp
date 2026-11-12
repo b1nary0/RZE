@@ -2,6 +2,7 @@
 
 #include <Rendering/Driver/DX11/DX11.h>
 #include <Rendering/Driver/DX11/DX11ConstantBuffer.h>
+#include <Rendering/Driver/DX11/DX11GPUStatistics.h>
 #include <Rendering/Driver/DX11/DX11GPUTimestamps.h>
 #include <Rendering/Driver/DX11/DX11IndexBuffer.h>
 #include <Rendering/Driver/DX11/DX11ShaderTypes.h>
@@ -621,6 +622,12 @@ namespace Rendering
 	std::unique_ptr<IGPUTimestamps> DX11Device::CreateGPUTimestamps(U32 capacity)
 	{
 		return std::make_unique<DX11GPUTimestamps>(*this, capacity);
+	}
+
+	std::unique_ptr<IGPUStatistics> DX11Device::CreateGPUStatistics(U32 capacity)
+	{
+		// Every D3D11 device has them
+		return std::make_unique<DX11GPUStatistics>(*this, capacity);
 	}
 
 	void DX11Device::BeginDrawSet()

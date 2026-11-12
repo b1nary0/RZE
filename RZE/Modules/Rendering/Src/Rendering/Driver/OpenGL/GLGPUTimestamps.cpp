@@ -29,7 +29,7 @@ namespace Rendering
 	{
 	}
 
-	EGPUTimestampsReadResult GLGPUTimestamps::Read(U32 count, std::vector<double>& outSeconds)
+	EGPUQueryReadResult GLGPUTimestamps::Read(U32 count, std::vector<double>& outSeconds)
 	{
 		AssertExpr(count > 0 && count <= m_queries.size());
 
@@ -38,7 +38,7 @@ namespace Rendering
 		glGetQueryObjectiv(m_queries[count - 1], GL_QUERY_RESULT_AVAILABLE, &isAvailable);
 		if (isAvailable == GL_FALSE)
 		{
-			return EGPUTimestampsReadResult::NotReady;
+			return EGPUQueryReadResult::NotReady;
 		}
 
 		outSeconds.resize(count);
@@ -53,6 +53,6 @@ namespace Rendering
 			}
 			outSeconds[index] = static_cast<double>(nanoseconds - first) * 1e-9;
 		}
-		return EGPUTimestampsReadResult::Ready;
+		return EGPUQueryReadResult::Ready;
 	}
 }

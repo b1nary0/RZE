@@ -37,18 +37,36 @@ namespace Rendering
 
 		// The render thread uses the device from here on
 		m_device->DetachFromCurrentThread();
-		auto threadExec = [this]()
+		const bool countGPUStatistics = deviceOptions.GPUStatistics;
+		auto threadExec = [this, countGPUStatistics]()
 			{
 				OPTICK_THREAD("Render Thread");
 				m_device->AttachToCurrentThread();
-				m_gpuTimer.Initialize([this](U32 capacity) { return m_device->CreateGPUTimestamps(capacity); });
+				GPUStatisticsFactory createStatistics;
+				if (countGPUStatistics)
+				{
+					createStatistics = [this](U32 capacity) { return m_device->CreateGPUStatistics(capacity); };
+				}
+				m_gpuProfiler.Initialize([this](U32 capacity) { return m_device->CreateGPUTimestamps(capacity); }, createStatistics);
+				if (!countGPUStatistics)
+				{
+					RZE_LOG("GPU pipeline statistics are off (-gpustats turns them on)");
+				}
+				else if (!m_gpuProfiler.HasStatistics())
+				{
+					RZE_LOG("GPU pipeline statistics: the graphics driver doesn't count them");
+				}
+				{
+					std::lock_guard lock(m_statsMutex);
+					m_stats.HasGPUStatistics = m_gpuProfiler.HasStatistics();
+				}
 				bool isRunning = true;
 				while (isRunning)
 				{
 					isRunning = Update();
 				}
-				// Its timestamps are the render thread's, so they go while the device is still attached to it
-				m_gpuTimer.Release();
+				// Its queries are the render thread's, so they go while the device is still attached to it
+				m_gpuProfiler.Release();
 				m_device->DetachFromCurrentThread();
 			};
 
@@ -180,7 +198,7 @@ namespace Rendering
 		// Checked once per batch: a batch is a whole frame, so every BeginEvent below still gets its EndEvent.
 		m_emitProfilerMarkers = m_device->IsProfilerAttached();
 		// A batch is a frame, so this opens a frame each batch; one that didn't present keeps its frame open
-		m_gpuTimer.BeginFrameIfNeeded();
+		m_gpuProfiler.BeginFrameIfNeeded();
 
 		for (RenderCommand* command : m_consumerQueue)
 		{
@@ -288,6 +306,7 @@ namespace Rendering
 			m_stats.LastFrameBusyTimeMS = m_frameBusyTime * 1000.0;
 			m_stats.LastFramePresentTimeMS = m_framePresentTime * 1000.0;
 			m_stats.LastFrameGPUTimeMS = m_lastGPUFrameTime;
+			m_stats.LastFrameGPUStatistics = m_lastGPUFrameStatistics;
 			if (hasWindowEnded)
 			{
 				m_stats.BusyTimeMS = m_statsWindow.PerFrame(m_windowBusyTime) * 1000.0;
@@ -301,6 +320,12 @@ namespace Rendering
 				{
 					m_stats.GPUScopeTimesMS[id] = m_windowGPUScopeTimes[id] / gpuFrames;
 				}
+				m_stats.GPUScopeStatistics.resize(m_windowGPUScopeStatistics.size());
+				for (size_t id = 0; id < m_windowGPUScopeStatistics.size(); ++id)
+				{
+					m_stats.GPUScopeStatistics[id] = m_windowGPUScopeStatistics[id] * (1.0 / gpuFrames);
+				}
+				m_stats.GPUFrameStatistics = m_windowGPUFrameStatistics * (1.0 / gpuFrames);
 			}
 		}
 		m_frameBusyTime = 0.0;
@@ -313,12 +338,15 @@ namespace Rendering
 			m_windowGPUFrames = 0;
 			m_windowGPUTime = 0.0;
 			std::fill(m_windowGPUScopeTimes.begin(), m_windowGPUScopeTimes.end(), 0.0);
+			std::fill(m_windowGPUScopeStatistics.begin(), m_windowGPUScopeStatistics.end(), GPUPipelineStatistics());
+			m_windowGPUFrameStatistics = GPUPipelineStatistics();
 		}
 	}
 
-	void RenderThread::AddGPUFrame(const GPUFrameTimes& times)
+	void RenderThread::AddGPUFrame(const GPUFrameProfile& profile)
 	{
-		m_lastGPUFrameTime = times.FrameMS;
+		m_lastGPUFrameTime = profile.FrameMS;
+		m_lastGPUFrameStatistics = profile.FrameStatistics;
 
 		// Only once the window has started, as with the busy time
 		if (!m_statsWindow.HasStarted())
@@ -327,15 +355,29 @@ namespace Rendering
 		}
 
 		++m_windowGPUFrames;
-		m_windowGPUTime += times.FrameMS;
-		if (m_windowGPUScopeTimes.size() < times.ScopeMS.size())
+		m_windowGPUTime += profile.FrameMS;
+		if (m_windowGPUScopeTimes.size() < profile.ScopeMS.size())
 		{
-			m_windowGPUScopeTimes.resize(times.ScopeMS.size(), 0.0);
+			m_windowGPUScopeTimes.resize(profile.ScopeMS.size(), 0.0);
 		}
-		for (size_t id = 0; id < times.ScopeMS.size(); ++id)
+		for (size_t id = 0; id < profile.ScopeMS.size(); ++id)
 		{
-			m_windowGPUScopeTimes[id] += times.ScopeMS[id];
+			m_windowGPUScopeTimes[id] += profile.ScopeMS[id];
 		}
+
+		if (!profile.HasStatistics)
+		{
+			return;
+		}
+		if (m_windowGPUScopeStatistics.size() < profile.ScopeStatistics.size())
+		{
+			m_windowGPUScopeStatistics.resize(profile.ScopeStatistics.size());
+		}
+		for (size_t id = 0; id < profile.ScopeStatistics.size(); ++id)
+		{
+			m_windowGPUScopeStatistics[id] += profile.ScopeStatistics[id];
+		}
+		m_windowGPUFrameStatistics += profile.FrameStatistics;
 	}
 
 	void RenderThread::BeginProfilerEvent(const char* name)

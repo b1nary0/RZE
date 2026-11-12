@@ -2,6 +2,7 @@
 
 #include <Rendering/Driver/OpenGL/GLCommon.h>
 #include <Rendering/Driver/OpenGL/GLConstantBuffer.h>
+#include <Rendering/Driver/OpenGL/GLGPUStatistics.h>
 #include <Rendering/Driver/OpenGL/GLGPUTimestamps.h>
 #include <Rendering/Driver/OpenGL/GLIndexBuffer.h>
 #include <Rendering/Driver/OpenGL/GLShaderTypes.h>
@@ -285,6 +286,16 @@ namespace Rendering
 	std::unique_ptr<IGPUTimestamps> GLDevice::CreateGPUTimestamps(U32 capacity)
 	{
 		return std::make_unique<GLGPUTimestamps>(capacity);
+	}
+
+	std::unique_ptr<IGPUStatistics> GLDevice::CreateGPUStatistics(U32 capacity)
+	{
+		// Core in GL 4.6; the context is 4.5, so it's the extension, which glad finds as it loads GL
+		if (GLAD_GL_ARB_pipeline_statistics_query == 0)
+		{
+			return nullptr;
+		}
+		return std::make_unique<GLGPUStatistics>(capacity);
 	}
 
 	void GLDevice::DeleteLater(EObjectType type, U32 name)

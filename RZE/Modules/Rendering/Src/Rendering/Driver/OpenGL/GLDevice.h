@@ -59,6 +59,8 @@ namespace Rendering
 		std::shared_ptr<IPixelShader> CreatePixelShader() override;
 		std::shared_ptr<IComputeShader> CreateComputeShader() override;
 		std::unique_ptr<IGPUTimestamps> CreateGPUTimestamps(U32 capacity) override;
+		// None without ARB_pipeline_statistics_query
+		std::unique_ptr<IGPUStatistics> CreateGPUStatistics(U32 capacity) override;
 
 		void Present() override;
 		void HandleWindowResize(U32 newWidth, U32 newHeight) override;

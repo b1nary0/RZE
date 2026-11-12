@@ -2,6 +2,7 @@
 
 #include <Rendering/RenderingDefines.h>
 #include <Rendering/BufferHandle.h>
+#include <Rendering/DrawCounts.h>
 #include <Rendering/ShaderHandle.h>
 #include <Rendering/RenderCommand.h>
 
@@ -28,7 +29,7 @@ namespace Rendering
 	struct TexelReadback;
 	struct TextureReadback;
 	struct ViewportParams;
-	
+
 	// All static: the render thread and the UI's frame data are shared by the whole process
 	class Renderer
 	{
@@ -71,10 +72,10 @@ namespace Rendering
 		static bool WaitForPresentSlot(U32 timeoutMS);
 		// How much of each frame the render thread is busy
 		static RenderThreadStats GetRenderThreadStats();
-		// Draw calls recorded since the last call, then starts over. The UI's aren't counted. Main thread only.
-		static U32 TakeDrawCallCount();
-		// Draw calls recorded since TakeDrawCallCount, without starting over, e.g. to count one stage's. Main thread only.
-		static U32 GetDrawCallCount() { return m_drawCallCount; }
+		// Draws recorded since the last call, then starts over. The UI's aren't counted. Main thread only.
+		static DrawCounts TakeDrawCounts();
+		// Draws recorded since TakeDrawCounts, without starting over, e.g. to count one stage's. Main thread only.
+		static DrawCounts GetDrawCounts() { return m_drawCounts; }
 
 		// Each UI frame, on the main thread, before ImGui::NewFrame: ImGui's renderer side of the new frame
 		static void ImGuiNewFrame();
@@ -212,8 +213,8 @@ namespace Rendering
 		static int m_uiFrameNumber;
 		// The textures the UI frame being drawn draws, which m_uiFrameData takes when it's copied
 		static std::vector<TextureBuffer2DHandle> m_uiTextures;
-		// Draw calls recorded since TakeDrawCallCount()
-		static U32 m_drawCallCount;
+		// Draws recorded since TakeDrawCounts()
+		static DrawCounts m_drawCounts;
 		// ReadBackBuffer's requests, which DevicePresent records before it presents
 		static std::vector<std::shared_ptr<TextureReadback>> m_backBufferReadbacks;
 	};

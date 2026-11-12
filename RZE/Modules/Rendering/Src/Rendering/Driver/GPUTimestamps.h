@@ -1,22 +1,14 @@
 #pragma once
 
+#include <Rendering/Driver/GPUQueryReadResult.h>
+
 #include <Utils/PrimitiveDefs.h>
 
 #include <vector>
 
 namespace Rendering
 {
-	// What IGPUTimestamps::Read found
-	enum class EGPUTimestampsReadResult
-	{
-		// The GPU hasn't passed every Write of the frame yet: ask again later
-		NotReady,
-		Ready,
-		// The GPU is done, but the times can't be trusted (D3D11's clock changed frequency during the frame)
-		Invalid
-	};
-
-	// One frame's GPU timestamps (GPUTimer): the GPU writes the time when it reaches each Write in the command stream.
+	// One frame's GPU timestamps (GPUProfiler): the GPU writes the time when it reaches each Write in the command stream.
 	// Each graphics API has its own (Driver/<API>/), made by IGFXDevice::CreateGPUTimestamps. Render thread only.
 	class IGPUTimestamps
 	{
@@ -36,6 +28,6 @@ namespace Rendering
 		virtual void End() = 0;
 		// Once the GPU has passed every Write of the frame (Ready): the first count timestamps, as seconds after the
 		// first. Never waits for the GPU.
-		virtual EGPUTimestampsReadResult Read(U32 count, std::vector<double>& outSeconds) = 0;
+		virtual EGPUQueryReadResult Read(U32 count, std::vector<double>& outSeconds) = 0;
 	};
 }
