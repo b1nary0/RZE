@@ -13,8 +13,8 @@ class MeshGeometry;
 struct MeshDraw
 {
 	const MeshGeometry* Geometry = nullptr;
-	// What the geometry is drawn with: Slot->GetMaterial(). A slot rather than a material, so a slot changing material
-	// (an override set or reset) is drawn without rebuilding the draws.
+	// What the geometry is drawn with: it binds Slot->GetMaterial() and carries Slot->BuildInstanceData(). A slot rather
+	// than a material, so a slot changing material (an override set or reset) is drawn without rebuilding the draws.
 	const MaterialSlot* Slot = nullptr;
 	// Where it's drawn, with its inverse after it in memory (an ObjectBufferLayout), so it uploads as the ObjectBuffer. For a
 	// sub-mesh at the mesh's origin it's the object's own matrices, shared by every such draw, so comparing pointers
@@ -27,4 +27,8 @@ struct MeshDraw
 	BoundingBox Bounds;
 	// Only used for a sub-mesh away from the mesh's origin: the object's transform times the placement's
 	GraphicsLayouts::ObjectBufferLayout OwnMatrices;
+
+	// What a shader needs of the draw besides its geometry and what its material binds: its matrices and the material
+	// values it carries, as they are now
+	GraphicsLayouts::MeshInstanceLayout BuildInstance() const;
 };

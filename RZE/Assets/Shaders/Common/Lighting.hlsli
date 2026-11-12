@@ -46,13 +46,11 @@ float SampleAmbientOcclusion(float2 pixelPosition)
 	return AmbientOcclusionMap.Load(int3(min(uint2(pixelPosition), size - 1), 0));
 }
 
-// How much of the pixel the material's opacity mask covers, 1 without a mask. A cutout material discards the pixel
-// below AlphaCutoff instead (and returns 1); a blended one returns the mask, to fade by. Diffuse alpha isn't used
-// unless the material says so, because some assets (e.g. Nanosuit) store unrelated data there.
-// The surface's linear colour: the diffuse texture's, tinted, or the tint alone without one
-float3 GetAlbedo(float2 uv)
+// The surface's linear colour: the diffuse texture's, tinted, or the tint alone without one. srgbTint: the draw's
+// (InstanceMaterial, ForwardTypes.hlsli).
+float3 GetAlbedo(float2 uv, float3 srgbTint)
 {
-	const float3 tint = SRGBToLinear(Tint);
+	const float3 tint = SRGBToLinear(srgbTint);
 	if (HasDiffuseMap < 0.5f)
 	{
 		return tint;
@@ -60,6 +58,9 @@ float3 GetAlbedo(float2 uv)
 	return SRGBToLinear(DiffuseMap.Sample(LinearSampler, uv).rgb) * tint;
 }
 
+// How much of the pixel the material's opacity mask covers, 1 without a mask. A cutout material discards the pixel
+// below AlphaCutoff instead (and returns 1); a blended one returns the mask, to fade by. Diffuse alpha isn't used
+// unless the material says so, because some assets (e.g. Nanosuit) store unrelated data there.
 float ApplyOpacityMask(float2 uv)
 {
 	if (HasOpacityMask < 0.5f)

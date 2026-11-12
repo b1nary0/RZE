@@ -73,6 +73,11 @@ bool MaterialOverrides::IsEmpty() const
 
 bool MaterialOverrides::ChangesValues() const
 {
+	return ChangesBindings() || Opacity || Shininess || Tint;
+}
+
+bool MaterialOverrides::ChangesBindings() const
+{
 	for (const std::optional<Filepath>& texture : Textures)
 	{
 		if (texture.has_value())
@@ -80,7 +85,7 @@ bool MaterialOverrides::ChangesValues() const
 			return true;
 		}
 	}
-	return BlendMode || Opacity || Shininess || Tint || InvertOpacityMask || OpacityMaskInAlpha;
+	return BlendMode || InvertOpacityMask || OpacityMaskInAlpha;
 }
 
 void MaterialOverrides::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) const

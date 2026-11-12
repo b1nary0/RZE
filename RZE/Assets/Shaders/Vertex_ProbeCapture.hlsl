@@ -1,8 +1,8 @@
 // Probe capture (ProbeCapture): draws a mesh into each probe face of the batch that sees it, an instance a face. Each face
 // is a 90-degree view from its probe, squeezed into its square of the target, with clip distances at the square's
 // edges so a triangle crossing them stops there rather than drawing onto the next face.
+#include "Common/ForwardTypes.hlsli"
 #include "Common/ProbeCaptureTypes.hlsli"
-#include "Common/VertexResources.hlsli"
 
 // Mirrors ProbeCapture::k_maxBatchFaces
 #define MAX_CAPTURE_FACES 384
@@ -17,7 +17,17 @@ struct CaptureFace
 	float4 ProbePosition;
 };
 
-// Mirrors ProbeCapture::FaceTableLayout. After VertexResources.hlsli's b0 and b1.
+// Mirrors GraphicsLayouts::MeshInstanceLayout: the draw every instance is of, as an instance of the forward pass's
+// stream carries it (Vertex_MeshInstanced.hlsl), so both read a draw's place and tint from the same thing
+cbuffer CaptureDraw : register(b1)
+{
+	float4x4 World;
+	float4x4 InvWorld;
+	float4 MaterialA;
+	float4 MaterialB;
+};
+
+// Mirrors ProbeCapture::FaceTableLayout
 cbuffer CaptureFaces : register(b2)
 {
 	CaptureFace Faces[MAX_CAPTURE_FACES];
@@ -40,5 +50,6 @@ CaptureVertexToPixel VSMain(CaptureVertexInput input)
 	output.UV = input.UV;
 	output.WorldPos = worldPos.xyz;
 	output.ProbePosition = face.ProbePosition.xyz;
+	output.Tint = UnpackInstanceMaterial(MaterialA, MaterialB).Tint;
 	return output;
 }

@@ -71,17 +71,17 @@ TEST_CASE("Only a blended material draws with its opacity; the rest are solid on
 	values.Opacity = 0.4f;
 
 	values.BlendMode = EBlendMode::Opaque;
-	CHECK(MaterialInstance::BuildBufferData(values).Opacity == doctest::Approx(1.0f));
+	CHECK(MaterialInstance::BuildInstanceData(values).Opacity == doctest::Approx(1.0f));
 	CHECK(MaterialInstance::BuildBufferData(values).OpacityMaskIsCoverage == doctest::Approx(0.0f));
 
 	values.BlendMode = EBlendMode::Cutout;
-	CHECK(MaterialInstance::BuildBufferData(values).Opacity == doctest::Approx(1.0f));
+	CHECK(MaterialInstance::BuildInstanceData(values).Opacity == doctest::Approx(1.0f));
 	CHECK(MaterialInstance::BuildBufferData(values).OpacityMaskIsCoverage == doctest::Approx(0.0f));
 
 	for (EBlendMode blended : { EBlendMode::Transparent, EBlendMode::Premultiplied, EBlendMode::Additive, EBlendMode::Multiply })
 	{
 		values.BlendMode = blended;
-		CHECK(MaterialInstance::BuildBufferData(values).Opacity == doctest::Approx(0.4f));
+		CHECK(MaterialInstance::BuildInstanceData(values).Opacity == doctest::Approx(0.4f));
 		// A blended material's mask fades rather than cuts
 		CHECK(MaterialInstance::BuildBufferData(values).OpacityMaskIsCoverage == doctest::Approx(1.0f));
 	}
@@ -90,11 +90,9 @@ TEST_CASE("Only a blended material draws with its opacity; the rest are solid on
 TEST_CASE("A material's GPU parameters say which mask and height textures it has, and how to read the mask")
 {
 	MaterialValues values = WithTextures({ TEXTURE_SLOT_OPACITY });
-	values.Shininess = 12.0f;
 	values.InvertOpacityMask = true;
 
 	GraphicsLayouts::MaterialBufferLayout params = MaterialInstance::BuildBufferData(values);
-	CHECK(params.Shininess == doctest::Approx(12.0f));
 	CHECK(params.HasOpacityMask == doctest::Approx(1.0f));
 	CHECK(params.HasHeightMap == doctest::Approx(0.0f));
 	CHECK(params.InvertOpacityMask == doctest::Approx(1.0f));
@@ -108,15 +106,31 @@ TEST_CASE("A material's GPU parameters say which mask and height textures it has
 	CHECK(params.OpacityMaskInAlpha == doctest::Approx(1.0f));
 }
 
-TEST_CASE("A material's GPU parameters carry its tint, and whether a diffuse texture is there for it to tint")
+TEST_CASE("A draw's GPU parameters carry its material's tint and shininess, whatever its textures")
 {
 	MaterialValues values = WithTextures({ TEXTURE_SLOT_DIFFUSE });
 	values.Tint = Vector3D(0.9f, 0.5f, 0.1f);
-	GraphicsLayouts::MaterialBufferLayout params = MaterialInstance::BuildBufferData(values);
-	CHECK(params.HasDiffuseMap == doctest::Approx(1.0f));
+	values.Shininess = 12.0f;
+	const GraphicsLayouts::InstanceMaterialLayout params = MaterialInstance::BuildInstanceData(values);
 	CHECK(params.Tint[0] == doctest::Approx(0.9f));
 	CHECK(params.Tint[1] == doctest::Approx(0.5f));
 	CHECK(params.Tint[2] == doctest::Approx(0.1f));
+	CHECK(params.Shininess == doctest::Approx(12.0f));
+
+	// A draw nobody gave values is white and solid
+	const GraphicsLayouts::InstanceMaterialLayout defaults;
+	CHECK(defaults.Tint[0] == doctest::Approx(1.0f));
+	CHECK(defaults.Opacity == doctest::Approx(1.0f));
+	CHECK(MaterialInstance::BuildInstanceData(MaterialValues()).Shininess == doctest::Approx(defaults.Shininess));
+
+	// Two registers, as the instance stream and the shaders read them
+	CHECK(sizeof(GraphicsLayouts::InstanceMaterialLayout) == 32);
+}
+
+TEST_CASE("A material's GPU parameters say whether a diffuse texture is there for the tint to multiply")
+{
+	GraphicsLayouts::MaterialBufferLayout params = MaterialInstance::BuildBufferData(WithTextures({ TEXTURE_SLOT_DIFFUSE }));
+	CHECK(params.HasDiffuseMap == doctest::Approx(1.0f));
 
 	// A normal map alone: the tint is the colour, rather than whatever diffuse texture was bound last
 	params = MaterialInstance::BuildBufferData(WithTextures({ TEXTURE_SLOT_NORMAL }));
@@ -124,7 +138,8 @@ TEST_CASE("A material's GPU parameters carry its tint, and whether a diffuse tex
 
 	// A material made in code binds its own textures, and keeps these
 	CHECK(GraphicsLayouts::MaterialBufferLayout().HasDiffuseMap == doctest::Approx(1.0f));
-	CHECK(GraphicsLayouts::MaterialBufferLayout().Tint[0] == doctest::Approx(1.0f));
+	// A whole number of registers, which is what's uploaded
+	CHECK(sizeof(GraphicsLayouts::MaterialBufferLayout) % 16 == 0);
 }
 
 TEST_CASE("A material's shader follows its textures")

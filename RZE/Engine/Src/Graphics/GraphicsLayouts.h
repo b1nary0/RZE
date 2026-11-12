@@ -125,22 +125,45 @@ namespace GraphicsLayouts
 	};
 
 	// Mirrors ObjectBuffer in Common/VertexResources.hlsli: a world transform and its inverse, side by side, uploaded
-	// together. RenderObject keeps its own this way, and so does a MeshDraw placed away from its mesh's origin. Also one
-	// instance of MeshBatches' instance stream (MeshInstanceInput in Vertex_MeshInstanced.hlsl), so it's only these
-	// two matrices.
+	// together. RenderObject keeps its own this way, and so does a MeshDraw placed away from its mesh's origin. Also
+	// the first half of a MeshInstanceLayout, so it's only these two matrices.
 	struct ObjectBufferLayout
 	{
 		Matrix4x4 Transform;
 		Matrix4x4 InvTransform;
 	};
 
-	// Mirrors MaterialBuffer in Common/PixelResources.hlsli. MaterialInstance::BuildBufferData works it out from a
-	// material's values.
+	// The material values a draw carries itself rather than reading from its material's buffer
+	// (MaterialBufferLayout): the ones that change nothing a draw binds, so draws that differ only in these, such as
+	// one mesh tinted a different colour by each object, still share a batch. MaterialInstance::BuildInstanceData
+	// works it out. Mirrors the two MATERIAL registers of MeshInstanceInput (Vertex_MeshInstanced.hlsl) and of
+	// CaptureDraw (Vertex_ProbeCapture.hlsl).
+	struct InstanceMaterialLayout
+	{
+		// MaterialValues::Tint: sRGB; multiplies the diffuse texture, or is the colour without one
+		float Tint[3]{ 1.0f, 1.0f, 1.0f };
+		float Shininess{ 1.0f };
+		// 1 unless the material is blended: the shaders write it as the scene's alpha
+		float Opacity{ 1.0f };
+		// The rest of Opacity's register: room for three more values before an instance grows
+		float _spare[3]{};
+	};
+
+	// Everything about one draw of a mesh that isn't its geometry or what it binds: where it is and its material's
+	// per-draw values (MeshDraw::BuildInstance). One instance of MeshBatches' instance stream (MeshInstanceInput in
+	// Vertex_MeshInstanced.hlsl), and ProbeCapture's per-draw buffer (CaptureDraw in Vertex_ProbeCapture.hlsl).
+	struct MeshInstanceLayout
+	{
+		ObjectBufferLayout Object;
+		InstanceMaterialLayout Material;
+	};
+
+	// Mirrors MaterialBuffer in Common/PixelResources.hlsli: what a material's textures and blend mode mean for
+	// reading them, the same for every draw that binds the material. MaterialInstance::BuildBufferData works it out
+	// from a material's values. The values that can differ draw by draw are in InstanceMaterialLayout instead.
 	// #TODO(Josh::Turn into material properties or something; material system?)
 	struct MaterialBufferLayout
 	{
-		float Shininess{ 1.0f };
-		float Opacity{ 1.0f };
 		// 1.0f when the matching texture slot is set. Unset slots aren't unbound, so the shader needs
 		// these to avoid sampling a previous draw's texture.
 		float HasOpacityMask{ 0.0f };
@@ -154,10 +177,9 @@ namespace GraphicsLayouts
 		// 1.0f when the diffuse slot is set; without it the tint alone is the colour. 1.0f by default, since materials
 		// made in code set their textures themselves (SetTexture) and keep the defaults.
 		float HasDiffuseMap{ 1.0f };
-		// MaterialValues::Tint; HLSL starts a float3 on a new 16-byte register, as here
-		float Tint[3]{ 1.0f, 1.0f, 1.0f };
-		// 1.0f when the specular slot is set; without it the shader uses a typical non-metal's intensity. Fills the
-		// rest of Tint's register, keeping the buffer a whole number of 16-byte registers, which is what's uploaded.
+		// 1.0f when the specular slot is set; without it the shader uses a typical non-metal's intensity
 		float HasSpecularMap{ 0.0f };
+		// The buffer is a whole number of 16-byte registers, which is what's uploaded
+		float _pad{ 0.0f };
 	};
 }

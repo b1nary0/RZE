@@ -16,8 +16,7 @@ MaterialInstance::MaterialInstance(const std::string& name)
 {
 	m_paramBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(GraphicsLayouts::MaterialBufferLayout), 16, 1);
 	// The GPU starts with the defaults too, so a material nobody commits (e.g. one made in code) isn't drawn with an
-	// empty buffer: its Opacity would be 0, which the shaders write as alpha, and post-processing then treats it as
-	// background
+	// empty buffer: its HasDiffuseMap would be 0, and it would draw its tint instead of the texture it was given
 	CommitPropertyChanges();
 }
 
@@ -54,10 +53,6 @@ GraphicsLayouts::MaterialBufferLayout MaterialInstance::BuildBufferData(const Ma
 	const bool isBlended = ::IsBlended(values.BlendMode);
 
 	GraphicsLayouts::MaterialBufferLayout params;
-	params.Shininess = values.Shininess;
-	// The shaders write opacity as the scene's alpha, which PostProcess also reads (background, exposure weight), so
-	// only a material drawn blended gets anything but solid
-	params.Opacity = isBlended ? values.Opacity : 1.0f;
 	params.HasOpacityMask = values.Textures[TEXTURE_SLOT_OPACITY].IsValid() ? 1.0f : 0.0f;
 	params.HasHeightMap = values.Textures[TEXTURE_SLOT_HEIGHT].IsValid() ? 1.0f : 0.0f;
 	params.OpacityMaskInAlpha = values.OpacityMaskInAlpha ? 1.0f : 0.0f;
@@ -65,10 +60,25 @@ GraphicsLayouts::MaterialBufferLayout MaterialInstance::BuildBufferData(const Ma
 	// A cutout clips at the mask; a blended material fades by it
 	params.OpacityMaskIsCoverage = isBlended ? 1.0f : 0.0f;
 	params.HasDiffuseMap = values.Textures[TEXTURE_SLOT_DIFFUSE].IsValid() ? 1.0f : 0.0f;
-	params.Tint[0] = values.Tint.X();
-	params.Tint[1] = values.Tint.Y();
-	params.Tint[2] = values.Tint.Z();
 	params.HasSpecularMap = values.Textures[TEXTURE_SLOT_SPECULAR].IsValid() ? 1.0f : 0.0f;
+	return params;
+}
+
+GraphicsLayouts::InstanceMaterialLayout MaterialInstance::BuildInstanceData(const MaterialValues& values)
+{
+	return BuildInstanceData(values.Tint, values.Shininess, values.Opacity, values.BlendMode);
+}
+
+GraphicsLayouts::InstanceMaterialLayout MaterialInstance::BuildInstanceData(const Vector3D& tint, float shininess, float opacity, EBlendMode blendMode)
+{
+	GraphicsLayouts::InstanceMaterialLayout params;
+	params.Tint[0] = tint.X();
+	params.Tint[1] = tint.Y();
+	params.Tint[2] = tint.Z();
+	params.Shininess = shininess;
+	// The shaders write opacity as the scene's alpha, which PostProcess also reads (background, exposure weight), so
+	// only a material drawn blended gets anything but solid
+	params.Opacity = ::IsBlended(blendMode) ? opacity : 1.0f;
 	return params;
 }
 

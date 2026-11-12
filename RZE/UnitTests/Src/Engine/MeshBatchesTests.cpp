@@ -1,6 +1,8 @@
 #include <doctest/doctest.h>
 
 #include <Graphics/GraphicsLayouts.h>
+#include <Graphics/MaterialOverrides.h>
+#include <Graphics/MaterialSlot.h>
 #include <Graphics/MeshBatches.h>
 #include <Graphics/MeshDraw.h>
 #include <Graphics/MeshGeometry.h>
@@ -12,16 +14,28 @@
 
 namespace
 {
+	// A slot without a material (making one needs the renderer): its draws carry the default values, with overrides
+	// on top
+	MaterialSlot MakeSlot(const MaterialOverrides& overrides)
+	{
+		MaterialSlot slot{ StaticMesh::Slot() };
+		slot.SetOverrides(overrides);
+		return slot;
+	}
+
 	// Draws of geometry, each placed somewhere of its own with its own matrices, as a sub-mesh away from its mesh's
-	// origin is
+	// origin is, all of one slot nothing overrides
 	std::vector<MeshDraw> MakeDraws(size_t count, const MeshGeometry& geometry)
 	{
+		static const MaterialSlot slot = MakeSlot(MaterialOverrides());
+
 		std::vector<MeshDraw> draws(count);
 		for (size_t index = 0; index < count; ++index)
 		{
 			MeshDraw& draw = draws[index];
 			const float offset = static_cast<float>(index + 1);
 			draw.Geometry = &geometry;
+			draw.Slot = &slot;
 			draw.OwnMatrices.Transform = Matrix4x4::CreateInPlace(Vector3D(offset, 2.0f * offset, -offset), Vector3D(1.0f), Vector3D(0.0f, 10.0f * offset, 0.0f));
 			draw.OwnMatrices.InvTransform = draw.OwnMatrices.Transform.Inverse();
 			draw.Transform = &draw.OwnMatrices.Transform;
@@ -37,11 +51,11 @@ namespace
 	std::vector<const MeshDraw*> InstanceDraws(const MeshBatches& batches, const std::vector<MeshDraw>& draws)
 	{
 		std::vector<const MeshDraw*> instanceDraws;
-		for (const GraphicsLayouts::ObjectBufferLayout& instance : batches.GetInstances())
+		for (const GraphicsLayouts::MeshInstanceLayout& instance : batches.GetInstances())
 		{
 			for (const MeshDraw& draw : draws)
 			{
-				if (draw.OwnMatrices.Transform == instance.Transform && draw.OwnMatrices.InvTransform == instance.InvTransform)
+				if (draw.OwnMatrices.Transform == instance.Object.Transform && draw.OwnMatrices.InvTransform == instance.Object.InvTransform)
 				{
 					instanceDraws.push_back(&draw);
 					break;
@@ -195,12 +209,56 @@ TEST_CASE("Each instance is its draw's transform and inverse, shared matrices in
 	batches.Add(draws[1], nullptr);
 	batches.Build();
 
-	const std::vector<GraphicsLayouts::ObjectBufferLayout>& instances = batches.GetInstances();
+	const std::vector<GraphicsLayouts::MeshInstanceLayout>& instances = batches.GetInstances();
 	REQUIRE(instances.size() == 2);
-	CHECK(instances[0].Transform == draws[0].OwnMatrices.Transform);
-	CHECK(instances[0].InvTransform == draws[0].OwnMatrices.InvTransform);
-	CHECK(instances[1].Transform == objectMatrices.Transform);
-	CHECK(instances[1].InvTransform == objectMatrices.InvTransform);
+	CHECK(instances[0].Object.Transform == draws[0].OwnMatrices.Transform);
+	CHECK(instances[0].Object.InvTransform == draws[0].OwnMatrices.InvTransform);
+	CHECK(instances[1].Object.Transform == objectMatrices.Transform);
+	CHECK(instances[1].Object.InvTransform == objectMatrices.InvTransform);
+}
+
+TEST_CASE("Draws of slots that differ only in tint, shininess or opacity share a batch, each instance with its own")
+{
+	const MeshGeometry geometry;
+
+	MaterialOverrides red;
+	red.Tint = Vector3D(1.0f, 0.0f, 0.0f);
+	MaterialOverrides shiny;
+	shiny.Shininess = 64.0f;
+	const MaterialSlot plainSlot = MakeSlot(MaterialOverrides());
+	const MaterialSlot redSlot = MakeSlot(red);
+	const MaterialSlot shinySlot = MakeSlot(shiny);
+
+	std::vector<MeshDraw> draws = MakeDraws(3, geometry);
+	draws[0].Slot = &plainSlot;
+	draws[1].Slot = &redSlot;
+	draws[2].Slot = &shinySlot;
+
+	// The same bind key: none of the three overrides anything a draw binds, so a stage is binding one material
+	MeshBatches batches;
+	for (const MeshDraw& draw : draws)
+	{
+		batches.Add(draw, &k_materialA);
+	}
+	batches.Build();
+
+	REQUIRE(batches.GetBatches().size() == 1);
+	CHECK(batches.GetBatches()[0].InstanceCount == 3);
+
+	const std::vector<GraphicsLayouts::MeshInstanceLayout>& instances = batches.GetInstances();
+	REQUIRE(instances.size() == 3);
+	const GraphicsLayouts::InstanceMaterialLayout defaults;
+	CHECK(instances[0].Material.Tint[1] == doctest::Approx(1.0f));
+	CHECK(instances[0].Material.Shininess == doctest::Approx(defaults.Shininess));
+	CHECK(instances[1].Material.Tint[0] == doctest::Approx(1.0f));
+	CHECK(instances[1].Material.Tint[1] == doctest::Approx(0.0f));
+	CHECK(instances[1].Material.Tint[2] == doctest::Approx(0.0f));
+	CHECK(instances[2].Material.Tint[1] == doctest::Approx(1.0f));
+	CHECK(instances[2].Material.Shininess == doctest::Approx(64.0f));
+	for (const GraphicsLayouts::MeshInstanceLayout& instance : instances)
+	{
+		CHECK(instance.Material.Opacity == doctest::Approx(1.0f));
+	}
 }
 
 TEST_CASE("Building again after Clear replaces the last pass's batches and instances")
@@ -223,7 +281,7 @@ TEST_CASE("Building again after Clear replaces the last pass's batches and insta
 	REQUIRE(batches.GetInstances().size() == 1);
 	CHECK(batches.GetBatches()[0].Draw == &draws[3]);
 	CHECK(batches.GetBatches()[0].FirstInstance == 0);
-	CHECK(batches.GetInstances()[0].Transform == draws[3].OwnMatrices.Transform);
+	CHECK(batches.GetInstances()[0].Object.Transform == draws[3].OwnMatrices.Transform);
 
 	batches.Clear();
 	batches.Build();
@@ -231,10 +289,10 @@ TEST_CASE("Building again after Clear replaces the last pass's batches and insta
 	CHECK(batches.GetInstances().empty());
 }
 
-TEST_CASE("The input layout reads the vertex from slot 0 and the instance's 8 columns from slot 1, 16 bytes apart")
+TEST_CASE("The input layout reads the vertex from slot 0 and the instance's 10 registers from slot 1, 16 bytes apart")
 {
 	const Rendering::ShaderInputLayout& layout = MeshBatches::GetInputLayout();
-	REQUIRE(layout.GetDataCount() == 12);
+	REQUIRE(layout.GetDataCount() == 14);
 
 	for (size_t index = 0; index < 4; ++index)
 	{
@@ -243,7 +301,8 @@ TEST_CASE("The input layout reads the vertex from slot 0 and the instance's 8 co
 		CHECK(layout[index].DataClassification == Rendering::EDataClassification::PER_VERTEX);
 	}
 
-	for (size_t column = 0; column < 8; ++column)
+	// Two matrices' columns, then the material's two registers
+	for (size_t column = 0; column < 10; ++column)
 	{
 		const Rendering::ShaderInputLayout::ShaderInputLayoutData& element = layout[4 + column];
 		CAPTURE(element.Name);
@@ -255,5 +314,5 @@ TEST_CASE("The input layout reads the vertex from slot 0 and the instance's 8 co
 		CHECK(!element.Name.empty());
 		CHECK((element.Name.back() < '0' || element.Name.back() > '9'));
 	}
-	CHECK(layout[11].Offset + 16 == sizeof(GraphicsLayouts::ObjectBufferLayout));
+	CHECK(layout[13].Offset + 16 == sizeof(GraphicsLayouts::MeshInstanceLayout));
 }

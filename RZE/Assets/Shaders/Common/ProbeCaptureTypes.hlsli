@@ -24,6 +24,8 @@ struct CaptureVertexToPixel
 	float2 UV       : UV;
 	float3 WorldPos : POSITION;
 	nointerpolation float3 ProbePosition : POSITION1;
+	// The draw's, sRGB (InstanceMaterial, ForwardTypes.hlsli)
+	nointerpolation float3 Tint : TINT;
 };
 
 #endif // PROBE_CAPTURE_TYPES_HLSLI

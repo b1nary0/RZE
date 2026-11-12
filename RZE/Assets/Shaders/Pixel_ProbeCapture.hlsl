@@ -12,7 +12,7 @@ uint2 PSMain(CaptureVertexToPixel input, bool isFrontFace : SV_IsFrontFace) : SV
 	ProbeSurface surface;
 	surface.IsHit = true;
 	surface.IsBackFace = !isFrontFace;
-	surface.Albedo = GetAlbedo(input.UV);
+	surface.Albedo = GetAlbedo(input.UV, input.Tint);
 	surface.Normal = normalize(input.Normal);
 	surface.Distance = length(input.WorldPos - input.ProbePosition);
 	return PackProbeSurface(surface);

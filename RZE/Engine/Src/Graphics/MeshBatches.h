@@ -14,10 +14,10 @@
 class MeshGeometry;
 struct MeshDraw;
 
-// A pass's mesh draws as instanced draws (Docs/Plans/DrawBatching.md): each draw's transform is an instance in one
-// stream, uploaded once a pass, and draws that would bind the same things are one batch, drawn with one call and
-// Vertex_MeshInstanced. Each stage that draws meshes owns one. The stage binds what each batch is drawn with; this only
-// knows the instances and which draws can share a batch.
+// A pass's mesh draws as instanced draws (Docs/Plans/DrawBatching.md): each draw's transform and the material values
+// it carries (MeshDraw::BuildInstance) are an instance in one stream, uploaded once a pass, and draws that would bind
+// the same things are one batch, drawn with one call and Vertex_MeshInstanced. Each stage that draws meshes owns one.
+// The stage binds what each batch is drawn with; this only knows the instances and which draws can share a batch.
 //
 // A frame: Clear, Add each draw, Upload, BindInstances, then draw each of GetBatches with
 // Renderer::DrawIndexedInstanced(indexBuffer, InstanceCount, FirstInstance).
@@ -45,7 +45,7 @@ public:
 	MeshBatches& operator=(const MeshBatches&) = delete;
 
 public:
-	// What a vertex shader drawn with these takes: the mesh vertex in slot 0, the instance (an ObjectBufferLayout) in slot 1
+	// What a vertex shader drawn with these takes: the mesh vertex in slot 0, the instance (a MeshInstanceLayout) in slot 1
 	static const Rendering::ShaderInputLayout& GetInputLayout();
 
 	// Makes the instance buffer
@@ -73,7 +73,7 @@ public:
 	// What Build built
 	const std::vector<Batch>& GetBatches() const { return m_batches; }
 	// Each batch's instances, from its FirstInstance
-	const std::vector<GraphicsLayouts::ObjectBufferLayout>& GetInstances() const { return m_instances; }
+	const std::vector<GraphicsLayouts::MeshInstanceLayout>& GetInstances() const { return m_instances; }
 
 private:
 	// A draw as added
@@ -102,7 +102,7 @@ private:
 	std::vector<Entry> m_entries;
 
 	// The rest are worked out by Build, and kept to reuse their memory
-	std::vector<GraphicsLayouts::ObjectBufferLayout> m_instances;
+	std::vector<GraphicsLayouts::MeshInstanceLayout> m_instances;
 	std::vector<Batch> m_batches;
 	// Each entry's batch
 	std::vector<U32> m_entryBatches;

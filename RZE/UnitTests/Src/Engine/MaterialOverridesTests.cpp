@@ -6,6 +6,7 @@
 
 #include <Graphics/Material.h>
 #include <Graphics/MaterialOverrides.h>
+#include <Graphics/MaterialSlot.h>
 #include <Graphics/StaticMesh.h>
 #include <Graphics/StaticMeshInstance.h>
 
@@ -255,4 +256,73 @@ TEST_CASE("Swapping a component's mesh carries its overrides over by slot name, 
 	CHECK(prepared->GetOverrides().count("bricks") == 0);
 
 	component.SetMeshInstance(nullptr);
+}
+
+TEST_CASE("Only overrides of what a draw binds take a material of their own; tint, shininess and opacity don't")
+{
+	MaterialOverrides overrides;
+	CHECK_FALSE(overrides.ChangesBindings());
+
+	overrides.Tint = Vector3D(0.5f, 0.25f, 0.0f);
+	overrides.Shininess = 8.0f;
+	overrides.Opacity = 0.5f;
+	CHECK(overrides.ChangesValues());
+	CHECK_FALSE(overrides.ChangesBindings());
+
+	// Which material it is isn't the slot's own material's business either
+	overrides.Material = GetMaterialPath("Other");
+	CHECK_FALSE(overrides.ChangesBindings());
+
+	MaterialOverrides blendMode;
+	blendMode.BlendMode = EBlendMode::Transparent;
+	CHECK(blendMode.ChangesBindings());
+
+	MaterialOverrides texture;
+	texture.Textures[TEXTURE_SLOT_DIFFUSE] = Filepath();
+	CHECK(texture.ChangesBindings());
+
+	MaterialOverrides invertMask;
+	invertMask.InvertOpacityMask = true;
+	CHECK(invertMask.ChangesBindings());
+
+	MaterialOverrides maskInAlpha;
+	maskInAlpha.OpacityMaskInAlpha = false;
+	CHECK(maskInAlpha.ChangesBindings());
+}
+
+TEST_CASE("A slot's draws carry its overrides of tint, shininess and opacity, and the material's values for the rest")
+{
+	// A slot without a material draws the defaults
+	StaticMesh::Slot meshSlot;
+	meshSlot.Name = "Body";
+	MaterialSlot slot(meshSlot);
+
+	GraphicsLayouts::InstanceMaterialLayout params = slot.BuildInstanceData();
+	CHECK(params.Tint[0] == doctest::Approx(1.0f));
+	CHECK(params.Shininess == doctest::Approx(MaterialValues().Shininess));
+	CHECK(params.Opacity == doctest::Approx(1.0f));
+
+	MaterialOverrides overrides;
+	overrides.Tint = Vector3D(0.5f, 0.25f, 0.0f);
+	overrides.Opacity = 0.4f;
+	slot.SetOverrides(overrides);
+	params = slot.BuildInstanceData();
+	CHECK(params.Tint[0] == doctest::Approx(0.5f));
+	CHECK(params.Tint[1] == doctest::Approx(0.25f));
+	CHECK(params.Tint[2] == doctest::Approx(0.0f));
+	CHECK(params.Shininess == doctest::Approx(MaterialValues().Shininess));
+	// Not blended, so solid whatever its opacity
+	CHECK(params.Opacity == doctest::Approx(1.0f));
+
+	overrides.BlendMode = EBlendMode::Transparent;
+	overrides.Shininess = 32.0f;
+	slot.SetOverrides(overrides);
+	params = slot.BuildInstanceData();
+	CHECK(params.Opacity == doctest::Approx(0.4f));
+	CHECK(params.Shininess == doctest::Approx(32.0f));
+
+	slot.SetOverrides(MaterialOverrides());
+	params = slot.BuildInstanceData();
+	CHECK(params.Tint[0] == doctest::Approx(1.0f));
+	CHECK(params.Opacity == doctest::Approx(1.0f));
 }

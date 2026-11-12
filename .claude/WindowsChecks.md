@@ -250,6 +250,22 @@ Things to know on this machine (2026-11-10):
   cutout shadows in particular (leaves, chains: cut out, not solid quads) and RenderPerfTest's point-light shadows
   on every side of a pillar. 4: the status bar's shadow draws while RenderPerfTest loads are far below the commit
   before (Linux, load + 20 s framed: ~34,400 draws → ~770).
+- **A39. Per-instance material values** (draw batching Step 4: `GraphicsLayouts::MeshInstanceLayout`, 160 B an
+  instance; tint, shininess and opacity left `MaterialBuffer` for the instance stream and `VertexToPixel`;
+  `ProbeCapture` has its own per-draw buffer). `MeshDraw.cpp` is new, so run `GenerateSolutions.bat` first. 1: A1's
+  three builds; A2's counts (4 new cases). 2: Debug harness (validation on) on `Sponza.scene` and
+  `RenderPerfTest.scene`, 20 s: no `D3D11 (` error. Watch for: the input layout's two new elements (`MATERIALA`,
+  `MATERIALB`, 14 in all) not matching `Vertex_MeshInstanced`; a vertex/pixel **signature mismatch** on any pixel
+  shader taking `VertexToPixel` (the three forward ones, `Pixel_DepthOnlyCutout`, `Pixel_PickID`,
+  `Pixel_OutlineMask`) or `CaptureVertexToPixel`, which gained `nointerpolation` members; a constant buffer smaller
+  than a shader expects (`MaterialBuffer` is now 32 B, `CaptureDraw` 160 B at vertex b1 of `Vertex_ProbeCapture`).
+  3: images as A37.3 against the commit before: identical but for run-to-run variation (Linux: 0 pixels on 5 of 8, the rest
+  one level apart on at most 148 pixels; framed Sponza also has 2 pixels 8 apart between some runs of the same
+  build, so repeat a shot before reading a difference into it). RenderPerfTest's pillars keep their
+  tints, the blended ones their see-through look, and the probes' bounce light keeps the tints' colours (it comes
+  through `ProbeCapture`'s new buffer). 4: the status bar's forward draws on framed RenderPerfTest: 912 → 28
+  (Linux). 5: by hand, change a pillar's Tint and Shininess in the inspector: it changes at once, and resetting the
+  override puts it back; picking and the selection outline still work on it.
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 

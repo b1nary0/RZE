@@ -4,10 +4,10 @@
 #include "Common/ForwardTypes.hlsli"
 #include "Common/VertexResources.hlsli"
 
-// A mesh vertex placed in the world by its draw's transform and seen by the camera. Shared by the shaders that take the
-// transform from the ObjectBuffer (Vertex_NewRenderer) and from the instance stream (Vertex_MeshInstanced), so the
-// two give the same positions.
-VertexToPixel TransformMeshVertex(VertexInput input, float4x4 world, float4x4 invWorld)
+// A mesh vertex placed in the world by its draw's transform and seen by the camera, with the material values its draw
+// carries. Shared by the shaders that take the transform from the ObjectBuffer (Vertex_NewRenderer) and from the
+// instance stream (Vertex_MeshInstanced), so the two give the same positions.
+VertexToPixel TransformMeshVertex(VertexInput input, float4x4 world, float4x4 invWorld, InstanceMaterial material)
 {
 	VertexToPixel output;
 
@@ -20,6 +20,9 @@ VertexToPixel TransformMeshVertex(VertexInput input, float4x4 world, float4x4 in
 	output.Tangent = normalize(mul((float3x3)world, input.Tangent));
 	output.UV = input.UV;
 	output.CameraPos = CameraPosition;
+	output.Tint = material.Tint;
+	output.Shininess = material.Shininess;
+	output.Opacity = material.Opacity;
 
 	return output;
 }

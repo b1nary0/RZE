@@ -8,11 +8,11 @@ float4 PSMain(VertexToPixel input) : SV_TARGET
 {
 	SurfaceData surface;
 	// Its tint, since it has no diffuse texture
-	surface.Albedo = GetAlbedo(input.UV);
+	surface.Albedo = GetAlbedo(input.UV, input.Tint);
 	surface.Normal = normalize(input.Normal);
 	surface.VertexNormal = surface.Normal;
 	surface.SpecularIntensity = DefaultSpecularIntensity;
-	surface.Shininess = Shininess;
+	surface.Shininess = input.Shininess;
 	surface.WorldPos = input.WorldPos;
 	surface.AmbientOcclusion = SampleAmbientOcclusion(input.Position.xy);
 
@@ -20,6 +20,6 @@ float4 PSMain(VertexToPixel input) : SV_TARGET
 	float3 colour = ComputeLighting(surface, viewDir);
 
 	// Linear and unclipped; PostProcessRenderStage applies exposure and tonemapping
-	// Opacity is 1 unless the material is blended (MaterialInstance::Create); only the blended pass uses it
-	return float4(colour, Opacity);
+	// Opacity is 1 unless the material is blended (MaterialInstance::BuildInstanceData); only the blended pass uses it
+	return float4(colour, input.Opacity);
 }

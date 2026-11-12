@@ -33,6 +33,11 @@ struct MaterialOverrides
 	bool IsEmpty() const;
 	// Some of the material's values are overridden, rather than only which material it is
 	bool ChangesValues() const;
+	// Some override changes what a draw binds (a texture, how it's blended, how its mask is read), so drawing with it
+	// takes a material of its own. The rest (Tint, Shininess, Opacity) each draw carries itself
+	// (GraphicsLayouts::InstanceMaterialLayout), so an object overriding only those still draws the material it
+	// overrides, in the same batch as everything else drawing it.
+	bool ChangesBindings() const;
 
 	// As a JSON object with just the overridden fields: the material by path, the blend mode by name, the tint as
 	// [r, g, b], textures by slot name (an emptied slot as ""), as scene files keep them

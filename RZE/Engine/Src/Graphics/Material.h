@@ -50,8 +50,15 @@ public:
 	// A material asset's material (MaterialValues::FromMaterialData, then SetValues)
 	static std::shared_ptr<MaterialInstance> Create(const MaterialAssetImporter::MaterialData& materialData);
 
-	// The GPU parameters values draw with. Plain values in and out, so it's testable without a GPU.
+	// The GPU parameters every draw binding a material with these values reads from its buffer. Plain values in and
+	// out, so it's testable without a GPU.
 	static GraphicsLayouts::MaterialBufferLayout BuildBufferData(const MaterialValues& values);
+	// The GPU parameters each draw carries itself: the values an object can override and still draw the same
+	// material (MaterialSlot::BuildInstanceData), so they're never read from a material's buffer. Only a blended
+	// material draws with its opacity; the rest are solid.
+	static GraphicsLayouts::InstanceMaterialLayout BuildInstanceData(const MaterialValues& values);
+	// The same from the values alone, for a caller that has them from somewhere else
+	static GraphicsLayouts::InstanceMaterialLayout BuildInstanceData(const Vector3D& tint, float shininess, float opacity, EBlendMode blendMode);
 	// The shader values draw with. Plain values in and out, so it's testable without a GPU.
 	static EShader ChooseShader(const MaterialValues& values);
 

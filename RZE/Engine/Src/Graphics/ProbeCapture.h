@@ -110,6 +110,8 @@ private:
 	TypedResourceHandle<PixelShader> m_pixelShader;
 	// FaceTableLayout
 	Rendering::ConstantBufferHandle m_faceTableBuffer;
+	// The draw being drawn: a GraphicsLayouts::MeshInstanceLayout (CaptureDraw in Vertex_ProbeCapture.hlsl)
+	Rendering::ConstantBufferHandle m_drawBuffer;
 	// Which face each instance is drawn into (a U32 each), grown when a batch needs more
 	Rendering::VertexBufferHandle m_instanceBuffer;
 	size_t m_instanceCapacity = 0;

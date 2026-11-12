@@ -5,6 +5,7 @@
 #include <Graphics/Material.h>
 #include <Graphics/MaterialDefines.h>
 #include <Graphics/MaterialSlot.h>
+#include <Graphics/MeshDraw.h>
 #include <Graphics/RenderEngine.h>
 #include <Graphics/Shader.h>
 #include <Graphics/Texture2D.h>
@@ -18,11 +19,13 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstring>
 #include <vector>
 
 namespace
 {
-	// Must match CaptureFaces's register in Vertex_ProbeCapture.hlsl
+	// Must match CaptureDraw's and CaptureFaces's registers in Vertex_ProbeCapture.hlsl
+	constexpr U32 k_drawSlot = 1;
 	constexpr U32 k_faceTableSlot = 2;
 	// Close enough for a probe a few centimetres from a wall to still see it
 	constexpr float k_nearDistance = 0.02f;
@@ -106,6 +109,7 @@ void ProbeCapture::Initialize()
 	m_vertexShader = LoadVertexShader("Vertex_ProbeCapture", inputLayout);
 	m_pixelShader = LoadPixelShader("Pixel_ProbeCapture");
 	m_faceTableBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(FaceTableLayout), 16, 1);
+	m_drawBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(GraphicsLayouts::MeshInstanceLayout), 16, 1);
 	m_instanceCapacity = k_initialInstanceCapacity;
 	m_instanceBuffer = Rendering::Renderer::CreateDynamicVertexBuffer(m_instanceCapacity * sizeof(U32), sizeof(U32));
 }
@@ -287,7 +291,7 @@ U32 ProbeCapture::Flush(const RenderScene& scene)
 	Rendering::Renderer::SetVertexShader(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetInputLayout(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetPrimitiveTopology(Rendering::EPrimitiveTopology::TriangleList);
-	Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetWorldMatrixBuffer(), 1);
+	Rendering::Renderer::SetConstantBufferVS(m_drawBuffer, k_drawSlot);
 	Rendering::Renderer::SetConstantBufferVS(m_faceTableBuffer, k_faceTableSlot);
 	Rendering::Renderer::SetPixelShader(m_pixelShader->GetPlatformObject());
 	Rendering::Renderer::SetVertexBuffer(m_instanceBuffer, 1);
@@ -298,17 +302,21 @@ U32 ProbeCapture::Flush(const RenderScene& scene)
 	viewport.Height = static_cast<float>(batch.TargetHeight);
 	Rendering::Renderer::SetViewport(viewport);
 
-	const Matrix4x4* uploadedTransform = nullptr;
+	// What m_drawBuffer holds: a mesh's sub-meshes are mostly in the same place with the same values, one after another
+	GraphicsLayouts::MeshInstanceLayout uploadedInstance;
+	bool hasUploadedInstance = false;
 	for (const Batch::Draw& batchDraw : batch.Draws)
 	{
 		const MeshDraw& draw = *batchDraw.Draw;
-		if (draw.Transform != uploadedTransform)
+		const GraphicsLayouts::MeshInstanceLayout instance = draw.BuildInstance();
+		if (!hasUploadedInstance || std::memcmp(&instance, &uploadedInstance, sizeof(instance)) != 0)
 		{
-			Rendering::Renderer::UploadDataToBuffer<Matrix4x4>(m_vertexShader->GetWorldMatrixBuffer(), draw.Transform);
-			uploadedTransform = draw.Transform;
+			Rendering::Renderer::UploadDataToBuffer<GraphicsLayouts::MeshInstanceLayout>(m_drawBuffer, &instance);
+			uploadedInstance = instance;
+			hasUploadedInstance = true;
 		}
 
-		// Only the albedo and the cutout mask are read
+		// Only the albedo and the cutout mask are read: the tint from the draw, the rest from its material
 		const MaterialInstance& materialInstance = draw.Slot->GetMaterial();
 		Rendering::Renderer::SetConstantBufferPS(materialInstance.GetParamBuffer(), 1);
 		if (const Texture2D* const diffuseMap = materialInstance.GetTextureResource(TEXTURE_SLOT_DIFFUSE))
