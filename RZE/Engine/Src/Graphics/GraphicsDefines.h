@@ -19,6 +19,14 @@ enum class ERenderMobility
 	Movable
 };
 
+// Which render objects something is done with, by their mobility
+enum class ERenderMobilityFilter
+{
+	Any,
+	Static,
+	Movable
+};
+
 // Which render objects and lights are alive, for their handles (UniqueLiveObjectPtr), whether they were destroyed
 // through the handle or not (e.g. RenderScene::ClearObjects, or the scene going away). Both kinds share one
 // LiveIDAllocator, and no ID is handed out twice, so a handle to a destroyed object stays invalid even if a new one

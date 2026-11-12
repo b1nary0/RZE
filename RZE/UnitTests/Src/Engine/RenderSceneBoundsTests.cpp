@@ -6,6 +6,7 @@
 #include <Graphics/StaticMeshInstance.h>
 
 #include <Utils/Math/BoundingBox.h>
+#include <Utils/Math/Frustum.h>
 #include <Utils/Math/Matrix4x4.h>
 
 #include <memory>
@@ -463,4 +464,83 @@ TEST_CASE("An object changing mobility changes both kinds where it is, and the s
 
 	scene.ClearObjects();
 	CHECK(scene.GetStaticBounds().IsEmpty());
+}
+
+namespace
+{
+	// Looks down -Z from 10 metres up the Z axis at a box 10 metres wide and high around the origin, 20 metres deep
+	Frustum MakeFrustumAroundOrigin()
+	{
+		const Matrix4x4 view = Matrix4x4::CreateViewMatrix(Vector3D(0.0f, 0.0f, 10.0f), Vector3D(), Vector3D(0.0f, 1.0f, 0.0f));
+		return Frustum(Matrix4x4::CreateOrthoMatrixZeroToOne(-5.0f, 5.0f, -5.0f, 5.0f, 0.1f, 20.0f) * view);
+	}
+
+	// The draws ForEachDrawIn visits, in order
+	std::vector<const MeshDraw*> CollectDrawsIn(const RenderScene& scene, const Frustum& frustum, ERenderMobilityFilter mobility)
+	{
+		std::vector<const MeshDraw*> draws;
+		scene.ForEachDrawIn(frustum, mobility, [&draws](const MeshDraw& draw)
+		{
+			draws.push_back(&draw);
+		});
+		return draws;
+	}
+}
+
+TEST_CASE("ForEachDrawIn visits the draws inside the frustum, in the objects' order")
+{
+	RenderScene scene;
+	const Frustum frustum = MakeFrustumAroundOrigin();
+
+	RenderObjectPtr inside = scene.CreateRenderObject(MakeMesh({ k_unitBox }));
+	RenderObjectPtr outside = scene.CreateRenderObject(MakeMesh({ k_unitBox }));
+	outside->SetTransform(MakeTransform(Vector3D(50.0f, 0.0f, 0.0f)));
+	// Reaches into the frustum with its first sub-mesh only
+	const BoundingBox nearBox(Vector3D(-1.0f), Vector3D(1.0f));
+	const BoundingBox farBox(Vector3D(29.0f, -1.0f, -1.0f), Vector3D(31.0f, 1.0f, 1.0f));
+	RenderObjectPtr straddling = scene.CreateRenderObject(MakeMesh({ nearBox, farBox }));
+	straddling->SetTransform(MakeTransform(Vector3D(3.0f, 0.0f, 0.0f)));
+	// Nothing to draw yet
+	RenderObjectPtr empty = scene.CreateRenderObject(nullptr);
+
+	const std::vector<const MeshDraw*> draws = CollectDrawsIn(scene, frustum, ERenderMobilityFilter::Any);
+	REQUIRE(draws.size() == 2);
+	CHECK(draws[0] == &inside->GetDraws()[0]);
+	CHECK(draws[1] == &straddling->GetDraws()[0]);
+
+	// Moved into view, it's visited where it is among the objects
+	outside->SetTransform(MakeTransform(Vector3D(-3.0f, 0.0f, 0.0f)));
+	const std::vector<const MeshDraw*> drawsAfterMove = CollectDrawsIn(scene, frustum, ERenderMobilityFilter::Any);
+	REQUIRE(drawsAfterMove.size() == 3);
+	CHECK(drawsAfterMove[0] == &inside->GetDraws()[0]);
+	CHECK(drawsAfterMove[1] == &outside->GetDraws()[0]);
+	CHECK(drawsAfterMove[2] == &straddling->GetDraws()[0]);
+
+	scene.DestroyRenderObject(inside);
+	scene.DestroyRenderObject(outside);
+	scene.DestroyRenderObject(straddling);
+	scene.DestroyRenderObject(empty);
+}
+
+TEST_CASE("ForEachDrawIn visits only the objects of the mobility asked for")
+{
+	RenderScene scene;
+	const Frustum frustum = MakeFrustumAroundOrigin();
+
+	RenderObjectPtr staticObject = scene.CreateRenderObject(MakeMesh({ k_unitBox }));
+	RenderObjectPtr movableObject = scene.CreateRenderObject(MakeMesh({ k_unitBox }));
+	movableObject->SetMobility(ERenderMobility::Movable);
+
+	const std::vector<const MeshDraw*> staticDraws = CollectDrawsIn(scene, frustum, ERenderMobilityFilter::Static);
+	REQUIRE(staticDraws.size() == 1);
+	CHECK(staticDraws[0] == &staticObject->GetDraws()[0]);
+
+	const std::vector<const MeshDraw*> movableDraws = CollectDrawsIn(scene, frustum, ERenderMobilityFilter::Movable);
+	REQUIRE(movableDraws.size() == 1);
+	CHECK(movableDraws[0] == &movableObject->GetDraws()[0]);
+
+	CHECK(CollectDrawsIn(scene, frustum, ERenderMobilityFilter::Any).size() == 2);
+
+	scene.DestroyRenderObject(staticObject);
+	scene.DestroyRenderObject(movableObject);
 }

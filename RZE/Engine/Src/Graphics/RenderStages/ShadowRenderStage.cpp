@@ -1,15 +1,12 @@
 #include <Graphics/RenderStages/ShadowRenderStage.h>
 
 #include <Graphics/CubeMap.h>
-#include <Graphics/IndexBuffer.h>
 #include <Graphics/Material.h>
 #include <Graphics/MaterialSlot.h>
-#include <Graphics/MeshGeometry.h>
+#include <Graphics/MeshBatches.h>
 #include <Graphics/RenderEngine.h>
 #include <Graphics/SceneChangeLog.h>
 #include <Graphics/Shader.h>
-#include <Graphics/Texture2D.h>
-#include <Graphics/VertexBuffer.h>
 
 #include <Rendering/Renderer.h>
 #include <Rendering/Driver/GFXBuffer.h>
@@ -109,18 +106,10 @@ namespace
 
 void ShadowRenderStage::Initialize()
 {
-	// Same layout as ForwardRenderStage; the forward vertex shader is reused with the light's view-projection
-	Rendering::ShaderInputLayout inputLayout =
-	{
-		{ "POSITION", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 0 },
-		{ "NORMAL", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 12 },
-		{ "UV", Rendering::EDataFormat::R32G32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 24 },
-		{ "TANGENT", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 32 }
-	};
+	// The depth prepass's and forward pass's vertex shader, with each light view's view-projection as its camera
+	m_vertexShader = LoadVertexShader("Vertex_MeshInstanced", MeshBatches::GetInputLayout());
 
-	m_vertexShader = LoadVertexShader("Vertex_NewRenderer", inputLayout);
-
-	m_casterShader = LoadPixelShader("Pixel_ShadowCaster");
+	m_casters.Initialize();
 
 	// Separate from the vertex shader's own camera buffer so the forward pass's camera isn't overwritten
 	m_lightCameraBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(RenderCamera), 128, 1);
@@ -356,15 +345,12 @@ void ShadowRenderStage::BeginShadowPass()
 {
 	Rendering::Renderer::Begin("ShadowRenderStage");
 
-	// The same for every light's views. The forward vertex shader is reused with each view's view-projection.
+	// The same for every light's views. DrawCasters sets the pixel shader, only for cutouts.
 	Rendering::Renderer::SetVertexShader(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetConstantBufferVS(m_lightCameraBuffer, 0);
-	Rendering::Renderer::SetPixelShader(m_casterShader->GetPlatformObject());
 	Rendering::Renderer::SetRasterizerState(Rendering::ERasterizerState::ShadowCaster);
 	Rendering::Renderer::SetInputLayout(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetPrimitiveTopology(Rendering::EPrimitiveTopology::TriangleList);
-	// Bound once; only its contents change per object
-	Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetWorldMatrixBuffer(), 1);
 }
 
 void ShadowRenderStage::RenderDirectionalShadow(const RenderScene& scene, bool redrawStatic, const ShadowMapState& state, RenderWorkCounts& workCounts)
@@ -376,7 +362,7 @@ void ShadowRenderStage::RenderDirectionalShadow(const RenderScene& scene, bool r
 	{
 		Rendering::Renderer::ClearDepthStencilBuffer(state.StaticShadowMap);
 		Rendering::Renderer::SetDepthTarget(state.StaticShadowMap);
-		workCounts.ShadowDraws += DrawCasters(scene, viewProjection, ECasters::Static);
+		workCounts.ShadowDraws += DrawCasters(scene, viewProjection, ERenderMobilityFilter::Static);
 		++workCounts.SunShadowMapsRendered;
 	}
 
@@ -384,7 +370,7 @@ void ShadowRenderStage::RenderDirectionalShadow(const RenderScene& scene, bool r
 	Rendering::Renderer::ClearRenderTargets();
 	Rendering::Renderer::CopyTextureSlice(state.StaticShadowMap, 0, state.ShadowMap, 0);
 	Rendering::Renderer::SetDepthTarget(state.ShadowMap);
-	workCounts.ShadowDraws += DrawCasters(scene, viewProjection, ECasters::Movable);
+	workCounts.ShadowDraws += DrawCasters(scene, viewProjection, ERenderMobilityFilter::Movable);
 	Rendering::Renderer::ClearRenderTargets();
 }
 
@@ -410,14 +396,14 @@ void ShadowRenderStage::RenderPointShadow(const RenderScene& scene, const LightO
 		{
 			Rendering::Renderer::ClearDepthStencilSlice(state.StaticPointShadowCubes, slice);
 			Rendering::Renderer::SetDepthTarget(state.StaticPointShadowCubes, slice);
-			workCounts.ShadowDraws += DrawCasters(scene, viewProjection, ECasters::Static);
+			workCounts.ShadowDraws += DrawCasters(scene, viewProjection, ERenderMobilityFilter::Static);
 		}
 
 		// Unbound before it's copied out of. A slice is 1 MB, so it's copied even with no Movable casters in view.
 		Rendering::Renderer::ClearRenderTargets();
 		Rendering::Renderer::CopyTextureSlice(state.StaticPointShadowCubes, slice, state.PointShadowCubes, slice);
 		Rendering::Renderer::SetDepthTarget(state.PointShadowCubes, slice);
-		workCounts.ShadowDraws += DrawCasters(scene, viewProjection, ECasters::Movable);
+		workCounts.ShadowDraws += DrawCasters(scene, viewProjection, ERenderMobilityFilter::Movable);
 		++workCounts.PointShadowFacesRendered;
 	}
 	Rendering::Renderer::ClearRenderTargets();
@@ -432,7 +418,7 @@ void ShadowRenderStage::RenderPointShadow(const RenderScene& scene, const LightO
 	outShadow.NormalOffsetPerMetre = 2.0f / size * k_normalOffsetTexels;
 }
 
-U32 ShadowRenderStage::DrawCasters(const RenderScene& scene, const Matrix4x4& viewProjection, ECasters casters)
+U32 ShadowRenderStage::DrawCasters(const RenderScene& scene, const Matrix4x4& viewProjection, ERenderMobilityFilter casters)
 {
 	// Only ClipSpace is used by the caster shaders
 	RenderCamera lightCamera;
@@ -441,57 +427,18 @@ U32 ShadowRenderStage::DrawCasters(const RenderScene& scene, const Matrix4x4& vi
 
 	// Objects and draws entirely outside the view can't cast into it (e.g. behind a cube face)
 	const Frustum frustum(viewProjection);
-	U32 drawCount = 0;
 
-	for (const auto& renderObject : scene.GetRenderObjects())
+	m_casters.Clear();
+	scene.ForEachDrawIn(frustum, casters, [this](const MeshDraw& draw)
 	{
-		const bool isWanted = casters == ECasters::All
-			|| (casters == ECasters::Static) == (renderObject->GetMobility() == ERenderMobility::Static);
-		if (!isWanted || !frustum.Intersects(renderObject->GetBounds()))
+		// #TODO(Transparency) See-through surfaces cast nothing for now: clear glass casting a solid shadow looks
+		// worse than no shadow. Partial or coloured shadows are future work (Docs/Plans/Transparency.md).
+		if (!draw.Slot->GetMaterial().IsBlended())
 		{
-			continue;
+			m_casters.Add(draw);
 		}
-
-		// As in ForwardRenderStage: only uploaded when the draw's transform changes
-		const Matrix4x4* uploadedTransform = nullptr;
-
-		for (const MeshDraw& draw : renderObject->GetDraws())
-		{
-			const MeshGeometry& meshGeometry = *draw.Geometry;
-			const MaterialInstance& materialInstance = draw.Slot->GetMaterial();
-
-			// #TODO(Transparency) See-through surfaces cast nothing for now: clear glass casting a solid shadow looks
-			// worse than no shadow. Partial or coloured shadows are future work (Docs/Plans/Transparency.md).
-			if (materialInstance.IsBlended() || !frustum.Intersects(draw.Bounds))
-			{
-				continue;
-			}
-
-			// See ForwardRenderStage: uploads the whole ObjectBufferLayout (transform + inverse)
-			if (draw.Transform != uploadedTransform)
-			{
-				Rendering::Renderer::UploadDataToBuffer<Matrix4x4>(m_vertexShader->GetWorldMatrixBuffer(), draw.Transform);
-				uploadedTransform = draw.Transform;
-			}
-
-			// Only needed for cutout casters (leaves, chains, lashes)
-			Rendering::Renderer::SetConstantBufferPS(materialInstance.GetParamBuffer(), 1);
-
-			if (const Texture2D* const opacityMap = materialInstance.GetTextureResource(TEXTURE_SLOT_OPACITY))
-			{
-				Rendering::Renderer::SetTextureResource(opacityMap->GetPlatformObject(), TEXTURE_SLOT_OPACITY);
-			}
-
-			const Rendering::IndexBufferHandle& indexBuffer = meshGeometry.GetIndexBuffer()->GetPlatformObject();
-			Rendering::Renderer::SetVertexBuffer(meshGeometry.GetVertexBuffer()->GetPlatformObject(), 0);
-			Rendering::Renderer::SetIndexBuffer(indexBuffer);
-
-			Rendering::Renderer::DrawIndexed(indexBuffer);
-			++drawCount;
-		}
-	}
-
-	return drawCount;
+	});
+	return m_casters.Draw();
 }
 
 bool ShadowRenderStage::FitDirectionalShadow(const RenderScene& scene, const Vector3D& lightDirection, DirectionalFit& outFit) const

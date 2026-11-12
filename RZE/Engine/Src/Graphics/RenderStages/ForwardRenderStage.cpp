@@ -120,33 +120,22 @@ void ForwardRenderStage::Render(RenderContext& context)
 	m_batches.Clear();
 	m_transparentDraws.clear();
 
-	for (const auto& renderObject : scene.GetRenderObjects())
+	scene.ForEachDrawIn(frustum, ERenderMobilityFilter::Any, [this, &view](const MeshDraw& draw)
 	{
-		if (!frustum.Intersects(renderObject->GetBounds()))
+		const MaterialInstance& materialInstance = draw.Slot->GetMaterial();
+
+		// Blended draws wait until everything they could show is drawn
+		if (materialInstance.IsBlended())
 		{
-			continue;
+			TransparentDraw& transparentDraw = m_transparentDraws.emplace_back();
+			transparentDraw.DistanceSquared = (draw.Bounds.GetCentre() - view.Camera.Position).LengthSq();
+			transparentDraw.Draw = &draw;
+			return;
 		}
 
-		for (const MeshDraw& draw : renderObject->GetDraws())
-		{
-			if (!frustum.Intersects(draw.Bounds))
-			{
-				continue;
-			}
-
-			// Blended draws wait until everything they could show is drawn
-			if (draw.Slot->GetMaterial().IsBlended())
-			{
-				TransparentDraw& transparentDraw = m_transparentDraws.emplace_back();
-				transparentDraw.DistanceSquared = (draw.Bounds.GetCentre() - view.Camera.Position).LengthSq();
-				transparentDraw.Draw = &draw;
-				continue;
-			}
-
-			// The material decides everything bound besides the geometry, its shader included
-			m_batches.Add(draw, &draw.Slot->GetMaterial());
-		}
-	}
+		// The material decides everything bound besides the geometry, its shader included
+		m_batches.Add(draw, &materialInstance);
+	});
 
 	// After everything opaque, farthest first, each on its own so the order holds
 	SortBackToFront(m_transparentDraws);

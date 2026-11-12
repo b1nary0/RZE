@@ -13,8 +13,11 @@
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector3D.h>
 
+#include <functional>
 #include <memory>
 #include <vector>
+
+class Frustum;
 
 typedef std::vector<std::unique_ptr<RenderObject>> RenderObjectContainer;
 typedef std::vector<std::unique_ptr<LightObject>> LightObjectContainer;
@@ -68,6 +71,11 @@ public:
 	const LightObjectContainer& GetLightObjects() const { return m_lightObjects; }
 	const ReflectionProbeContainer& GetReflectionProbes() const { return m_reflectionProbes; }
 	const DebugLineContainer& GetDebugLines() const { return m_debugLines; }
+
+	// Visits each draw that's at least partly inside frustum, of the render objects of that mobility, in the objects'
+	// order and then their draws': an object outside it is skipped whole, then each of its draws that is. What every
+	// stage that draws the scene's meshes from a view walks, so they cull alike. The draws stay put for the frame.
+	void ForEachDrawIn(const Frustum& frustum, ERenderMobilityFilter mobility, const std::function<void(const MeshDraw&)>& visit) const;
 
 	// Changes whenever a render object is added, removed, moved or given a new mesh, a light is added, removed or
 	// changes how it lights the scene (LightObject::GetLightingRevision), or a reflection probe is added, removed,

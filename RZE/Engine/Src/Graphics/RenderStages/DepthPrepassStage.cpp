@@ -1,13 +1,10 @@
 #include <Graphics/RenderStages/DepthPrepassStage.h>
 
-#include <Graphics/IndexBuffer.h>
 #include <Graphics/Material.h>
-#include <Graphics/MaterialDefines.h>
 #include <Graphics/MaterialSlot.h>
+#include <Graphics/MeshBatches.h>
 #include <Graphics/RenderEngine.h>
 #include <Graphics/Shader.h>
-#include <Graphics/Texture2D.h>
-#include <Graphics/VertexBuffer.h>
 
 #include <Rendering/Renderer.h>
 #include <Rendering/Graphics/RenderTarget.h>
@@ -18,7 +15,6 @@ void DepthPrepassStage::Initialize()
 {
 	// ForwardRenderStage loads the same shader
 	m_vertexShader = LoadVertexShader("Vertex_MeshInstanced", MeshBatches::GetInputLayout());
-	m_cutoutShader = LoadPixelShader("Pixel_DepthPrepass");
 
 	m_batches.Initialize();
 }
@@ -58,70 +54,15 @@ void DepthPrepassStage::Render(RenderContext& context)
 	const Frustum frustum(view.Camera.ClipSpace);
 
 	m_batches.Clear();
-	for (const auto& renderObject : scene.GetRenderObjects())
+	scene.ForEachDrawIn(frustum, ERenderMobilityFilter::Any, [this](const MeshDraw& draw)
 	{
-		if (!frustum.Intersects(renderObject->GetBounds()))
+		// Blended draws don't write depth: whatever they cover still has to be shaded
+		if (!draw.Slot->GetMaterial().IsBlended())
 		{
-			continue;
+			m_batches.Add(draw);
 		}
-
-		for (const MeshDraw& draw : renderObject->GetDraws())
-		{
-			const MaterialInstance& materialInstance = draw.Slot->GetMaterial();
-
-			// Blended draws don't write depth: whatever they cover still has to be shaded
-			if (materialInstance.IsBlended() || !frustum.Intersects(draw.Bounds))
-			{
-				continue;
-			}
-
-			// Without an opacity map, only the geometry is bound, so draws of it share a batch whatever their material.
-			// With one, its material's opacity is bound too.
-			const bool isCutout = materialInstance.GetTextureResource(TEXTURE_SLOT_OPACITY) != nullptr;
-			m_batches.Add(draw, isCutout ? &materialInstance : nullptr);
-		}
-	}
-
-	m_batches.Upload();
-	m_batches.BindInstances();
-
-	// Opaque draws need no pixel shader, so it's only set when a cutout's turn comes, and unset after
-	bool isCutoutShaderBound = false;
-	Rendering::Renderer::UnsetPixelShader();
-
-	for (const MeshBatches::Batch& batch : m_batches.GetBatches())
-	{
-		const MeshDraw& draw = *batch.Draw;
-		const MaterialInstance& materialInstance = draw.Slot->GetMaterial();
-
-		const Texture2D* const opacityMap = materialInstance.GetTextureResource(TEXTURE_SLOT_OPACITY);
-		const bool isCutout = opacityMap != nullptr;
-		if (isCutout != isCutoutShaderBound)
-		{
-			if (isCutout)
-			{
-				Rendering::Renderer::SetPixelShader(m_cutoutShader->GetPlatformObject());
-			}
-			else
-			{
-				Rendering::Renderer::UnsetPixelShader();
-			}
-			isCutoutShaderBound = isCutout;
-		}
-
-		if (isCutout)
-		{
-			Rendering::Renderer::SetConstantBufferPS(materialInstance.GetParamBuffer(), 1);
-			Rendering::Renderer::SetTextureResource(opacityMap->GetPlatformObject(), TEXTURE_SLOT_OPACITY);
-		}
-
-		const MeshGeometry& meshGeometry = *draw.Geometry;
-		const Rendering::IndexBufferHandle& indexBuffer = meshGeometry.GetIndexBuffer()->GetPlatformObject();
-		Rendering::Renderer::SetVertexBuffer(meshGeometry.GetVertexBuffer()->GetPlatformObject(), 0);
-		Rendering::Renderer::SetIndexBuffer(indexBuffer);
-
-		Rendering::Renderer::DrawIndexedInstanced(indexBuffer, batch.InstanceCount, batch.FirstInstance);
-	}
+	});
+	m_batches.Draw();
 
 	m_sceneDepthOutput.Publish(context, sceneDepthData);
 

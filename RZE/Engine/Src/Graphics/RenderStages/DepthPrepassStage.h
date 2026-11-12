@@ -1,17 +1,17 @@
 #pragma once
 
-#include <Graphics/MeshBatches.h>
+#include <Graphics/DepthOnlyMeshBatches.h>
 #include <Graphics/RenderData/SceneDepthData.h>
 #include <Graphics/RenderStage.h>
 
 #include <EngineCore/Resources/TypedResourceHandle.h>
 
-class PixelShader;
 class VertexShader;
 
 // Draws the depth of everything that isn't blended before any shading, so the forward pass shades each pixel once,
 // by its nearest surface, and so later passes (ambient occlusion) can read the scene's depth before lighting it.
-// Opaque draws run no pixel shader; cutouts run one that only clips (Docs/Plans/SSAOAndGlobalIllumination.md).
+// Opaque draws run no pixel shader; cutouts run one that only clips (DepthOnlyMeshBatches;
+// Docs/Plans/SSAOAndGlobalIllumination.md).
 class DepthPrepassStage : public IRenderStage
 {
 public:
@@ -30,8 +30,7 @@ private:
 
 	// The forward pass's, so both passes compute the same depths
 	TypedResourceHandle<VertexShader> m_vertexShader;
-	TypedResourceHandle<PixelShader> m_cutoutShader;
 
 	// What's drawn each Render
-	MeshBatches m_batches;
+	DepthOnlyMeshBatches m_batches;
 };

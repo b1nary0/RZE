@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Graphics/DepthOnlyMeshBatches.h>
+#include <Graphics/GraphicsDefines.h>
 #include <Graphics/GraphicsLayouts.h>
 #include <Graphics/RenderData/SceneLightingData.h>
 #include <Graphics/RenderStage.h>
@@ -17,7 +19,6 @@ class LightObject;
 class RenderScene;
 struct RenderWorkCounts;
 class VertexShader;
-class PixelShader;
 
 // Turns a scene's lights into what shading reads (SceneLightingData): a buffer of every light, uploaded each time
 // it runs, and the shadow maps of the lights that cast shadows, which ForwardRenderStage samples. Each light type
@@ -49,14 +50,6 @@ public:
 	void Render(RenderContext& context) override;
 
 private:
-	// Which render objects DrawCasters draws
-	enum class ECasters
-	{
-		All,
-		Static,
-		Movable
-	};
-
 	// What one shadow map was last rendered for, so it's only rendered again once that changes
 	struct CachedShadowMap
 	{
@@ -123,9 +116,9 @@ private:
 	// Static casters drawn again into the Static cube, and those and the faces in movableFaces are copied from it and
 	// have their Movable casters drawn on top
 	void RenderPointShadow(const RenderScene& scene, const LightObject& light, U32 cubeIndex, U32 staticFaces, U32 movableFaces, const ShadowMapState& state, GraphicsLayouts::PointShadowLayout& outShadow, RenderWorkCounts& workCounts);
-	// Depth of every opaque caster of those kinds that's in view, into the bound depth target. Shared by every light
-	// type's views. Returns how many draws it made.
-	U32 DrawCasters(const RenderScene& scene, const Matrix4x4& viewProjection, ECasters casters);
+	// Depth of every caster of that mobility that's in view and isn't blended, into the bound depth target, instanced
+	// (DepthOnlyMeshBatches). Shared by every light type's views. Returns how many draw calls it made.
+	U32 DrawCasters(const RenderScene& scene, const Matrix4x4& viewProjection, ERenderMobilityFilter casters);
 
 	// Fits the directional map around the Static casters as seen along lightDirection, with room to spare; false
 	// (outFit not fitted) if there are none to cast shadows
@@ -136,7 +129,8 @@ private:
 
 	TypedResourceHandle<VertexShader> m_vertexShader;
 
-	TypedResourceHandle<PixelShader> m_casterShader;
+	// What one DrawCasters call draws; used within it, so every light view shares it
+	DepthOnlyMeshBatches m_casters;
 
 	// Only used within one UpdateShadowMaps call, so every scene shares it
 	Rendering::ConstantBufferHandle m_lightCameraBuffer;

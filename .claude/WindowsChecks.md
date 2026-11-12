@@ -239,6 +239,17 @@ Things to know on this machine (2026-11-10):
   Linux an image shifted between sessions hours apart with the same code). Expect identical images, except a few
   pixels one level apart on Stress2500, where overlapping objects tie and the draw order decides (Linux: 4 framed,
   1 from the camera). 4: Debug harness on RenderPerfTest: no `D3D11 (` error.
+- **A38. Instanced shadow casters, shared scene walk** (draw batching Step 3: `DepthOnlyMeshBatches`,
+  `RenderScene::ForEachDrawIn`; `Pixel_DepthPrepass.hlsl` and `Pixel_ShadowCaster.hlsl` became
+  `Pixel_DepthOnlyCutout.hlsl`). Files added and removed, so run `GenerateSolutions.bat` first. 1: A1's three builds;
+  A2's counts (2 new `ForEachDrawIn` cases). 2: Debug harness (validation on) on `Sponza.scene` and
+  `RenderPerfTest.scene`, 20 s: no `D3D11 (` error, and none about a pixel shader or input layout while
+  ShadowRenderStage draws with **no pixel shader bound** for opaque casters (new on DX11 for this stage; the prepass
+  already does it). 3: **shadows unchanged:** images as A37.3, back to back against the commit before, framed and
+  from the camera: identical (Linux: 0 pixels on 7 of 8, 4 pixels one level apart on framed Sponza). Look at Sponza's
+  cutout shadows in particular (leaves, chains: cut out, not solid quads) and RenderPerfTest's point-light shadows
+  on every side of a pillar. 4: the status bar's shadow draws while RenderPerfTest loads are far below the commit
+  before (Linux, load + 20 s framed: ~34,400 draws → ~770).
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 

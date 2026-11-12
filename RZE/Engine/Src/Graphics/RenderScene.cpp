@@ -1,6 +1,7 @@
 #include <Graphics/RenderScene.h>
 
 #include <Utils/LiveIDAllocator.h>
+#include <Utils/Math/Frustum.h>
 #include <Utils/Math/Math.h>
 #include <Utils/Math/Units.h>
 
@@ -52,6 +53,27 @@ void RenderScene::ClearObjects()
 {
 	m_renderObjects.clear();
 	OnAllRenderObjectsChanged();
+}
+
+void RenderScene::ForEachDrawIn(const Frustum& frustum, ERenderMobilityFilter mobility, const std::function<void(const MeshDraw&)>& visit) const
+{
+	for (const std::unique_ptr<RenderObject>& renderObject : m_renderObjects)
+	{
+		const bool isWanted = mobility == ERenderMobilityFilter::Any
+			|| (mobility == ERenderMobilityFilter::Static) == (renderObject->GetMobility() == ERenderMobility::Static);
+		if (!isWanted || !frustum.Intersects(renderObject->GetBounds()))
+		{
+			continue;
+		}
+
+		for (const MeshDraw& draw : renderObject->GetDraws())
+		{
+			if (frustum.Intersects(draw.Bounds))
+			{
+				visit(draw);
+			}
+		}
+	}
 }
 
 const BoundingBox& RenderScene::GetBounds() const
