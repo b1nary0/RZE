@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Graphics/MeshBatches.h>
 #include <Graphics/RenderData/AmbientOcclusionData.h>
 #include <Graphics/RenderData/SceneColourData.h>
 #include <Graphics/RenderData/SceneDepthData.h>
@@ -14,7 +15,6 @@
 
 #include <vector>
 
-class Matrix4x4;
 class PixelShader;
 class VertexShader;
 struct MeshDraw;
@@ -47,9 +47,9 @@ public:
 	static void SortBackToFront(std::vector<TransparentDraw>& draws);
 
 private:
-	// Binds the draw's transform, material and buffers and draws it. Only uploads the transform and sets the shader
-	// when they differ from the last draw's, which the two pointers track across calls.
-	void DrawMesh(const MeshDraw& draw, const Matrix4x4*& uploadedTransform, const PixelShader*& boundPixelShader);
+	// Binds the batch's material and buffers and draws its instances. Only sets the shader when it differs from the last
+	// batch's, which boundPixelShader tracks across calls.
+	void DrawBatch(const MeshBatches::Batch& batch, const PixelShader*& boundPixelShader);
 
 private:
 	RenderInput<SceneLightingData> m_sceneLightingInput;
@@ -68,4 +68,7 @@ private:
 
 	// Filled and drawn every Render; kept to reuse its memory
 	std::vector<TransparentDraw> m_transparentDraws;
+
+	// What's drawn each Render: the opaque draws, then the blended ones farthest first
+	MeshBatches m_batches;
 };

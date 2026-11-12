@@ -38,17 +38,12 @@ namespace
 
 void ForwardRenderStage::Initialize()
 {
-	Rendering::ShaderInputLayout inputLayout =
-	{
-		{ "POSITION", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 0 },
-		{ "NORMAL", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 12 },
-		{ "UV", Rendering::EDataFormat::R32G32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 24 },
-		{ "TANGENT", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 32 }
-	};
-
-	m_vertexShader = LoadVertexShader("Vertex_NewRenderer", inputLayout);
+	// DepthPrepassStage loads the same shader, so both passes compute the same depths
+	m_vertexShader = LoadVertexShader("Vertex_MeshInstanced", MeshBatches::GetInputLayout());
 
 	m_viewLightingBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(GraphicsLayouts::ViewLightingLayout), 16, 1);
+
+	m_batches.Initialize();
 }
 
 void ForwardRenderStage::Setup(RenderStageBuilder& builder)
@@ -115,19 +110,14 @@ void ForwardRenderStage::Render(RenderContext& context)
 	Rendering::Renderer::SetConstantBufferPS(reflection.ProbeBuffer, k_reflectionProbesSlot);
 	Rendering::Renderer::SetTextureResource(reflection.Cubes, k_reflectionCubesSlot);
 
-	// The same for every draw: bound once, and only the world matrix buffer's contents change per object
+	// The same for every draw: bound once
 	Rendering::Renderer::SetConstantBufferPS(sceneLightingData.LightBuffer, k_lightBufferSlot);
 	Rendering::Renderer::SetConstantBufferPS(m_viewLightingBuffer, k_viewLightingBufferSlot);
-	Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetWorldMatrixBuffer(), 1);
-
-	// Consecutive draws often share a shader, so it's only set when it changes
-	const PixelShader* boundPixelShader = nullptr;
-	// Draws at the mesh's origin share the object's transform, so it's only uploaded when it changes
-	const Matrix4x4* uploadedTransform = nullptr;
 
 	// Objects and draws entirely outside the view aren't drawn
 	const Frustum frustum(view.Camera.ClipSpace);
 
+	m_batches.Clear();
 	m_transparentDraws.clear();
 
 	for (const auto& renderObject : scene.GetRenderObjects())
@@ -137,9 +127,6 @@ void ForwardRenderStage::Render(RenderContext& context)
 			continue;
 		}
 
-		// @TODO
-		// Currently each MeshDraw is a draw call. Need to batch this down so it becomes a single draw call
-		// per render object, at least. Can do this maybe in the burner?
 		for (const MeshDraw& draw : renderObject->GetDraws())
 		{
 			if (!frustum.Intersects(draw.Bounds))
@@ -156,38 +143,59 @@ void ForwardRenderStage::Render(RenderContext& context)
 				continue;
 			}
 
-			DrawMesh(draw, uploadedTransform, boundPixelShader);
+			m_batches.Add(draw);
 		}
 	}
 
-	if (!m_transparentDraws.empty())
+	// After everything opaque, farthest first
+	SortBackToFront(m_transparentDraws);
+	for (const TransparentDraw& transparentDraw : m_transparentDraws)
 	{
-		SortBackToFront(m_transparentDraws);
+		m_batches.Add(*transparentDraw.Draw);
+	}
 
-		// Blended over what's behind, and tested against depth without writing it, so one see-through surface
-		// doesn't hide another behind it. Strictly nearer, as before the prepass: a surface at exactly the depth of
-		// the opaque one behind it stays hidden.
-		// #TODO(Transparency) Over empty background (scene alpha 0) the blend leaves alpha 0, so PostProcess paints
-		// the background colour there and the surface vanishes. Needs the background handled before blending.
-		Rendering::Renderer::SetDepthState(Rendering::EDepthState::ReadOnly);
-		// The ambient occlusion is of what's behind them: they aren't in the depth it was computed from
-		Rendering::Renderer::SetTextureResource(ambientOcclusion.Unoccluded, k_ambientOcclusionSlot);
+	m_batches.Upload();
+	m_batches.BindInstances();
 
-		// Sorted by distance, not by mode, so the blend state is only set when it changes from the last draw's
-		Rendering::EBlendState boundBlendState = Rendering::EBlendState::Opaque;
-		for (const TransparentDraw& transparentDraw : m_transparentDraws)
+	// Consecutive batches often share a shader, so it's only set when it changes
+	const PixelShader* boundPixelShader = nullptr;
+	// The blended batches come last, so the first one switches to blending for the rest
+	bool isBlending = false;
+	// Sorted by distance, not by mode, so the blend state is only set when it changes from the last batch's
+	Rendering::EBlendState boundBlendState = Rendering::EBlendState::Opaque;
+
+	for (const MeshBatches::Batch& batch : m_batches.GetBatches())
+	{
+		const MaterialInstance& materialInstance = batch.Draw->Slot->GetMaterial();
+		if (materialInstance.IsBlended())
 		{
-			const MeshDraw& draw = *transparentDraw.Draw;
-			const Rendering::EBlendState blendState = ToBlendState(draw.Slot->GetMaterial().GetBlendMode());
+			if (!isBlending)
+			{
+				// Blended over what's behind, and tested against depth without writing it, so one see-through surface
+				// doesn't hide another behind it. Strictly nearer, as before the prepass: a surface at exactly the
+				// depth of the opaque one behind it stays hidden.
+				// #TODO(Transparency) Over empty background (scene alpha 0) the blend leaves alpha 0, so PostProcess
+				// paints the background colour there and the surface vanishes. Needs the background handled before
+				// blending.
+				Rendering::Renderer::SetDepthState(Rendering::EDepthState::ReadOnly);
+				// The ambient occlusion is of what's behind them: they aren't in the depth it was computed from
+				Rendering::Renderer::SetTextureResource(ambientOcclusion.Unoccluded, k_ambientOcclusionSlot);
+				isBlending = true;
+			}
+
+			const Rendering::EBlendState blendState = ToBlendState(materialInstance.GetBlendMode());
 			if (blendState != boundBlendState)
 			{
 				Rendering::Renderer::SetBlendState(blendState);
 				boundBlendState = blendState;
 			}
-
-			DrawMesh(draw, uploadedTransform, boundPixelShader);
 		}
 
+		DrawBatch(batch, boundPixelShader);
+	}
+
+	if (isBlending)
+	{
 		Rendering::Renderer::SetBlendState(Rendering::EBlendState::Opaque);
 	}
 
@@ -217,17 +225,10 @@ void ForwardRenderStage::SortBackToFront(std::vector<TransparentDraw>& draws)
 		});
 }
 
-void ForwardRenderStage::DrawMesh(const MeshDraw& draw, const Matrix4x4*& uploadedTransform, const PixelShader*& boundPixelShader)
+void ForwardRenderStage::DrawBatch(const MeshBatches::Batch& batch, const PixelShader*& boundPixelShader)
 {
+	const MeshDraw& draw = *batch.Draw;
 	const MeshGeometry& meshGeometry = *draw.Geometry;
-
-	// @note this sends in the address of a transform but fulfils the memory of a GraphicsLayouts::ObjectBufferLayout as a whole
-	// this should be re-evaluated later to have a better solve for the issue of commands needing access to the data being uploaded's lifetime
-	if (draw.Transform != uploadedTransform)
-	{
-		Rendering::Renderer::UploadDataToBuffer<Matrix4x4>(m_vertexShader->GetWorldMatrixBuffer(), draw.Transform);
-		uploadedTransform = draw.Transform;
-	}
 
 	// @TODO
 	// This is god awful. Just in place while developing shader model.
@@ -256,5 +257,5 @@ void ForwardRenderStage::DrawMesh(const MeshDraw& draw, const Matrix4x4*& upload
 	Rendering::Renderer::SetVertexBuffer(meshGeometry.GetVertexBuffer()->GetPlatformObject(), 0);
 	Rendering::Renderer::SetIndexBuffer(indexBuffer);
 
-	Rendering::Renderer::DrawIndexed(indexBuffer);
+	Rendering::Renderer::DrawIndexedInstanced(indexBuffer, batch.InstanceCount, batch.FirstInstance);
 }

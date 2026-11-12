@@ -16,17 +16,11 @@
 
 void DepthPrepassStage::Initialize()
 {
-	// Must match ForwardRenderStage's, which loads the same shader
-	Rendering::ShaderInputLayout inputLayout =
-	{
-		{ "POSITION", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 0 },
-		{ "NORMAL", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 12 },
-		{ "UV", Rendering::EDataFormat::R32G32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 24 },
-		{ "TANGENT", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 32 }
-	};
-
-	m_vertexShader = LoadVertexShader("Vertex_NewRenderer", inputLayout);
+	// ForwardRenderStage loads the same shader
+	m_vertexShader = LoadVertexShader("Vertex_MeshInstanced", MeshBatches::GetInputLayout());
 	m_cutoutShader = LoadPixelShader("Pixel_DepthPrepass");
+
+	m_batches.Initialize();
 }
 
 void DepthPrepassStage::Setup(RenderStageBuilder& builder)
@@ -54,23 +48,16 @@ void DepthPrepassStage::Render(RenderContext& context)
 
 	Rendering::Renderer::SetVertexShader(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetCameraDataBuffer(), 0);
-	Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetWorldMatrixBuffer(), 1);
 
 	Rendering::Renderer::SetViewport({ view.ViewportSize.X(), view.ViewportSize.Y() });
 
 	Rendering::Renderer::SetInputLayout(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetPrimitiveTopology(Rendering::EPrimitiveTopology::TriangleList);
 
-	// Opaque draws need no pixel shader, so it's only set when a cutout's turn comes, and unset after
-	bool isCutoutShaderBound = false;
-	Rendering::Renderer::UnsetPixelShader();
-
-	// As in ForwardRenderStage: only uploaded when the draw's transform changes
-	const Matrix4x4* uploadedTransform = nullptr;
-
 	// The same culling as the forward pass, so it draws over exactly this depth
 	const Frustum frustum(view.Camera.ClipSpace);
 
+	m_batches.Clear();
 	for (const auto& renderObject : scene.GetRenderObjects())
 	{
 		if (!frustum.Intersects(renderObject->GetBounds()))
@@ -88,40 +75,49 @@ void DepthPrepassStage::Render(RenderContext& context)
 				continue;
 			}
 
-			if (draw.Transform != uploadedTransform)
-			{
-				Rendering::Renderer::UploadDataToBuffer<Matrix4x4>(m_vertexShader->GetWorldMatrixBuffer(), draw.Transform);
-				uploadedTransform = draw.Transform;
-			}
+			m_batches.Add(draw);
+		}
+	}
 
-			const Texture2D* const opacityMap = materialInstance.GetTextureResource(TEXTURE_SLOT_OPACITY);
-			const bool isCutout = opacityMap != nullptr;
-			if (isCutout != isCutoutShaderBound)
-			{
-				if (isCutout)
-				{
-					Rendering::Renderer::SetPixelShader(m_cutoutShader->GetPlatformObject());
-				}
-				else
-				{
-					Rendering::Renderer::UnsetPixelShader();
-				}
-				isCutoutShaderBound = isCutout;
-			}
+	m_batches.Upload();
+	m_batches.BindInstances();
 
+	// Opaque draws need no pixel shader, so it's only set when a cutout's turn comes, and unset after
+	bool isCutoutShaderBound = false;
+	Rendering::Renderer::UnsetPixelShader();
+
+	for (const MeshBatches::Batch& batch : m_batches.GetBatches())
+	{
+		const MeshDraw& draw = *batch.Draw;
+		const MaterialInstance& materialInstance = draw.Slot->GetMaterial();
+
+		const Texture2D* const opacityMap = materialInstance.GetTextureResource(TEXTURE_SLOT_OPACITY);
+		const bool isCutout = opacityMap != nullptr;
+		if (isCutout != isCutoutShaderBound)
+		{
 			if (isCutout)
 			{
-				Rendering::Renderer::SetConstantBufferPS(materialInstance.GetParamBuffer(), 1);
-				Rendering::Renderer::SetTextureResource(opacityMap->GetPlatformObject(), TEXTURE_SLOT_OPACITY);
+				Rendering::Renderer::SetPixelShader(m_cutoutShader->GetPlatformObject());
 			}
-
-			const MeshGeometry& meshGeometry = *draw.Geometry;
-			const Rendering::IndexBufferHandle& indexBuffer = meshGeometry.GetIndexBuffer()->GetPlatformObject();
-			Rendering::Renderer::SetVertexBuffer(meshGeometry.GetVertexBuffer()->GetPlatformObject(), 0);
-			Rendering::Renderer::SetIndexBuffer(indexBuffer);
-
-			Rendering::Renderer::DrawIndexed(indexBuffer);
+			else
+			{
+				Rendering::Renderer::UnsetPixelShader();
+			}
+			isCutoutShaderBound = isCutout;
 		}
+
+		if (isCutout)
+		{
+			Rendering::Renderer::SetConstantBufferPS(materialInstance.GetParamBuffer(), 1);
+			Rendering::Renderer::SetTextureResource(opacityMap->GetPlatformObject(), TEXTURE_SLOT_OPACITY);
+		}
+
+		const MeshGeometry& meshGeometry = *draw.Geometry;
+		const Rendering::IndexBufferHandle& indexBuffer = meshGeometry.GetIndexBuffer()->GetPlatformObject();
+		Rendering::Renderer::SetVertexBuffer(meshGeometry.GetVertexBuffer()->GetPlatformObject(), 0);
+		Rendering::Renderer::SetIndexBuffer(indexBuffer);
+
+		Rendering::Renderer::DrawIndexedInstanced(indexBuffer, batch.InstanceCount, batch.FirstInstance);
 	}
 
 	m_sceneDepthOutput.Publish(context, sceneDepthData);

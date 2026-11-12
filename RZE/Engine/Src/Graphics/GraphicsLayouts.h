@@ -125,7 +125,9 @@ namespace GraphicsLayouts
 	};
 
 	// Mirrors ObjectBuffer in Common/VertexResources.hlsli: a world transform and its inverse, side by side, uploaded
-	// together. RenderObject keeps its own this way, and so does a MeshDraw placed away from its mesh's origin.
+	// together. RenderObject keeps its own this way, and so does a MeshDraw placed away from its mesh's origin. Also one
+	// instance of MeshBatches' instance stream (MeshInstanceInput in Vertex_MeshInstanced.hlsl), so it's only these
+	// two matrices.
 	struct ObjectBufferLayout
 	{
 		Matrix4x4 Transform;

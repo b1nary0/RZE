@@ -218,6 +218,18 @@ Things to know on this machine (2026-11-10):
   3: `GenerateSolutions.bat` and `BuildGame.bat` run as before. 4: A1's three builds and A2's tests from that clone.
   5: Open a `.cpp` in Visual Studio, edit and save it: `git diff` shows only that edit, not every line (VS keeps LF
   files LF).
+- **A36. Instanced mesh vertex path in the depth prepass and forward pass** (draw batching Step 1: `MeshBatches`,
+  `Vertex_MeshInstanced.hlsl`, `Common/MeshVertex.hlsli`). New files, so run `GenerateSolutions.bat` first. 1: A1's
+  three builds; A2's counts (4 new `MeshBatches` cases). 2: Debug Editor (validation on) on `Sponza.scene` and
+  `RenderPerfTest.scene`, harness, 20 s: the log has no `doesn't take the vertex layout`, no `CreateInputLayout`
+  failure and no `D3D11 (` error for the new input layout (12 elements, `WORLDA..D` / `INVWORLDA..D` in slot 1);
+  Sponza and the RenderPerfTest pillars render as before (shaded, shadowed, nothing stretched or missing: a transposed
+  matrix shows as geometry flung across the screen). 3: **identical images:** with `AutoExposure=0` in `Engine.ini`
+  (put it back after), `shot` RenderPerfTest and Sponza with this commit and with the commit before (each with
+  `-framescene`, and once from the scene's camera): pixel-identical scene views (two runs of one build were identical
+  on Linux once auto exposure was off). 4: the status bar's DepthPrepassStage and ForwardRenderStage draw calls match
+  before and after (Linux, framed RenderPerfTest: ~947 / ~950). 5: Debug with `-gfxliveobjects`, closed: "No D3D11
+  objects outlived shutdown besides the device." (the instance buffers).
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Graphics/MeshBatches.h>
 #include <Graphics/RenderData/SceneDepthData.h>
 #include <Graphics/RenderStage.h>
 
@@ -30,4 +31,7 @@ private:
 	// The forward pass's, so both passes compute the same depths
 	TypedResourceHandle<VertexShader> m_vertexShader;
 	TypedResourceHandle<PixelShader> m_cutoutShader;
+
+	// What's drawn each Render
+	MeshBatches m_batches;
 };
