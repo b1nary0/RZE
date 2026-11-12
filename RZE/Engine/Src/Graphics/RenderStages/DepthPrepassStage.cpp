@@ -75,7 +75,10 @@ void DepthPrepassStage::Render(RenderContext& context)
 				continue;
 			}
 
-			m_batches.Add(draw);
+			// Without an opacity map, only the geometry is bound, so draws of it share a batch whatever their material.
+			// With one, its material's opacity is bound too.
+			const bool isCutout = materialInstance.GetTextureResource(TEXTURE_SLOT_OPACITY) != nullptr;
+			m_batches.Add(draw, isCutout ? &materialInstance : nullptr);
 		}
 	}
 

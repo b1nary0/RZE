@@ -3,6 +3,7 @@
 #include <Graphics/GraphicsLayouts.h>
 #include <Graphics/MeshBatches.h>
 #include <Graphics/MeshDraw.h>
+#include <Graphics/MeshGeometry.h>
 
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector3D.h>
@@ -11,88 +12,223 @@
 
 namespace
 {
-	// Draws placed at different positions, each with its own matrices, as a sub-mesh away from its mesh's origin is
-	std::vector<MeshDraw> MakeDraws(size_t count)
+	// Draws of geometry, each placed somewhere of its own with its own matrices, as a sub-mesh away from its mesh's
+	// origin is
+	std::vector<MeshDraw> MakeDraws(size_t count, const MeshGeometry& geometry)
 	{
 		std::vector<MeshDraw> draws(count);
 		for (size_t index = 0; index < count; ++index)
 		{
 			MeshDraw& draw = draws[index];
 			const float offset = static_cast<float>(index + 1);
+			draw.Geometry = &geometry;
 			draw.OwnMatrices.Transform = Matrix4x4::CreateInPlace(Vector3D(offset, 2.0f * offset, -offset), Vector3D(1.0f), Vector3D(0.0f, 10.0f * offset, 0.0f));
 			draw.OwnMatrices.InvTransform = draw.OwnMatrices.Transform.Inverse();
 			draw.Transform = &draw.OwnMatrices.Transform;
 		}
 		return draws;
 	}
-}
 
-TEST_CASE("Each draw is a batch of one instance, in the order given, with its transform and inverse")
-{
-	const std::vector<MeshDraw> meshDraws = MakeDraws(3);
-	// Not the order they're stored in, as forward's blended draws come sorted
-	const std::vector<const MeshDraw*> draws = { &meshDraws[2], &meshDraws[0], &meshDraws[1] };
+	// Stand-ins for what a stage binds: only their addresses are compared
+	const int k_materialA = 0;
+	const int k_materialB = 0;
 
-	std::vector<GraphicsLayouts::ObjectBufferLayout> instances;
-	std::vector<MeshBatches::Batch> batches;
-	MeshBatches::Build(draws, instances, batches);
-
-	REQUIRE(instances.size() == 3);
-	REQUIRE(batches.size() == 3);
-	for (size_t index = 0; index < draws.size(); ++index)
+	// The draws' instances, batch by batch, in the order they were placed
+	std::vector<const MeshDraw*> InstanceDraws(const MeshBatches& batches, const std::vector<MeshDraw>& draws)
 	{
-		CAPTURE(index);
-		CHECK(batches[index].Draw == draws[index]);
-		CHECK(batches[index].FirstInstance == index);
-		CHECK(batches[index].InstanceCount == 1);
-		CHECK(instances[index].Transform == draws[index]->OwnMatrices.Transform);
-		CHECK(instances[index].InvTransform == draws[index]->OwnMatrices.InvTransform);
+		std::vector<const MeshDraw*> instanceDraws;
+		for (const GraphicsLayouts::ObjectBufferLayout& instance : batches.GetInstances())
+		{
+			for (const MeshDraw& draw : draws)
+			{
+				if (draw.OwnMatrices.Transform == instance.Transform && draw.OwnMatrices.InvTransform == instance.InvTransform)
+				{
+					instanceDraws.push_back(&draw);
+					break;
+				}
+			}
+		}
+		return instanceDraws;
+	}
+
+	// The batches cover the instances in order, with no gaps
+	void CheckContiguous(const MeshBatches& batches)
+	{
+		U32 next = 0;
+		for (const MeshBatches::Batch& batch : batches.GetBatches())
+		{
+			CHECK(batch.FirstInstance == next);
+			CHECK(batch.InstanceCount > 0);
+			next += batch.InstanceCount;
+		}
+		CHECK(next == batches.GetInstances().size());
 	}
 }
 
-TEST_CASE("A draw sharing its object's matrices gets them as its instance")
+TEST_CASE("Draws with the same bind key and geometry are one batch; either differing splits them")
 {
+	const MeshGeometry geometryA;
+	const MeshGeometry geometryB;
+	const std::vector<MeshDraw> drawsA = MakeDraws(3, geometryA);
+	const std::vector<MeshDraw> drawsB = MakeDraws(2, geometryB);
+
+	MeshBatches batches;
+	batches.Add(drawsA[0], &k_materialA);
+	batches.Add(drawsA[1], &k_materialA);
+	// Same geometry, another key
+	batches.Add(drawsA[2], &k_materialB);
+	// Same key, another geometry
+	batches.Add(drawsB[0], &k_materialA);
+	batches.Add(drawsB[1], &k_materialA);
+	batches.Build();
+
+	const std::vector<MeshBatches::Batch>& built = batches.GetBatches();
+	REQUIRE(built.size() == 3);
+	CHECK(built[0].Draw == &drawsA[0]);
+	CHECK(built[0].InstanceCount == 2);
+	CHECK(built[1].Draw == &drawsA[2]);
+	CHECK(built[1].InstanceCount == 1);
+	CHECK(built[2].Draw == &drawsB[0]);
+	CHECK(built[2].InstanceCount == 2);
+	CheckContiguous(batches);
+}
+
+TEST_CASE("Batches come where their first draw was added, and a batch's instances in the order added")
+{
+	const MeshGeometry geometryA;
+	const MeshGeometry geometryB;
+	// 0 to 2 of geometry A, 3 and 4 of B
+	std::vector<MeshDraw> draws = MakeDraws(5, geometryA);
+	draws[3].Geometry = &geometryB;
+	draws[4].Geometry = &geometryB;
+
+	// Interleaved, as a scene's objects come
+	MeshBatches batches;
+	batches.Add(draws[3], nullptr);
+	batches.Add(draws[2], nullptr);
+	batches.Add(draws[4], nullptr);
+	batches.Add(draws[0], nullptr);
+	batches.Add(draws[1], nullptr);
+	batches.Build();
+
+	const std::vector<MeshBatches::Batch>& built = batches.GetBatches();
+	REQUIRE(built.size() == 2);
+	CHECK(built[0].Draw == &draws[3]);
+	CHECK(built[0].InstanceCount == 2);
+	CHECK(built[1].Draw == &draws[2]);
+	CHECK(built[1].InstanceCount == 3);
+	CheckContiguous(batches);
+
+	const std::vector<const MeshDraw*> instanceDraws = InstanceDraws(batches, draws);
+	REQUIRE(instanceDraws.size() == 5);
+	CHECK(instanceDraws[0] == &draws[3]);
+	CHECK(instanceDraws[1] == &draws[4]);
+	CHECK(instanceDraws[2] == &draws[2]);
+	CHECK(instanceDraws[3] == &draws[0]);
+	CHECK(instanceDraws[4] == &draws[1]);
+}
+
+TEST_CASE("Ungrouped draws are batches of their own in the order added, never joined")
+{
+	const MeshGeometry geometry;
+	const std::vector<MeshDraw> draws = MakeDraws(5, geometry);
+
+	MeshBatches batches;
+	batches.Add(draws[0], &k_materialA);
+	// Same geometry as the grouped draw, and as each other: still apart
+	batches.AddUngrouped(draws[3]);
+	batches.AddUngrouped(draws[1]);
+	batches.AddUngrouped(draws[4]);
+	batches.Build();
+
+	const std::vector<MeshBatches::Batch>& built = batches.GetBatches();
+	REQUIRE(built.size() == 4);
+	CHECK(built[0].Draw == &draws[0]);
+	CHECK(built[1].Draw == &draws[3]);
+	CHECK(built[2].Draw == &draws[1]);
+	CHECK(built[3].Draw == &draws[4]);
+	for (const MeshBatches::Batch& batch : built)
+	{
+		CHECK(batch.InstanceCount == 1);
+	}
+	CheckContiguous(batches);
+
+	const std::vector<const MeshDraw*> instanceDraws = InstanceDraws(batches, draws);
+	REQUIRE(instanceDraws.size() == 4);
+	CHECK(instanceDraws[1] == &draws[3]);
+	CHECK(instanceDraws[2] == &draws[1]);
+	CHECK(instanceDraws[3] == &draws[4]);
+}
+
+TEST_CASE("A grouped draw added after an ungrouped one joins its batch ahead of it")
+{
+	const MeshGeometry geometry;
+	const std::vector<MeshDraw> draws = MakeDraws(3, geometry);
+
+	MeshBatches batches;
+	batches.Add(draws[0], nullptr);
+	batches.AddUngrouped(draws[1]);
+	batches.Add(draws[2], nullptr);
+	batches.Build();
+
+	const std::vector<MeshBatches::Batch>& built = batches.GetBatches();
+	REQUIRE(built.size() == 2);
+	CHECK(built[0].Draw == &draws[0]);
+	CHECK(built[0].InstanceCount == 2);
+	CHECK(built[1].Draw == &draws[1]);
+	CheckContiguous(batches);
+}
+
+TEST_CASE("Each instance is its draw's transform and inverse, shared matrices included")
+{
+	const MeshGeometry geometry;
 	// As a sub-mesh at its mesh's origin: Transform points at the object's ObjectBufferLayout, not the draw's own
 	GraphicsLayouts::ObjectBufferLayout objectMatrices;
 	objectMatrices.Transform = Matrix4x4::CreateInPlace(Vector3D(5.0f, 0.0f, 0.0f), Vector3D(2.0f), Vector3D(0.0f));
 	objectMatrices.InvTransform = objectMatrices.Transform.Inverse();
 
-	std::vector<MeshDraw> meshDraws(2);
-	for (MeshDraw& draw : meshDraws)
-	{
-		draw.Transform = &objectMatrices.Transform;
-	}
+	std::vector<MeshDraw> draws = MakeDraws(2, geometry);
+	draws[1].Transform = &objectMatrices.Transform;
 
-	std::vector<GraphicsLayouts::ObjectBufferLayout> instances;
-	std::vector<MeshBatches::Batch> batches;
-	MeshBatches::Build({ &meshDraws[0], &meshDraws[1] }, instances, batches);
+	MeshBatches batches;
+	batches.Add(draws[0], nullptr);
+	batches.Add(draws[1], nullptr);
+	batches.Build();
 
+	const std::vector<GraphicsLayouts::ObjectBufferLayout>& instances = batches.GetInstances();
 	REQUIRE(instances.size() == 2);
-	for (const GraphicsLayouts::ObjectBufferLayout& instance : instances)
-	{
-		CHECK(instance.Transform == objectMatrices.Transform);
-		CHECK(instance.InvTransform == objectMatrices.InvTransform);
-	}
+	CHECK(instances[0].Transform == draws[0].OwnMatrices.Transform);
+	CHECK(instances[0].InvTransform == draws[0].OwnMatrices.InvTransform);
+	CHECK(instances[1].Transform == objectMatrices.Transform);
+	CHECK(instances[1].InvTransform == objectMatrices.InvTransform);
 }
 
-TEST_CASE("Building again replaces the last pass's instances and batches")
+TEST_CASE("Building again after Clear replaces the last pass's batches and instances")
 {
-	const std::vector<MeshDraw> meshDraws = MakeDraws(4);
+	const MeshGeometry geometry;
+	const std::vector<MeshDraw> draws = MakeDraws(4, geometry);
 
-	std::vector<GraphicsLayouts::ObjectBufferLayout> instances;
-	std::vector<MeshBatches::Batch> batches;
-	MeshBatches::Build({ &meshDraws[0], &meshDraws[1], &meshDraws[2], &meshDraws[3] }, instances, batches);
-	MeshBatches::Build({ &meshDraws[3] }, instances, batches);
+	MeshBatches batches;
+	for (const MeshDraw& draw : draws)
+	{
+		batches.AddUngrouped(draw);
+	}
+	batches.Build();
+	REQUIRE(batches.GetBatches().size() == 4);
 
-	REQUIRE(instances.size() == 1);
-	REQUIRE(batches.size() == 1);
-	CHECK(batches[0].Draw == &meshDraws[3]);
-	CHECK(batches[0].FirstInstance == 0);
-	CHECK(instances[0].Transform == meshDraws[3].OwnMatrices.Transform);
+	batches.Clear();
+	batches.Add(draws[3], nullptr);
+	batches.Build();
+	REQUIRE(batches.GetBatches().size() == 1);
+	REQUIRE(batches.GetInstances().size() == 1);
+	CHECK(batches.GetBatches()[0].Draw == &draws[3]);
+	CHECK(batches.GetBatches()[0].FirstInstance == 0);
+	CHECK(batches.GetInstances()[0].Transform == draws[3].OwnMatrices.Transform);
 
-	MeshBatches::Build({}, instances, batches);
-	CHECK(instances.empty());
-	CHECK(batches.empty());
+	batches.Clear();
+	batches.Build();
+	CHECK(batches.GetBatches().empty());
+	CHECK(batches.GetInstances().empty());
 }
 
 TEST_CASE("The input layout reads the vertex from slot 0 and the instance's 8 columns from slot 1, 16 bytes apart")

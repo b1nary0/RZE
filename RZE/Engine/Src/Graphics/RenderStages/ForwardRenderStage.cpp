@@ -143,15 +143,16 @@ void ForwardRenderStage::Render(RenderContext& context)
 				continue;
 			}
 
-			m_batches.Add(draw);
+			// The material decides everything bound besides the geometry, its shader included
+			m_batches.Add(draw, &draw.Slot->GetMaterial());
 		}
 	}
 
-	// After everything opaque, farthest first
+	// After everything opaque, farthest first, each on its own so the order holds
 	SortBackToFront(m_transparentDraws);
 	for (const TransparentDraw& transparentDraw : m_transparentDraws)
 	{
-		m_batches.Add(*transparentDraw.Draw);
+		m_batches.AddUngrouped(*transparentDraw.Draw);
 	}
 
 	m_batches.Upload();

@@ -230,6 +230,15 @@ Things to know on this machine (2026-11-10):
   on Linux once auto exposure was off). 4: the status bar's DepthPrepassStage and ForwardRenderStage draw calls match
   before and after (Linux, framed RenderPerfTest: ~947 / ~950). 5: Debug with `-gfxliveobjects`, closed: "No D3D11
   objects outlived shutdown besides the device." (the instance buffers).
+- **A37. Grouped mesh batches** (draw batching Step 2: draws with the same geometry and material are one instanced
+  draw). No new files. 1: A1's three builds; A2's counts (7 `MeshBatches` cases, 3 more than A36). 2: Development,
+  framed (`-framescene`), the status bar's draw calls: RenderPerfTest's DepthPrepassStage **~25** (Linux 25, was
+  ~947) and ForwardRenderStage **~912**; `Stress2500.scene` (generate it as in A34) DepthPrepassStage **~32** and
+  ForwardRenderStage **~350** (one a blended draw: those are never grouped). Linux's in brackets; DX11 should match.
+  3: **images:** as A36.3, but shoot the commit before and this one **back to back**, not against older shots (on
+  Linux an image shifted between sessions hours apart with the same code). Expect identical images, except a few
+  pixels one level apart on Stress2500, where overlapping objects tie and the draw order decides (Linux: 4 framed,
+  1 from the camera). 4: Debug harness on RenderPerfTest: no `D3D11 (` error.
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 
