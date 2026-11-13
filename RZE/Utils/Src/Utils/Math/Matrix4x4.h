@@ -60,3 +60,41 @@ private:
 
 	glm::mat4 m_mat;
 };
+
+// The one-statement functions, here so callers in other .cpp files can inline them (no build uses LTO)
+
+inline Matrix4x4::Matrix4x4()
+	: m_mat(1.0f)
+{
+}
+
+inline Matrix4x4::Matrix4x4(const glm::mat4& mat)
+	: m_mat(mat)
+{
+}
+
+inline const glm::mat4& Matrix4x4::GetInternalMat() const
+{
+	return m_mat;
+}
+
+inline const float* Matrix4x4::GetValuePtr() const
+{
+	return &m_mat[0].x;
+}
+
+inline float* Matrix4x4::GetValuePtr()
+{
+	return &m_mat[0].x;
+}
+
+inline Matrix4x4 Matrix4x4::operator*(const Matrix4x4& rhs) const
+{
+	return Matrix4x4(m_mat * rhs.m_mat);
+}
+
+inline Vector4D Matrix4x4::operator*(const Vector4D& rhs) const
+{
+	const glm::vec4 product = m_mat * rhs.GetInternalVec();
+	return Vector4D(product.x, product.y, product.z, product.w);
+}

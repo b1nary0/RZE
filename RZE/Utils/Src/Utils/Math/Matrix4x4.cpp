@@ -19,16 +19,6 @@ namespace
 
 Matrix4x4 Matrix4x4::IDENTITY = Matrix4x4(glm::mat4(1.0f));
 
-Matrix4x4::Matrix4x4()
-{
-	m_mat = glm::mat4(1.0f);
-}
-
-Matrix4x4::Matrix4x4(const glm::mat4& mat)
-{
-	m_mat = mat;
-}
-
 Matrix4x4 Matrix4x4::FromValuePtr(const float* values)
 {
 	AssertNotNull(values);
@@ -160,21 +150,6 @@ Vector4D Matrix4x4::GetRow(int row) const
 	return Vector4D(m_mat[0][row], m_mat[1][row], m_mat[2][row], m_mat[3][row]);
 }
 
-const glm::mat4& Matrix4x4::GetInternalMat() const
-{
-	return m_mat;
-}
-
-const float* Matrix4x4::GetValuePtr() const
-{
-	return glm::value_ptr(m_mat);
-}
-
-float* Matrix4x4::GetValuePtr()
-{
-	return glm::value_ptr(m_mat);
-}
-
 bool Matrix4x4::operator!=(const Matrix4x4& rhs) const
 {
 	glm::mat4 rhsInternalMat = rhs.GetInternalMat();
@@ -193,15 +168,3 @@ bool Matrix4x4::operator!=(const Matrix4x4& rhs) const
 
 	return !bEqual;
 }
-
-Matrix4x4 Matrix4x4::operator*(const Matrix4x4& rhs) const
-{
-	return Matrix4x4(m_mat * rhs.m_mat);
-}
-
-Vector4D Matrix4x4::operator*(const Vector4D& rhs) const
-{
-	glm::vec4 vec = GetInternalMat() * rhs.GetInternalVec();
-	return Vector4D(vec.x, vec.y, vec.z, vec.w);
-}
-

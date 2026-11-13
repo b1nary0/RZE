@@ -3,6 +3,7 @@
 #include <Utils/Math/Vector3D.h>
 
 #include <array>
+#include <cfloat>
 
 class Matrix4x4;
 
@@ -57,3 +58,37 @@ private:
 	Vector3D m_min;
 	Vector3D m_max;
 };
+
+// The one-statement functions, here so callers in other .cpp files can inline them (no build uses LTO)
+
+inline BoundingBox::BoundingBox()
+	: m_min(FLT_MAX)
+	, m_max(-FLT_MAX)
+{
+}
+
+inline BoundingBox::BoundingBox(const Vector3D& min, const Vector3D& max)
+	: m_min(min)
+	, m_max(max)
+{
+}
+
+inline bool BoundingBox::IsEmpty() const
+{
+	return m_min.X() > m_max.X() || m_min.Y() > m_max.Y() || m_min.Z() > m_max.Z();
+}
+
+inline Vector3D BoundingBox::GetCentre() const
+{
+	return (m_min + m_max) * 0.5f;
+}
+
+inline Vector3D BoundingBox::GetSize() const
+{
+	return m_max - m_min;
+}
+
+inline bool BoundingBox::operator==(const BoundingBox& other) const
+{
+	return m_min == other.m_min && m_max == other.m_max;
+}

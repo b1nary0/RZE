@@ -9,23 +9,6 @@
 
 namespace VectorUtils
 {
-	float Dot(const Vector3D& a, const Vector3D& b)
-	{
-		return glm::dot(a.GetInternalVec(), b.GetInternalVec());
-	}
-
-	Vector3D Min(const Vector3D& a, const Vector3D& b)
-	{
-		const glm::vec3 minVec = glm::min(a.GetInternalVec(), b.GetInternalVec());
-		return Vector3D(minVec.x, minVec.y, minVec.z);
-	}
-
-	Vector3D Max(const Vector3D& a, const Vector3D& b)
-	{
-		const glm::vec3 maxVec = glm::max(a.GetInternalVec(), b.GetInternalVec());
-		return Vector3D(maxVec.x, maxVec.y, maxVec.z);
-	}
-
 	Vector2D Lerp(const Vector2D& from, const Vector2D& to, const float factor)
 	{
 		Vector3D ret = Lerp(Vector3D(from.X(), from.Y(), 0.0f), Vector3D(to.X(), to.Y(), 0.0f), factor);

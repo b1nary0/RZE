@@ -32,6 +32,10 @@ driving the editor are covered by the `run-rze` skill (`.claude/skills/run-rze/`
   Exception: `Utils/StringUtils.h` keeps its one-expression helpers (case-insensitive compares, `ToLower`/`ToUpper`)
   and its template in the header, as candidates for inlining into the per-item loops that call them. Everything longer
   in it goes in `StringUtils.cpp`.
+  Exception: the math types in `Utils/Math` (`Vector3D`, `Vector4D`, `Plane`, `BoundingBox`, `Matrix4x4`,
+  `VectorUtils`) define their one-statement functions (getters, setters, constructors, one-expression operators) as
+  `inline` after the class, since no build uses LTO and the per-draw loops call them. Loops, asserts and anything
+  needing a heavier include stay in the .cpp.
 - **Sink parameters:** never take a parameter by value and `std::move` it. Handed-over containers, handles and
   move-only types are `T&&`. A `std::shared_ptr` or a string the caller keeps is `const T&` and copied.
 - **No `auto` for plain types** such as an index or a value a helper returns: write the type out. If it's long, alias it

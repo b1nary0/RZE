@@ -4,20 +4,7 @@
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector4D.h>
 
-#include <cfloat>
 #include <cmath>
-
-BoundingBox::BoundingBox()
-	: m_min(FLT_MAX)
-	, m_max(-FLT_MAX)
-{
-}
-
-BoundingBox::BoundingBox(const Vector3D& min, const Vector3D& max)
-	: m_min(min)
-	, m_max(max)
-{
-}
 
 BoundingBox BoundingBox::Around(const Corners& points)
 {
@@ -27,21 +14,6 @@ BoundingBox BoundingBox::Around(const Corners& points)
 		box.Grow(point);
 	}
 	return box;
-}
-
-bool BoundingBox::IsEmpty() const
-{
-	return m_min.X() > m_max.X() || m_min.Y() > m_max.Y() || m_min.Z() > m_max.Z();
-}
-
-Vector3D BoundingBox::GetCentre() const
-{
-	return (m_min + m_max) * 0.5f;
-}
-
-Vector3D BoundingBox::GetSize() const
-{
-	return m_max - m_min;
 }
 
 float BoundingBox::GetRadius() const
@@ -154,9 +126,4 @@ bool BoundingBox::Intersects(const BoundingBox& other) const
 		}
 	}
 	return true;
-}
-
-bool BoundingBox::operator==(const BoundingBox& other) const
-{
-	return m_min == other.m_min && m_max == other.m_max;
 }

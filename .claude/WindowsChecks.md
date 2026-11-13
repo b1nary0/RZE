@@ -311,6 +311,14 @@ Things to know on this machine (2026-11-10):
   `LESS_EQUAL`: 0 px different (Linux: 0 on all 4; a z nudged by ~5 ULPs dropped 260K px, so the test catches it).
   Revert. If any differ, report the count and where; no holes may show in the normal build either. 4: shadows and
   cutouts (Sponza's leaves and chains) look as before; `close` code 0, 0 live.
+- **A44. Math types' one-statement functions inline** (mesh pass performance Step 4.1: getters, setters,
+  constructors and one-expression operators of `Vector3D`, `Vector4D`, `Plane`, `BoundingBox`, `Matrix4x4` and
+  `VectorUtils::Dot/Min/Max` moved to their headers as `inline`; `Plane.cpp` deleted). 1: `GenerateSolutions.bat`
+  (a file was removed), then A1's three builds: 0 warnings (MSVC sees the bodies in many more files now). 2: A2's
+  counts (no new cases). 3: Development `Editor.exe` with `/Ob2`: `dumpbin /disasm` of `Frustum::Intersects` calls
+  nothing (Linux: no call left, and none of `Vector3D::X`, `Plane::SignedDistance`, `BoundingBox::IsEmpty`,
+  `VectorUtils::Min` exists as a symbol). 4: framed shots of `Sponza`, `RenderTest`, `RenderPerfTest` and
+  `Stress2500` against the commit before: 0 px different (Linux: 0 on all 4).
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 

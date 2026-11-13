@@ -1,5 +1,8 @@
 #pragma once
 
+#include <GLM/common.hpp>
+#include <GLM/geometric.hpp>
+
 #include <Utils/Math/Quaternion.h>
 #include <Utils/Math/Units.h>
 #include <Utils/Math/Vector2D.h>
@@ -41,3 +44,23 @@ namespace VectorUtils
 
 	float		DistanceSq(const Vector3D& from, const Vector3D& to);
 }
+
+// The one-statement functions, here so callers in other .cpp files can inline them (no build uses LTO)
+
+inline float VectorUtils::Dot(const Vector3D& a, const Vector3D& b)
+{
+	return glm::dot(a.GetInternalVec(), b.GetInternalVec());
+}
+
+inline Vector3D VectorUtils::Min(const Vector3D& a, const Vector3D& b)
+{
+	const glm::vec3 minimum = glm::min(a.GetInternalVec(), b.GetInternalVec());
+	return Vector3D(minimum.x, minimum.y, minimum.z);
+}
+
+inline Vector3D VectorUtils::Max(const Vector3D& a, const Vector3D& b)
+{
+	const glm::vec3 maximum = glm::max(a.GetInternalVec(), b.GetInternalVec());
+	return Vector3D(maximum.x, maximum.y, maximum.z);
+}
+
