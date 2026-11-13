@@ -38,7 +38,7 @@ namespace
 
 void ForwardRenderStage::Initialize()
 {
-	// DepthPrepassStage loads the same shader, so both passes compute the same depths
+	// Places vertices as DepthPrepassStage's shader does, to the bit (MeshClipPosition in Common/MeshVertex.hlsli)
 	m_vertexShader = LoadVertexShader("Vertex_MeshInstanced", MeshInstanceFormats::Forward().InputLayout);
 
 	m_viewLightingBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(GraphicsLayouts::ViewLightingLayout), 16, 1);

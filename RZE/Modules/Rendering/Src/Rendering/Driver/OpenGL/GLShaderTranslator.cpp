@@ -260,6 +260,30 @@ namespace Rendering
 						const spirv_cross::SPIRType& type = compiler.get_type(builtin.value_type_id);
 						outResult.ClipDistanceCount = type.array.empty() ? 1u : static_cast<U32>(type.array[0]);
 					}
+					else if (builtin.builtin == spv::BuiltInPosition)
+					{
+						// Invariant (GLSL's "invariant gl_Position"): two programs that compute the position the same
+						// way from the same inputs get the same bits, which a depth prepass drawn with one vertex
+						// shader and a pass that tests against its depths with another rely on (MeshVertex.hlsli's
+						// MeshClipPosition). Its arithmetic is kept as written by HLSL's precise.
+						const spirv_cross::TypeID blockType = builtin.resource.base_type_id;
+						if (compiler.has_decoration(blockType, spv::DecorationBlock))
+						{
+							const spirv_cross::SPIRType& type = compiler.get_type(blockType);
+							for (U32 member = 0; member < static_cast<U32>(type.member_types.size()); ++member)
+							{
+								if (compiler.has_member_decoration(blockType, member, spv::DecorationBuiltIn) &&
+									compiler.get_member_decoration(blockType, member, spv::DecorationBuiltIn) == spv::BuiltInPosition)
+								{
+									compiler.set_member_decoration(blockType, member, spv::DecorationInvariant);
+								}
+							}
+						}
+						else
+						{
+							compiler.set_decoration(builtin.resource.id, spv::DecorationInvariant);
+						}
+					}
 				}
 
 				outResult.GLSL = compiler.compile();

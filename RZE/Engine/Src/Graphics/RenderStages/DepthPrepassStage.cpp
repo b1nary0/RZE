@@ -13,8 +13,8 @@
 
 void DepthPrepassStage::Initialize()
 {
-	// ForwardRenderStage loads the same shader
-	m_vertexShader = LoadVertexShader("Vertex_MeshInstanced", MeshInstanceFormats::Forward().InputLayout);
+	// Places vertices as ForwardRenderStage's shader does, to the bit (MeshClipPosition in Common/MeshVertex.hlsli)
+	m_vertexShader = LoadVertexShader("Vertex_MeshDepthOnly", MeshInstanceFormats::Depth().InputLayout);
 
 	m_batches.Initialize();
 }

@@ -28,7 +28,7 @@ public:
 private:
 	RenderOutput<SceneDepthData> m_sceneDepthOutput;
 
-	// The forward pass's, so both passes compute the same depths
+	// Vertex_MeshDepthOnly: computes the same depths as the forward pass's, from only what depth needs
 	TypedResourceHandle<VertexShader> m_vertexShader;
 
 	// What's drawn each Render

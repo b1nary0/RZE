@@ -32,6 +32,16 @@ struct MeshInstanceInput
 	float4 MaterialB : MATERIALB;
 };
 
+// A draw's world transform as MeshInstanceFormats::Depth streams it (GraphicsLayouts::MeshDepthInstanceLayout): its
+// four columns' first three values, a MeshWorld
+struct MeshDepthInstanceInput
+{
+	float3 WorldA : WORLDA;
+	float3 WorldB : WORLDB;
+	float3 WorldC : WORLDC;
+	float3 WorldD : WORLDD;
+};
+
 MeshInstance ReadMeshInstance(MeshInstanceInput input)
 {
 	MeshInstance instance;

@@ -157,6 +157,14 @@ namespace GraphicsLayouts
 		InstanceMaterialLayout Material;
 	};
 
+	// What a depth-only pass needs of a draw (MeshInstanceFormats::Depth): its world transform as its four columns'
+	// first three values. Transforms are affine, so each column's fourth is the bottom row's 0, 0, 0, 1. Mirrors
+	// MeshDepthInstanceInput (Common/MeshInstance.hlsli), a MeshWorld.
+	struct MeshDepthInstanceLayout
+	{
+		float WorldColumns[4][3]{};
+	};
+
 	// Mirrors MaterialBuffer in Common/PixelResources.hlsli: what a material's textures and blend mode mean for
 	// reading them, the same for every draw that binds the material. MaterialInstance::BuildBufferData works it out
 	// from a material's values. The values that can differ draw by draw are in InstanceMaterialLayout instead.

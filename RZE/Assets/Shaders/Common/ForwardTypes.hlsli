@@ -56,4 +56,19 @@ struct VertexToPixel
 	nointerpolation float  Opacity   : OPACITY;
 };
 
+// What a depth-only pass reads of a mesh vertex (Vertex_MeshDepthOnly): where it is, and its UV for cutouts' masks. The
+// same buffer as VertexInput's; the input layout names only these two (MeshInstanceFormats::Depth).
+struct DepthVertexInput
+{
+	float3 Position : POSITION;
+	float2 UV       : UV;
+};
+
+// Vertex_MeshDepthOnly's output, which Pixel_DepthOnlyCutout reads
+struct DepthVertexToPixel
+{
+	float4 Position : SV_POSITION;
+	float2 UV       : UV;
+};
+
 #endif // FORWARD_TYPES_HLSLI

@@ -4,7 +4,7 @@
 #include "Common/ForwardTypes.hlsli"
 #include "Common/Lighting.hlsli"
 
-void PSMain(VertexToPixel input)
+void PSMain(DepthVertexToPixel input)
 {
 	ApplyOpacityMask(input.UV);
 }

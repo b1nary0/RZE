@@ -366,3 +366,79 @@ TEST_CASE("The Forward format reads the vertex from slot 0 and the instance's 10
 	}
 	CHECK(layout[13].Offset + 16 == sizeof(GraphicsLayouts::MeshInstanceLayout));
 }
+
+TEST_CASE("The Depth format reads the vertex's position and UV where they are, and three float3 columns from slot 1")
+{
+	const MeshInstanceFormat& format = MeshInstanceFormats::Depth();
+	CHECK(format.Stride == sizeof(GraphicsLayouts::MeshDepthInstanceLayout));
+	CHECK(format.Stride == 48);
+
+	const Rendering::ShaderInputLayout& layout = format.InputLayout;
+	REQUIRE(layout.GetDataCount() == 6);
+
+	// The same places in the vertex as the Forward format reads them, as both read the same vertex buffer
+	const Rendering::ShaderInputLayout& forward = MeshInstanceFormats::Forward().InputLayout;
+	CHECK(layout[0].Name == "POSITION");
+	CHECK(layout[0].Offset == forward[0].Offset);
+	CHECK(layout[1].Name == "UV");
+	CHECK(layout[1].Offset == forward[2].Offset);
+	for (size_t index = 0; index < 2; ++index)
+	{
+		CAPTURE(index);
+		CHECK(layout[index].InputSlot == 0);
+		CHECK(layout[index].DataClassification == Rendering::EDataClassification::PER_VERTEX);
+	}
+
+	for (size_t column = 0; column < 4; ++column)
+	{
+		const Rendering::ShaderInputLayout::ShaderInputLayoutData& element = layout[2 + column];
+		CAPTURE(element.Name);
+		CHECK(element.InputSlot == MeshInstanceFormats::k_instanceSlot);
+		CHECK(element.DataClassification == Rendering::EDataClassification::PER_INSTANCE);
+		CHECK(element.DataFormat == Rendering::EDataFormat::R32G32B32_FLOAT);
+		CHECK(element.Offset == column * 12);
+		CHECK(!element.Name.empty());
+		CHECK((element.Name.back() < '0' || element.Name.back() > '9'));
+	}
+}
+
+TEST_CASE("A Depth instance is its draw's transform's columns without their fourth values, shared matrices included")
+{
+	const MeshGeometry geometry;
+	GraphicsLayouts::ObjectBufferLayout objectMatrices;
+	objectMatrices.Transform = Matrix4x4::CreateInPlace(Vector3D(5.0f, -3.0f, 7.0f), Vector3D(2.0f, 1.0f, 0.5f), Vector3D(30.0f, 45.0f, 60.0f));
+	objectMatrices.InvTransform = objectMatrices.Transform.Inverse();
+
+	std::vector<MeshDraw> draws = MakeDraws(2, geometry);
+	draws[1].Transform = &objectMatrices.Transform;
+	// No slot: a depth instance is built without it
+	draws[0].Slot = nullptr;
+	draws[1].Slot = nullptr;
+
+	MeshBatchGrouping grouping;
+	grouping.Add(draws[0], nullptr);
+	grouping.Add(draws[1], nullptr);
+	grouping.Build();
+
+	MeshInstanceStream stream(MeshInstanceFormats::Depth());
+	BuildStream(stream, grouping);
+	REQUIRE(stream.GetCount() == 2);
+	const Matrix4x4* const transforms[] = { &draws[0].OwnMatrices.Transform, &objectMatrices.Transform };
+	for (U32 index = 0; index < 2; ++index)
+	{
+		CAPTURE(index);
+		GraphicsLayouts::MeshDepthInstanceLayout instance;
+		std::memcpy(&instance, stream.GetInstance(index), sizeof(instance));
+		const float* const expected = transforms[index]->GetValuePtr();
+		for (size_t column = 0; column < 4; ++column)
+		{
+			CAPTURE(column);
+			// The columns' fourth values are the bottom row: an affine transform's 0, 0, 0, 1
+			CHECK(expected[4 * column + 3] == (column == 3 ? 1.0f : 0.0f));
+			for (size_t row = 0; row < 3; ++row)
+			{
+				CHECK(instance.WorldColumns[column][row] == expected[4 * column + row]);
+			}
+		}
+	}
+}

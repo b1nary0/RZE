@@ -14,8 +14,8 @@ struct MeshInstanceFormat
 {
 	// One instance's size in bytes, and the stream's stride
 	U32 Stride = 0;
-	// What a vertex shader drawn with it takes: the mesh vertex in slot 0, the instance in slot 1
-	// (MeshInstanceFormats::k_instanceSlot)
+	// What a vertex shader drawn with it takes: the mesh vertex, or the part of it the shader reads, in slot 0, the
+	// instance in slot 1 (MeshInstanceFormats::k_instanceSlot)
 	Rendering::ShaderInputLayout InputLayout;
 	// Writes the draw's instance, as it is now, into Stride bytes at out
 	void (*Fill)(const MeshDraw& draw, void* out) = nullptr;
@@ -29,4 +29,7 @@ namespace MeshInstanceFormats
 	// Everything a shaded draw needs besides its geometry and material: its matrices and the material values it
 	// carries (a GraphicsLayouts::MeshInstanceLayout, MeshDraw::BuildInstance). Read by MeshInstanceInput.
 	const MeshInstanceFormat& Forward();
+	// What a depth-only pass needs: the vertex's position and UV (for cutouts' masks), and the draw's world transform
+	// (a GraphicsLayouts::MeshDepthInstanceLayout), built without its material slot. Read by MeshDepthInstanceInput.
+	const MeshInstanceFormat& Depth();
 }

@@ -1,6 +1,6 @@
 // Mesh instances (MeshBatches): the vertices in slot 0, and each instance's transform and material values in slot 1
-// (MeshInstanceFormats::Forward), so a batch of instances is one draw. The depth prepass and forward pass draw with
-// it, so both compute the same depths.
+// (MeshInstanceFormats::Forward), so a batch of instances is one draw. The forward pass draws with it; its depths are
+// the depth prepass's (Vertex_MeshDepthOnly) to the bit, as both place vertices with MeshClipPosition.
 #include "Common/MeshInstance.hlsli"
 #include "Common/MeshVertex.hlsli"
 

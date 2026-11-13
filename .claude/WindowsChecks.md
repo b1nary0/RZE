@@ -300,6 +300,17 @@ Things to know on this machine (2026-11-10):
   `CaptureDraw` is now `MeshInstance Draw;`, a struct in a cbuffer: FXC compiles it (no shader compile error in the
   log), and RenderPerfTest's irradiance and reflection probes light the scene as at 71a50741 (Linux: 0 px different
   on 4 framed scenes, probe capture counts identical). 4: `close` code 0, 0 live.
+- **A43. Depth-only vertex path** (mesh pass performance Step 3: `Vertex_MeshDepthOnly`, `MeshInstanceFormats::Depth`,
+  `MeshClipPosition` with `precise` in `Common/MeshVertex.hlsli`). 1: A1's three builds; A2's counts (2 new
+  `MeshBatches` cases). 2: Debug Editor (validation on) on `Sponza.scene` and `RenderPerfTest.scene`: no shader
+  compile error (FXC takes `precise` on locals), and no `D3D11 (` message about an input layout: the Depth format's
+  names only POSITION and UV of the 44-byte vertex, then four `R32G32B32_FLOAT` columns 12 bytes apart. 3: **the
+  prepass's and forward's depths are equal on DX11**, which only `precise` guarantees there (GL also marks the
+  position invariant): temporarily change `DX11Device`'s `ReadOnlyLessEqual` comparison to `D3D11_COMPARISON_EQUAL`,
+  then compare framed shots of `Sponza`, `RenderTest`, `RenderPerfTest` and `Stress2500` against the same build with
+  `LESS_EQUAL`: 0 px different (Linux: 0 on all 4; a z nudged by ~5 ULPs dropped 260K px, so the test catches it).
+  Revert. If any differ, report the count and where; no holes may show in the normal build either. 4: shadows and
+  cutouts (Sponza's leaves and chains) look as before; `close` code 0, 0 live.
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 

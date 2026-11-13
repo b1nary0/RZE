@@ -106,8 +106,8 @@ namespace
 
 void ShadowRenderStage::Initialize()
 {
-	// The depth prepass's and forward pass's vertex shader, with each light view's view-projection as its camera
-	m_vertexShader = LoadVertexShader("Vertex_MeshInstanced", MeshInstanceFormats::Forward().InputLayout);
+	// The depth prepass's vertex shader, with each light view's view-projection as its camera
+	m_vertexShader = LoadVertexShader("Vertex_MeshDepthOnly", MeshInstanceFormats::Depth().InputLayout);
 
 	m_casters.Initialize();
 
