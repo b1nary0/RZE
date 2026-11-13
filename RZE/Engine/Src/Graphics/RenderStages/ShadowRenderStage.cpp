@@ -3,7 +3,7 @@
 #include <Graphics/CubeMap.h>
 #include <Graphics/Material.h>
 #include <Graphics/MaterialSlot.h>
-#include <Graphics/MeshBatches.h>
+#include <Graphics/MeshInstanceFormat.h>
 #include <Graphics/RenderEngine.h>
 #include <Graphics/SceneChangeLog.h>
 #include <Graphics/Shader.h>
@@ -107,7 +107,7 @@ namespace
 void ShadowRenderStage::Initialize()
 {
 	// The depth prepass's and forward pass's vertex shader, with each light view's view-projection as its camera
-	m_vertexShader = LoadVertexShader("Vertex_MeshInstanced", MeshBatches::GetInputLayout());
+	m_vertexShader = LoadVertexShader("Vertex_MeshInstanced", MeshInstanceFormats::Forward().InputLayout);
 
 	m_casters.Initialize();
 

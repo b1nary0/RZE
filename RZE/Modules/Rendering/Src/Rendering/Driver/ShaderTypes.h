@@ -6,6 +6,7 @@
 #include <Utils/DebugUtils/Debug.h>
 
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace Rendering
@@ -39,6 +40,10 @@ namespace Rendering
 
 		ShaderInputLayout(const std::initializer_list<ShaderInputLayoutData>& initializerList)
 			: m_layoutData(initializerList) {}
+
+		// For a layout put together from parts, e.g. one set of vertex elements followed by each instance format's
+		explicit ShaderInputLayout(std::vector<ShaderInputLayoutData>&& layoutData)
+			: m_layoutData(std::move(layoutData)) {}
 
 		const ShaderInputLayoutData& operator[](size_t idx) const
 		{

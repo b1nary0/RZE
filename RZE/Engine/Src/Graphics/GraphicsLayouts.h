@@ -136,8 +136,7 @@ namespace GraphicsLayouts
 	// The material values a draw carries itself rather than reading from its material's buffer
 	// (MaterialBufferLayout): the ones that change nothing a draw binds, so draws that differ only in these, such as
 	// one mesh tinted a different colour by each object, still share a batch. MaterialInstance::BuildInstanceData
-	// works it out. Mirrors the two MATERIAL registers of MeshInstanceInput (Vertex_MeshInstanced.hlsl) and of
-	// CaptureDraw (Vertex_ProbeCapture.hlsl).
+	// works it out. Mirrors MeshInstance's two material registers (Common/MeshInstance.hlsli).
 	struct InstanceMaterialLayout
 	{
 		// MaterialValues::Tint: sRGB; multiplies the diffuse texture, or is the colour without one
@@ -150,8 +149,8 @@ namespace GraphicsLayouts
 	};
 
 	// Everything about one draw of a mesh that isn't its geometry or what it binds: where it is and its material's
-	// per-draw values (MeshDraw::BuildInstance). One instance of MeshBatches' instance stream (MeshInstanceInput in
-	// Vertex_MeshInstanced.hlsl), and ProbeCapture's per-draw buffer (CaptureDraw in Vertex_ProbeCapture.hlsl).
+	// per-draw values (MeshDraw::BuildInstance). Mirrors MeshInstance in Common/MeshInstance.hlsli: an instance in
+	// MeshInstanceFormats::Forward, and ProbeCapture's per-draw buffer (CaptureDraw in Vertex_ProbeCapture.hlsl).
 	struct MeshInstanceLayout
 	{
 		ObjectBufferLayout Object;

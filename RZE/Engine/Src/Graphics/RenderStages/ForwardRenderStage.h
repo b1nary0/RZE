@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Graphics/MeshBatches.h>
+#include <Graphics/MeshInstanceFormat.h>
 #include <Graphics/RenderData/AmbientOcclusionData.h>
 #include <Graphics/RenderData/SceneColourData.h>
 #include <Graphics/RenderData/SceneDepthData.h>
@@ -70,5 +71,5 @@ private:
 	std::vector<TransparentDraw> m_transparentDraws;
 
 	// What's drawn each Render: the opaque draws, then the blended ones farthest first
-	MeshBatches m_batches;
+	MeshBatches m_batches{ MeshInstanceFormats::Forward() };
 };

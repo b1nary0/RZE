@@ -2,7 +2,7 @@
 
 #include <Graphics/Material.h>
 #include <Graphics/MaterialSlot.h>
-#include <Graphics/MeshBatches.h>
+#include <Graphics/MeshInstanceFormat.h>
 #include <Graphics/RenderEngine.h>
 #include <Graphics/Shader.h>
 
@@ -14,7 +14,7 @@
 void DepthPrepassStage::Initialize()
 {
 	// ForwardRenderStage loads the same shader
-	m_vertexShader = LoadVertexShader("Vertex_MeshInstanced", MeshBatches::GetInputLayout());
+	m_vertexShader = LoadVertexShader("Vertex_MeshInstanced", MeshInstanceFormats::Forward().InputLayout);
 
 	m_batches.Initialize();
 }

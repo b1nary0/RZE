@@ -2,6 +2,7 @@
 // is a 90-degree view from its probe, squeezed into its square of the target, with clip distances at the square's
 // edges so a triangle crossing them stops there rather than drawing onto the next face.
 #include "Common/ForwardTypes.hlsli"
+#include "Common/MeshInstance.hlsli"
 #include "Common/ProbeCaptureTypes.hlsli"
 
 // Mirrors ProbeCapture::k_maxBatchFaces
@@ -17,14 +18,11 @@ struct CaptureFace
 	float4 ProbePosition;
 };
 
-// Mirrors GraphicsLayouts::MeshInstanceLayout: the draw every instance is of, as an instance of the forward pass's
-// stream carries it (Vertex_MeshInstanced.hlsl), so both read a draw's place and tint from the same thing
+// The draw every instance is of, as an instance of the forward pass's stream carries it (Vertex_MeshInstanced.hlsl),
+// so both read a draw's place and tint from the same thing
 cbuffer CaptureDraw : register(b1)
 {
-	float4x4 World;
-	float4x4 InvWorld;
-	float4 MaterialA;
-	float4 MaterialB;
+	MeshInstance Draw;
 };
 
 // Mirrors ProbeCapture::FaceTableLayout
@@ -38,7 +36,7 @@ CaptureVertexToPixel VSMain(CaptureVertexInput input)
 	const CaptureFace face = Faces[input.Face];
 
 	CaptureVertexToPixel output;
-	const float4 worldPos = mul(World, float4(input.Position, 1.0f));
+	const float4 worldPos = mul(Draw.World, float4(input.Position, 1.0f));
 	const float4 faceClip = mul(face.ViewProjection, worldPos);
 
 	// Inside the face's own view, -w to w across and up
@@ -46,10 +44,10 @@ CaptureVertexToPixel VSMain(CaptureVertexInput input)
 	output.Position = float4(faceClip.xy * face.Placement.xy + face.Placement.zw * faceClip.w, faceClip.zw);
 
 	// Normals transform by the inverse-transpose so non-uniform scale doesn't skew them
-	output.Normal = normalize(mul(input.Normal, (float3x3)InvWorld));
+	output.Normal = normalize(mul(input.Normal, (float3x3)Draw.InvWorld));
 	output.UV = input.UV;
 	output.WorldPos = worldPos.xyz;
 	output.ProbePosition = face.ProbePosition.xyz;
-	output.Tint = UnpackInstanceMaterial(MaterialA, MaterialB).Tint;
+	output.Tint = UnpackInstanceMaterial(Draw.MaterialA, Draw.MaterialB).Tint;
 	return output;
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Graphics/MeshBatches.h>
+#include <Graphics/MeshInstanceFormat.h>
 
 #include <EngineCore/Resources/TypedResourceHandle.h>
 
@@ -14,7 +15,7 @@ struct MeshDraw;
 // draw of a geometry is one batch whatever its material. One with an opacity map (a cutout: leaves, chains) runs a
 // pixel shader that only clips, with its material's mask bound, so it batches by material too.
 //
-// The stage sets up everything else: the target, Vertex_MeshInstanced with MeshBatches::GetInputLayout, its camera and
+// The stage sets up everything else: the target, Vertex_MeshInstanced with MeshInstanceFormats::Forward, its camera and
 // the depth, rasterizer and topology states. A pass: Clear, Add each draw, Draw.
 class DepthOnlyMeshBatches
 {
@@ -43,5 +44,5 @@ private:
 	// Only clips; bound just for cutouts
 	TypedResourceHandle<PixelShader> m_cutoutShader;
 
-	MeshBatches m_batches;
+	MeshBatches m_batches{ MeshInstanceFormats::Forward() };
 };

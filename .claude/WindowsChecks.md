@@ -291,6 +291,15 @@ Things to know on this machine (2026-11-10):
   query. 3: while hovering, the columns and the tooltip's edges don't move as the figures change (Linux: every column's
   right edge the same to the pixel across 3 shots a second apart); the status bar's line keeps its words in place.
   4: `close` code 0; with `-gfxliveobjects` no `ID3D11Query` outlives shutdown after a hover (the queries are made then).
+- **A42. Mesh batches split into grouping, formats and streams** (mesh pass performance Step 2: `MeshBatchGrouping`,
+  `MeshInstanceFormat`, `MeshInstanceStream`, `Common/MeshInstance.hlsli`). Files added, so run
+  `GenerateSolutions.bat` first. 1: A1's three builds (`ShaderInputLayout` gained a constructor from a vector); A2's
+  counts (1 new `MeshBatches` case). 2: Debug Editor (validation on) on `RenderPerfTest.scene` and `Sponza.scene`,
+  settled: renders as before, and no `D3D11 (` message about the input layout (`Vertex_MeshInstanced` now takes
+  `MeshInstanceInput` from the include; the layout's 14 elements are unchanged). 3: `Vertex_ProbeCapture`'s
+  `CaptureDraw` is now `MeshInstance Draw;`, a struct in a cbuffer: FXC compiles it (no shader compile error in the
+  log), and RenderPerfTest's irradiance and reflection probes light the scene as at 71a50741 (Linux: 0 px different
+  on 4 framed scenes, probe capture counts identical). 4: `close` code 0, 0 live.
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 

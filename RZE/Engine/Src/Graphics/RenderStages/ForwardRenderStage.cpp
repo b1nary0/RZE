@@ -39,7 +39,7 @@ namespace
 void ForwardRenderStage::Initialize()
 {
 	// DepthPrepassStage loads the same shader, so both passes compute the same depths
-	m_vertexShader = LoadVertexShader("Vertex_MeshInstanced", MeshBatches::GetInputLayout());
+	m_vertexShader = LoadVertexShader("Vertex_MeshInstanced", MeshInstanceFormats::Forward().InputLayout);
 
 	m_viewLightingBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(GraphicsLayouts::ViewLightingLayout), 16, 1);
 
