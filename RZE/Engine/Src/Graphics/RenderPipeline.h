@@ -2,6 +2,7 @@
 
 #include <Graphics/RenderPipelineCompiler.h>
 #include <Graphics/RenderWorkCounts.h>
+#include <Graphics/VisibleDrawsCache.h>
 
 #include <Rendering/DrawCounts.h>
 #include <Rendering/Driver/GPUStatistics.h>
@@ -46,8 +47,9 @@ public:
 	// frameIndex: RenderEngine's, the same for every view rendered in one frame
 	void Render(RenderView& view, RenderScene& scene, float deltaTime, U64 frameIndex);
 
-	// Each stage's time and draws since the last call, in the order they run, then starts them over. Their GPU times
-	// and statistics are the render thread's latest averages.
+	// Each stage's time and draws since the last call, in the order they run, after a "Culling" row, then starts them
+	// over. Culling is the time spent culling the scene for every stage (VisibleDrawsCache), taken out of the time of
+	// the stage that asked first. The stages' GPU times and statistics are the render thread's latest averages.
 	std::vector<RenderStageStats> TakeStageStats();
 	// What the stages have counted since the last call (RenderContext::WorkCounts), then starts them over
 	RenderWorkCounts TakeWorkCounts();
@@ -61,6 +63,10 @@ private:
 	// Seconds each stage has spent in Render(), and the draws it recorded, since TakeStageStats(), indexed like m_stages
 	std::vector<double> m_stageTimes;
 	std::vector<Rendering::DrawCounts> m_stageDrawCounts;
+	// What the stages see of the scene, reset for each view
+	VisibleDrawsCache m_visibleDraws;
+	// Seconds spent culling, since TakeStageStats()
+	double m_cullTime = 0.0;
 	// Since TakeWorkCounts()
 	RenderWorkCounts m_workCounts;
 	CompiledRenderPipeline m_compiled;

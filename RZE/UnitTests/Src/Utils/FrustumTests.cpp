@@ -39,3 +39,12 @@ TEST_CASE("A frustum never sees an empty box")
 {
 	CHECK_FALSE(MakeFrustum().Intersects(BoundingBox()));
 }
+
+TEST_CASE("Frustums made from the same matrix are equal, and from different ones aren't")
+{
+	CHECK(MakeFrustum() == MakeFrustum());
+
+	const Matrix4x4 view = Matrix4x4::CreateViewMatrix(Vector3D(1.0f, 0.0f, 0.0f), Vector3D(1.0f, 0.0f, -1.0f), Vector3D(0.0f, 1.0f, 0.0f));
+	const Matrix4x4 projection = Matrix4x4::CreatePerspectiveMatrixZeroToOne(60.0f, 1.0f, 0.1f, 100.0f);
+	CHECK_FALSE(MakeFrustum() == Frustum(projection * view));
+}

@@ -5,6 +5,9 @@
 #include <Utils/Math/Vector3D.h>
 #include <Utils/Math/Vector4D.h>
 
+#include <algorithm>
+#include <iterator>
+
 Frustum::Frustum(const Matrix4x4& viewProjection)
 {
 	const Vector4D row0 = viewProjection.GetRow(0);
@@ -45,4 +48,9 @@ bool Frustum::Intersects(const BoundingBox& box) const
 	}
 
 	return true;
+}
+
+bool Frustum::operator==(const Frustum& other) const
+{
+	return std::equal(std::begin(m_planes), std::end(m_planes), std::begin(other.m_planes));
 }

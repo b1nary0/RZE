@@ -25,6 +25,9 @@ public:
 	// Positive on the side the normal points to, negative on the other, zero on the plane
 	float SignedDistance(const Vector3D& point) const;
 
+	// Exactly the same coefficients
+	bool operator==(const Plane& other) const;
+
 private:
 	// (normal.x, normal.y, normal.z, distance)
 	glm::vec4 m_plane;
@@ -60,4 +63,9 @@ inline float Plane::GetDistance() const
 inline float Plane::SignedDistance(const Vector3D& point) const
 {
 	return glm::dot(glm::vec3(m_plane), point.GetInternalVec()) + m_plane.w;
+}
+
+inline bool Plane::operator==(const Plane& other) const
+{
+	return m_plane == other.m_plane;
 }

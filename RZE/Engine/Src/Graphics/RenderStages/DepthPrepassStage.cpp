@@ -1,7 +1,5 @@
 #include <Graphics/RenderStages/DepthPrepassStage.h>
 
-#include <Graphics/Material.h>
-#include <Graphics/MaterialSlot.h>
 #include <Graphics/MeshInstanceFormat.h>
 #include <Graphics/RenderEngine.h>
 #include <Graphics/Shader.h>
@@ -31,7 +29,6 @@ void DepthPrepassStage::Render(RenderContext& context)
 	Rendering::Renderer::Begin("DepthPrepassStage");
 
 	const RenderView& view = context.View;
-	const RenderScene& scene = context.Scene;
 
 	SceneDepthData sceneDepthData;
 	sceneDepthData.Depth = view.Target->GetDepthTexturePlatformObject();
@@ -50,18 +47,15 @@ void DepthPrepassStage::Render(RenderContext& context)
 	Rendering::Renderer::SetInputLayout(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetPrimitiveTopology(Rendering::EPrimitiveTopology::TriangleList);
 
-	// The same culling as the forward pass, so it draws over exactly this depth
-	const Frustum frustum(view.Camera.ClipSpace);
+	// What the forward pass sees too, so it draws over exactly this depth. Blended draws don't write depth: whatever
+	// they cover still has to be shaded.
+	const VisibleDraws visibleDraws = context.GetVisibleDraws({ Frustum(view.Camera.ClipSpace), ERenderMobilityFilter::Any });
 
 	m_batches.Clear();
-	scene.ForEachDrawIn(frustum, ERenderMobilityFilter::Any, [this](const MeshDraw& draw)
+	for (const MeshDraw* draw : visibleDraws.Opaque)
 	{
-		// Blended draws don't write depth: whatever they cover still has to be shaded
-		if (!draw.Slot->GetMaterial().IsBlended())
-		{
-			m_batches.Add(draw);
-		}
-	});
+		m_batches.Add(*draw);
+	}
 	m_batches.Draw();
 
 	m_sceneDepthOutput.Publish(context, sceneDepthData);

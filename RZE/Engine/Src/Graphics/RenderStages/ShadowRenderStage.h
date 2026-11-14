@@ -17,7 +17,6 @@
 
 class LightObject;
 class RenderScene;
-struct RenderWorkCounts;
 class VertexShader;
 
 // Turns a scene's lights into what shading reads (SceneLightingData): a buffer of every light, uploaded each time
@@ -105,20 +104,20 @@ private:
 	void UploadLights(const RenderScene& scene, const ShadowMapState& state);
 
 	// Renders each shadowed light's map that's out of date, then uploads the ShadowBuffer that says how to read them
-	// if any was. Counts what it renders into workCounts.
-	void UpdateShadowMaps(const RenderScene& scene, ShadowMapState& state, RenderWorkCounts& workCounts);
+	// if any was. Counts what it renders into context.WorkCounts.
+	void UpdateShadowMaps(RenderContext& context, ShadowMapState& state);
 	// Sets up the depth-only state every light's views draw with, and starts the pass
 	void BeginShadowPass();
 	// Into the directional map, as state.Fit has it: its Static casters again into the Static map if redrawStatic, then
 	// that copied, with the Movable casters on top
-	void RenderDirectionalShadow(const RenderScene& scene, bool redrawStatic, const ShadowMapState& state, RenderWorkCounts& workCounts);
+	void RenderDirectionalShadow(RenderContext& context, bool redrawStatic, const ShadowMapState& state);
 	// Into cube cubeIndex of the point light cubes: the faces in staticFaces (a bit each, 1 << ECubeFace) have their
 	// Static casters drawn again into the Static cube, and those and the faces in movableFaces are copied from it and
 	// have their Movable casters drawn on top
-	void RenderPointShadow(const RenderScene& scene, const LightObject& light, U32 cubeIndex, U32 staticFaces, U32 movableFaces, const ShadowMapState& state, GraphicsLayouts::PointShadowLayout& outShadow, RenderWorkCounts& workCounts);
+	void RenderPointShadow(RenderContext& context, const LightObject& light, U32 cubeIndex, U32 staticFaces, U32 movableFaces, const ShadowMapState& state, GraphicsLayouts::PointShadowLayout& outShadow);
 	// Depth of every caster of that mobility that's in view and isn't blended, into the bound depth target, instanced
 	// (DepthOnlyMeshBatches). Shared by every light type's views. Returns how many draw calls it made.
-	U32 DrawCasters(const RenderScene& scene, const Matrix4x4& viewProjection, ERenderMobilityFilter casters);
+	U32 DrawCasters(RenderContext& context, const Matrix4x4& viewProjection, ERenderMobilityFilter casters);
 
 	// Fits the directional map around the Static casters as seen along lightDirection, with room to spare; false
 	// (outFit not fitted) if there are none to cast shadows

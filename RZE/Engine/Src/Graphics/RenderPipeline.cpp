@@ -36,7 +36,8 @@ void RenderPipeline::Render(RenderView& view, RenderScene& scene, float deltaTim
 	CompileIfDirty();
 
 	view.m_frameBlackboard.BeginFrame();
-	RenderContext context(view, scene, deltaTime, frameIndex, m_workCounts);
+	m_visibleDraws.Reset();
+	RenderContext context(view, scene, deltaTime, frameIndex, m_workCounts, m_visibleDraws);
 
 	for (size_t stageIndex : m_compiled.ExecutionOrder)
 	{
@@ -49,7 +50,10 @@ void RenderPipeline::Render(RenderView& view, RenderScene& scene, float deltaTim
 			Rendering::Renderer::BeginGPUScope(static_cast<U32>(stageIndex));
 			m_stages[stageIndex]->Render(context);
 			Rendering::Renderer::EndGPUScope();
-			m_stageTimes[stageIndex] += TimeUtils::GetSeconds() - stageStart;
+			// Culling for whichever stages share the result is counted apart from the stage that asked first
+			const double cullSeconds = m_visibleDraws.TakeCullSeconds();
+			m_stageTimes[stageIndex] += TimeUtils::GetSeconds() - stageStart - cullSeconds;
+			m_cullTime += cullSeconds;
 			m_stageDrawCounts[stageIndex] += Rendering::Renderer::GetDrawCounts() - drawsBefore;
 		}
 	}
@@ -62,7 +66,15 @@ std::vector<RenderStageStats> RenderPipeline::TakeStageStats()
 	const std::vector<Rendering::GPUPipelineStatistics>& gpuStatistics = renderThreadStats.GPUScopeStatistics;
 
 	std::vector<RenderStageStats> stageStats;
-	stageStats.reserve(m_compiled.ExecutionOrder.size());
+	stageStats.reserve(m_compiled.ExecutionOrder.size() + 1);
+
+	// Not a stage, so no GPU time or draws of its own
+	RenderStageStats culling;
+	culling.Name = "Culling";
+	culling.TimeMS = m_cullTime * 1000.0;
+	stageStats.push_back(std::move(culling));
+	m_cullTime = 0.0;
+
 	for (size_t stageIndex : m_compiled.ExecutionOrder)
 	{
 		RenderStageStats stats;

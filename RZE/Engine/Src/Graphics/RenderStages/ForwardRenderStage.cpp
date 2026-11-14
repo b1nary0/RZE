@@ -63,7 +63,6 @@ void ForwardRenderStage::Render(RenderContext& context)
 	Rendering::Renderer::Begin("ForwardRenderStage");
 
 	const RenderView& view = context.View;
-	const RenderScene& scene = context.Scene;
 	const SceneLightingData& sceneLightingData = m_sceneLightingInput.Get(context);
 
 	// Linear scene colour; PostProcessRenderStage exposes and tonemaps it into the 8-bit target.
@@ -114,28 +113,25 @@ void ForwardRenderStage::Render(RenderContext& context)
 	Rendering::Renderer::SetConstantBufferPS(sceneLightingData.LightBuffer, k_lightBufferSlot);
 	Rendering::Renderer::SetConstantBufferPS(m_viewLightingBuffer, k_viewLightingBufferSlot);
 
-	// Objects and draws entirely outside the view aren't drawn
-	const Frustum frustum(view.Camera.ClipSpace);
+	// Objects and draws entirely outside the view aren't drawn. The depth prepass asked for the same, so it's culled
+	// once.
+	const VisibleDraws visibleDraws = context.GetVisibleDraws({ Frustum(view.Camera.ClipSpace), ERenderMobilityFilter::Any });
 
 	m_batches.Clear();
-	m_transparentDraws.clear();
-
-	scene.ForEachDrawIn(frustum, ERenderMobilityFilter::Any, [this, &view](const MeshDraw& draw)
+	for (const MeshDraw* draw : visibleDraws.Opaque)
 	{
-		const MaterialInstance& materialInstance = draw.Slot->GetMaterial();
-
-		// Blended draws wait until everything they could show is drawn
-		if (materialInstance.IsBlended())
-		{
-			TransparentDraw& transparentDraw = m_transparentDraws.emplace_back();
-			transparentDraw.DistanceSquared = (draw.Bounds.GetCentre() - view.Camera.Position).LengthSq();
-			transparentDraw.Draw = &draw;
-			return;
-		}
-
 		// The material decides everything bound besides the geometry, its shader included
-		m_batches.Add(draw, &materialInstance);
-	});
+		m_batches.Add(*draw, &draw->Slot->GetMaterial());
+	}
+
+	// Blended draws wait until everything they could show is drawn
+	m_transparentDraws.clear();
+	for (const MeshDraw* draw : visibleDraws.Blended)
+	{
+		TransparentDraw& transparentDraw = m_transparentDraws.emplace_back();
+		transparentDraw.DistanceSquared = (draw->Bounds.GetCentre() - view.Camera.Position).LengthSq();
+		transparentDraw.Draw = draw;
+	}
 
 	// After everything opaque, farthest first, each on its own so the order holds
 	SortBackToFront(m_transparentDraws);

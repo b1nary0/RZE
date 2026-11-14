@@ -319,6 +319,13 @@ Things to know on this machine (2026-11-10):
   nothing (Linux: no call left, and none of `Vector3D::X`, `Plane::SignedDistance`, `BoundingBox::IsEmpty`,
   `VectorUtils::Min` exists as a symbol). 4: framed shots of `Sponza`, `RenderTest`, `RenderPerfTest` and
   `Stress2500` against the commit before: 0 px different (Linux: 0 on all 4).
+- **A45. Cull cache shared by the mesh passes** (mesh pass performance Step 4a: `VisibleDrawsCache`,
+  `RenderContext::GetVisibleDraws`, `RenderScene::CollectDrawsIn` in place of `ForEachDrawIn`, a "Culling" row in the
+  stage stats; results handed out as `MeshDrawSpan`s). 1: `GenerateSolutions.bat` (files were added), then A1's three builds: 0 warnings. 2: A2's counts (5
+  new cases). 3: framed shots of `Sponza`, `RenderTest`, `RenderPerfTest` and `Stress2500` against the commit before:
+  0 px different (Linux: 0 on all 4), shadows from the sun and the point lights included. 4: the Frame Stats panel's
+  stage table starts with a Culling row (record ms only, the rest 0); each stage's draws and instances are as before
+  (Linux: equal on Sponza, RenderPerfTest and Stress2500). `close` code 0.
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 

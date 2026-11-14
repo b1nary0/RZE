@@ -475,19 +475,16 @@ namespace
 		return Frustum(Matrix4x4::CreateOrthoMatrixZeroToOne(-5.0f, 5.0f, -5.0f, 5.0f, 0.1f, 20.0f) * view);
 	}
 
-	// The draws ForEachDrawIn visits, in order
+	// The draws CollectDrawsIn finds, in order
 	std::vector<const MeshDraw*> CollectDrawsIn(const RenderScene& scene, const Frustum& frustum, ERenderMobilityFilter mobility)
 	{
 		std::vector<const MeshDraw*> draws;
-		scene.ForEachDrawIn(frustum, mobility, [&draws](const MeshDraw& draw)
-		{
-			draws.push_back(&draw);
-		});
+		scene.CollectDrawsIn(frustum, mobility, draws);
 		return draws;
 	}
 }
 
-TEST_CASE("ForEachDrawIn visits the draws inside the frustum, in the objects' order")
+TEST_CASE("CollectDrawsIn finds the draws inside the frustum, in the objects' order")
 {
 	RenderScene scene;
 	const Frustum frustum = MakeFrustumAroundOrigin();
@@ -508,7 +505,7 @@ TEST_CASE("ForEachDrawIn visits the draws inside the frustum, in the objects' or
 	CHECK(draws[0] == &inside->GetDraws()[0]);
 	CHECK(draws[1] == &straddling->GetDraws()[0]);
 
-	// Moved into view, it's visited where it is among the objects
+	// Moved into view, it's found where it is among the objects
 	outside->SetTransform(MakeTransform(Vector3D(-3.0f, 0.0f, 0.0f)));
 	const std::vector<const MeshDraw*> drawsAfterMove = CollectDrawsIn(scene, frustum, ERenderMobilityFilter::Any);
 	REQUIRE(drawsAfterMove.size() == 3);
@@ -522,7 +519,7 @@ TEST_CASE("ForEachDrawIn visits the draws inside the frustum, in the objects' or
 	scene.DestroyRenderObject(empty);
 }
 
-TEST_CASE("ForEachDrawIn visits only the objects of the mobility asked for")
+TEST_CASE("CollectDrawsIn finds only the objects of the mobility asked for")
 {
 	RenderScene scene;
 	const Frustum frustum = MakeFrustumAroundOrigin();
@@ -540,6 +537,12 @@ TEST_CASE("ForEachDrawIn visits only the objects of the mobility asked for")
 	CHECK(movableDraws[0] == &movableObject->GetDraws()[0]);
 
 	CHECK(CollectDrawsIn(scene, frustum, ERenderMobilityFilter::Any).size() == 2);
+
+	// What it fills is emptied first
+	std::vector<const MeshDraw*> draws = { &staticObject->GetDraws()[0] };
+	scene.CollectDrawsIn(frustum, ERenderMobilityFilter::Movable, draws);
+	REQUIRE(draws.size() == 1);
+	CHECK(draws[0] == &movableObject->GetDraws()[0]);
 
 	scene.DestroyRenderObject(staticObject);
 	scene.DestroyRenderObject(movableObject);

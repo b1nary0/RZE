@@ -1,8 +1,6 @@
 #include <Graphics/RenderStages/ShadowRenderStage.h>
 
 #include <Graphics/CubeMap.h>
-#include <Graphics/Material.h>
-#include <Graphics/MaterialSlot.h>
 #include <Graphics/MeshInstanceFormat.h>
 #include <Graphics/RenderEngine.h>
 #include <Graphics/SceneChangeLog.h>
@@ -135,7 +133,7 @@ void ShadowRenderStage::Render(RenderContext& context)
 	const bool needsMap = context.View.Lighting == ERenderViewLighting::Scene;
 	if (needsMap && (!state.HasCheckedMaps || state.CheckedRevision != scene.GetRevision()))
 	{
-		UpdateShadowMaps(scene, state, context.WorkCounts);
+		UpdateShadowMaps(context, state);
 		state.CheckedRevision = scene.GetRevision();
 		state.HasCheckedMaps = true;
 	}
@@ -209,9 +207,11 @@ ShadowRenderStage::ShadowMapState ShadowRenderStage::CreateShadowMapState()
 	return state;
 }
 
-void ShadowRenderStage::UpdateShadowMaps(const RenderScene& scene, ShadowMapState& state, RenderWorkCounts& workCounts)
+void ShadowRenderStage::UpdateShadowMaps(RenderContext& context, ShadowMapState& state)
 {
 	OPTICK_EVENT();
+
+	const RenderScene& scene = context.Scene;
 
 	// A map is out of date once its slot goes to another light, or its light's shadows move. Slots no light has any
 	// more are left as they are: no light's ShadowIndex points at them, and if their light gets them back they still
@@ -291,7 +291,7 @@ void ShadowRenderStage::UpdateShadowMaps(const RenderScene& scene, ShadowMapStat
 			if (fit.IsFitted && (needsFit || hasStaticChanged || hasMovableChanged))
 			{
 				beginOnce();
-				RenderDirectionalShadow(scene, needsFit || hasStaticChanged, state, workCounts);
+				RenderDirectionalShadow(context, needsFit || hasStaticChanged, state);
 			}
 			markRendered(cache, light);
 			break;
@@ -325,7 +325,7 @@ void ShadowRenderStage::UpdateShadowMaps(const RenderScene& scene, ShadowMapStat
 			if ((staticFaces | movableFaces) != 0)
 			{
 				beginOnce();
-				RenderPointShadow(scene, light, static_cast<U32>(shadowIndex), staticFaces, movableFaces, state, state.ShadowData.PointShadows[shadowIndex], workCounts);
+				RenderPointShadow(context, light, static_cast<U32>(shadowIndex), staticFaces, movableFaces, state, state.ShadowData.PointShadows[shadowIndex]);
 			}
 			// Up to date either way, so the next check only looks at changes after this
 			markRendered(cache, light);
@@ -353,8 +353,9 @@ void ShadowRenderStage::BeginShadowPass()
 	Rendering::Renderer::SetPrimitiveTopology(Rendering::EPrimitiveTopology::TriangleList);
 }
 
-void ShadowRenderStage::RenderDirectionalShadow(const RenderScene& scene, bool redrawStatic, const ShadowMapState& state, RenderWorkCounts& workCounts)
+void ShadowRenderStage::RenderDirectionalShadow(RenderContext& context, bool redrawStatic, const ShadowMapState& state)
 {
+	RenderWorkCounts& workCounts = context.WorkCounts;
 	const Matrix4x4& viewProjection = state.Fit.ViewProjection;
 	const float size = static_cast<float>(k_shadowMapSize);
 	Rendering::Renderer::SetViewport({ size, size });
@@ -362,7 +363,7 @@ void ShadowRenderStage::RenderDirectionalShadow(const RenderScene& scene, bool r
 	{
 		Rendering::Renderer::ClearDepthStencilBuffer(state.StaticShadowMap);
 		Rendering::Renderer::SetDepthTarget(state.StaticShadowMap);
-		workCounts.ShadowDraws += DrawCasters(scene, viewProjection, ERenderMobilityFilter::Static);
+		workCounts.ShadowDraws += DrawCasters(context, viewProjection, ERenderMobilityFilter::Static);
 		++workCounts.SunShadowMapsRendered;
 	}
 
@@ -370,12 +371,13 @@ void ShadowRenderStage::RenderDirectionalShadow(const RenderScene& scene, bool r
 	Rendering::Renderer::ClearRenderTargets();
 	Rendering::Renderer::CopyTextureSlice(state.StaticShadowMap, 0, state.ShadowMap, 0);
 	Rendering::Renderer::SetDepthTarget(state.ShadowMap);
-	workCounts.ShadowDraws += DrawCasters(scene, viewProjection, ERenderMobilityFilter::Movable);
+	workCounts.ShadowDraws += DrawCasters(context, viewProjection, ERenderMobilityFilter::Movable);
 	Rendering::Renderer::ClearRenderTargets();
 }
 
-void ShadowRenderStage::RenderPointShadow(const RenderScene& scene, const LightObject& light, U32 cubeIndex, U32 staticFaces, U32 movableFaces, const ShadowMapState& state, GraphicsLayouts::PointShadowLayout& outShadow, RenderWorkCounts& workCounts)
+void ShadowRenderStage::RenderPointShadow(RenderContext& context, const LightObject& light, U32 cubeIndex, U32 staticFaces, U32 movableFaces, const ShadowMapState& state, GraphicsLayouts::PointShadowLayout& outShadow)
 {
+	RenderWorkCounts& workCounts = context.WorkCounts;
 	const Matrix4x4 projection = Matrix4x4::CreatePerspectiveMatrixZeroToOne(90.0f, 1.0f, k_pointShadowNear, CalculatePointShadowFar(light));
 
 	const float size = static_cast<float>(k_pointShadowSize);
@@ -396,14 +398,14 @@ void ShadowRenderStage::RenderPointShadow(const RenderScene& scene, const LightO
 		{
 			Rendering::Renderer::ClearDepthStencilSlice(state.StaticPointShadowCubes, slice);
 			Rendering::Renderer::SetDepthTarget(state.StaticPointShadowCubes, slice);
-			workCounts.ShadowDraws += DrawCasters(scene, viewProjection, ERenderMobilityFilter::Static);
+			workCounts.ShadowDraws += DrawCasters(context, viewProjection, ERenderMobilityFilter::Static);
 		}
 
 		// Unbound before it's copied out of. A slice is 1 MB, so it's copied even with no Movable casters in view.
 		Rendering::Renderer::ClearRenderTargets();
 		Rendering::Renderer::CopyTextureSlice(state.StaticPointShadowCubes, slice, state.PointShadowCubes, slice);
 		Rendering::Renderer::SetDepthTarget(state.PointShadowCubes, slice);
-		workCounts.ShadowDraws += DrawCasters(scene, viewProjection, ERenderMobilityFilter::Movable);
+		workCounts.ShadowDraws += DrawCasters(context, viewProjection, ERenderMobilityFilter::Movable);
 		++workCounts.PointShadowFacesRendered;
 	}
 	Rendering::Renderer::ClearRenderTargets();
@@ -418,26 +420,24 @@ void ShadowRenderStage::RenderPointShadow(const RenderScene& scene, const LightO
 	outShadow.NormalOffsetPerMetre = 2.0f / size * k_normalOffsetTexels;
 }
 
-U32 ShadowRenderStage::DrawCasters(const RenderScene& scene, const Matrix4x4& viewProjection, ERenderMobilityFilter casters)
+U32 ShadowRenderStage::DrawCasters(RenderContext& context, const Matrix4x4& viewProjection, ERenderMobilityFilter casters)
 {
 	// Only ClipSpace is used by the caster shaders
 	RenderCamera lightCamera;
 	lightCamera.ClipSpace = viewProjection;
 	Rendering::Renderer::UploadDataToBuffer<RenderCamera>(m_lightCameraBuffer, &lightCamera);
 
-	// Objects and draws entirely outside the view can't cast into it (e.g. behind a cube face)
-	const Frustum frustum(viewProjection);
+	// Objects and draws entirely outside the view can't cast into it (e.g. behind a cube face). Each light view is
+	// asked for once, so this always culls, but through the cache its time is counted with the rest of the culling.
+	const VisibleDraws visibleDraws = context.GetVisibleDraws({ Frustum(viewProjection), casters });
 
+	// #TODO(Transparency) See-through surfaces cast nothing for now: clear glass casting a solid shadow looks worse
+	// than no shadow. Partial or coloured shadows are future work (Docs/Plans/Transparency.md).
 	m_casters.Clear();
-	scene.ForEachDrawIn(frustum, casters, [this](const MeshDraw& draw)
+	for (const MeshDraw* draw : visibleDraws.Opaque)
 	{
-		// #TODO(Transparency) See-through surfaces cast nothing for now: clear glass casting a solid shadow looks
-		// worse than no shadow. Partial or coloured shadows are future work (Docs/Plans/Transparency.md).
-		if (!draw.Slot->GetMaterial().IsBlended())
-		{
-			m_casters.Add(draw);
-		}
-	});
+		m_casters.Add(*draw);
+	}
 	return m_casters.Draw();
 }
 

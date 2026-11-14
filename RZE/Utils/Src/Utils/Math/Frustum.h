@@ -18,6 +18,9 @@ public:
 	// frustum can still return true, which is fine for culling.
 	bool Intersects(const BoundingBox& box) const;
 
+	// Exactly the same planes, as two frustums made from the same matrix have
+	bool operator==(const Frustum& other) const;
+
 private:
 	Plane m_planes[6];
 };

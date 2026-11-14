@@ -55,8 +55,9 @@ void RenderScene::ClearObjects()
 	OnAllRenderObjectsChanged();
 }
 
-void RenderScene::ForEachDrawIn(const Frustum& frustum, ERenderMobilityFilter mobility, const std::function<void(const MeshDraw&)>& visit) const
+void RenderScene::CollectDrawsIn(const Frustum& frustum, ERenderMobilityFilter mobility, std::vector<const MeshDraw*>& outDraws) const
 {
+	outDraws.clear();
 	for (const std::unique_ptr<RenderObject>& renderObject : m_renderObjects)
 	{
 		const bool isWanted = mobility == ERenderMobilityFilter::Any
@@ -70,7 +71,7 @@ void RenderScene::ForEachDrawIn(const Frustum& frustum, ERenderMobilityFilter mo
 		{
 			if (frustum.Intersects(draw.Bounds))
 			{
-				visit(draw);
+				outDraws.push_back(&draw);
 			}
 		}
 	}
