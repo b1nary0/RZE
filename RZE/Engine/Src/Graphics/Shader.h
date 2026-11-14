@@ -26,7 +26,6 @@ public:
 
 	const Rendering::VertexShaderHandle& GetPlatformObject() const { return m_shader; }
 	const Rendering::ConstantBufferHandle& GetCameraDataBuffer() const { return m_cameraDataBuf; }
-	const Rendering::ConstantBufferHandle& GetWorldMatrixBuffer() const { return m_worldMatrixBuf; }
 	
 private:
 	const std::string m_name;
@@ -35,7 +34,6 @@ private:
 
 	Rendering::VertexShaderHandle m_shader;
 	Rendering::ConstantBufferHandle m_cameraDataBuf;
-	Rendering::ConstantBufferHandle m_worldMatrixBuf;
 };
 
 class PixelShader : public IResource

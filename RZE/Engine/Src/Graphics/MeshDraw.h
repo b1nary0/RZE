@@ -16,7 +16,7 @@ struct MeshDraw
 	// What the geometry is drawn with: it binds Slot->GetMaterial() and carries Slot->BuildInstanceData(). A slot rather
 	// than a material, so a slot changing material (an override set or reset) is drawn without rebuilding the draws.
 	const MaterialSlot* Slot = nullptr;
-	// Where it's drawn, with its inverse after it in memory (an ObjectBufferLayout), so it uploads as the ObjectBuffer. For a
+	// Where it's drawn, with its inverse after it in memory (an ObjectBufferLayout), so its instance copies both. For a
 	// sub-mesh at the mesh's origin it's the object's own matrices, shared by every such draw, so comparing pointers
 	// tells a stage when it needs to upload again. Otherwise it's OwnMatrices, which means a MeshDraw can't be copied
 	// without rebuilding it: keep draws in the vector BuildDraws filled.

@@ -5,8 +5,8 @@
 #include <Utils/Math/Vector3D.h>
 
 // The CPU side of shader buffers that aren't one render stage's own, such as the scene's lights, which any stage or
-// shader may read. A layout only one stage's shaders use (e.g. PickRenderStage::PickBufferLayout) stays with that
-// stage.
+// shader may read. A layout only one stage's shaders use (e.g. OutlineRenderStage::OutlineBufferLayout) stays with
+// that stage.
 namespace GraphicsLayouts
 {
 	// Mirrors MAX_LIGHTS in Common/PixelResources.hlsli. Lights past it are left out.
@@ -124,9 +124,9 @@ namespace GraphicsLayouts
 		float _pad = 0.0f;
 	};
 
-	// Mirrors ObjectBuffer in Common/VertexResources.hlsli: a world transform and its inverse, side by side, uploaded
-	// together. RenderObject keeps its own this way, and so does a MeshDraw placed away from its mesh's origin. Also
-	// the first half of a MeshInstanceLayout, so it's only these two matrices.
+	// A world transform and its inverse, side by side, so a MeshDraw's Transform reaches both and its instance copies
+	// them as one (MeshDraw::BuildInstance). RenderObject keeps its own this way, and so does a MeshDraw placed away
+	// from its mesh's origin. Also the first half of a MeshInstanceLayout, so it's only these two matrices.
 	struct ObjectBufferLayout
 	{
 		Matrix4x4 Transform;
@@ -163,6 +163,15 @@ namespace GraphicsLayouts
 	struct MeshDepthInstanceLayout
 	{
 		float WorldColumns[4][3]{};
+	};
+
+	// What a pass that writes an ID for each draw's pixels needs of it (MeshInstanceFormats::ID: picking, the outline
+	// mask): its world transform as the depth passes have it, and the 64-bit ID the stage gave the draw, low half
+	// first. Mirrors MeshIDInstanceInput (Common/MeshInstance.hlsli).
+	struct MeshIDInstanceLayout
+	{
+		MeshDepthInstanceLayout World;
+		U32 ID[2]{};
 	};
 
 	// Mirrors MaterialBuffer in Common/PixelResources.hlsli: what a material's textures and blend mode mean for

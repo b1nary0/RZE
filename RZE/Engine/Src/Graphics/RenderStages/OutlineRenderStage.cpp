@@ -1,15 +1,10 @@
 #include <Graphics/RenderStages/OutlineRenderStage.h>
 
 #include <Graphics/FullScreenPass.h>
-#include <Graphics/IndexBuffer.h>
-#include <Graphics/Material.h>
-#include <Graphics/MaterialSlot.h>
-#include <Graphics/MeshGeometry.h>
+#include <Graphics/MeshInstanceFormat.h>
 #include <Graphics/RenderEngine.h>
 #include <Graphics/RenderView.h>
 #include <Graphics/Shader.h>
-#include <Graphics/Texture2D.h>
-#include <Graphics/VertexBuffer.h>
 
 #include <Rendering/Renderer.h>
 #include <Rendering/Driver/GFXBuffer.h>
@@ -72,15 +67,7 @@ namespace
 
 void OutlineRenderStage::Initialize()
 {
-	// Same layout as ForwardRenderStage, whose vertex shader the mask is drawn with
-	Rendering::ShaderInputLayout meshInputLayout =
-	{
-		{ "POSITION", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 0 },
-		{ "NORMAL", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 12 },
-		{ "UV", Rendering::EDataFormat::R32G32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 24 },
-		{ "TANGENT", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 32 }
-	};
-	m_meshVertexShader = LoadVertexShader("Vertex_NewRenderer", meshInputLayout);
+	m_meshVertexShader = LoadVertexShader("Vertex_MeshID", MeshInstanceFormats::ID().InputLayout);
 
 	Rendering::ShaderInputLayout quadInputLayout = {};
 	m_quadVertexShader = LoadVertexShader("Vertex_RenderTargetQuad", quadInputLayout);
@@ -88,8 +75,9 @@ void OutlineRenderStage::Initialize()
 	m_maskShader = LoadPixelShader("Pixel_OutlineMask");
 	m_outlineShader = LoadPixelShader("Pixel_Outline");
 
-	m_maskBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(MaskBufferLayout), 16, 1);
 	m_outlineBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(OutlineBufferLayout), 16, 1);
+
+	m_maskBatches.Initialize();
 }
 
 void OutlineRenderStage::Setup(RenderStageBuilder& builder)
@@ -193,24 +181,20 @@ bool OutlineRenderStage::DrawMask(const RenderContext& context, const Rendering:
 	// After the targets, as it's the view's depth target until then
 	Rendering::Renderer::SetTextureResource(m_sceneDepthInput.Get(context).Depth, k_sceneDepthSlot);
 
-	// The forward pass and the prepass upload the same camera to the same buffer
 	Rendering::Renderer::UploadDataToBuffer<RenderCamera>(m_meshVertexShader->GetCameraDataBuffer(), &view.Camera);
 
 	Rendering::Renderer::SetVertexShader(m_meshVertexShader->GetPlatformObject());
 	Rendering::Renderer::SetPixelShader(m_maskShader->GetPlatformObject());
 	Rendering::Renderer::SetConstantBufferVS(m_meshVertexShader->GetCameraDataBuffer(), 0);
-	Rendering::Renderer::SetConstantBufferVS(m_meshVertexShader->GetWorldMatrixBuffer(), 1);
-	Rendering::Renderer::SetConstantBufferPS(m_maskBuffer, 0);
 
 	Rendering::Renderer::SetViewport({ view.ViewportSize.X(), view.ViewportSize.Y() });
 	Rendering::Renderer::SetInputLayout(m_meshVertexShader->GetPlatformObject());
 	Rendering::Renderer::SetPrimitiveTopology(Rendering::EPrimitiveTopology::TriangleList);
 
-	// As in ForwardRenderStage: only uploaded when the draw's transform changes
-	const Matrix4x4* uploadedTransform = nullptr;
+	// Its own cull rather than the view's (VisibleDrawsCache): a draw doesn't know its object, which says its outline
 	const Frustum frustum(view.Camera.ClipSpace);
-	bool hasDrawn = false;
 
+	m_maskBatches.Clear();
 	for (const auto& renderObject : context.Scene.GetRenderObjects())
 	{
 		const U64 liveID = renderObject->GetLiveID();
@@ -221,41 +205,17 @@ bool OutlineRenderStage::DrawMask(const RenderContext& context, const Rendering:
 			continue;
 		}
 
-		const MaskBufferLayout maskData = { outlined->OutlineID, outlined->ShapeID, { 0, 0 } };
-		Rendering::Renderer::UploadDataToBuffer<MaskBufferLayout>(m_maskBuffer, &maskData);
-
+		const U64 maskID = outlined->OutlineID | (static_cast<U64>(outlined->ShapeID) << 32);
 		for (const MeshDraw& draw : renderObject->GetDraws())
 		{
-			if (!frustum.Intersects(draw.Bounds))
+			if (frustum.Intersects(draw.Bounds))
 			{
-				continue;
+				m_maskBatches.Add(draw, maskID);
 			}
-
-			// See ForwardRenderStage: uploads the whole ObjectBufferLayout (transform + inverse)
-			if (draw.Transform != uploadedTransform)
-			{
-				Rendering::Renderer::UploadDataToBuffer<Matrix4x4>(m_meshVertexShader->GetWorldMatrixBuffer(), draw.Transform);
-				uploadedTransform = draw.Transform;
-			}
-
-			const MeshGeometry& meshGeometry = *draw.Geometry;
-			const MaterialInstance& materialInstance = draw.Slot->GetMaterial();
-
-			// For cutout materials, as in PickRenderStage: the outline follows the cut-out shape
-			Rendering::Renderer::SetConstantBufferPS(materialInstance.GetParamBuffer(), 1);
-			if (const Texture2D* const opacityMap = materialInstance.GetTextureResource(TEXTURE_SLOT_OPACITY))
-			{
-				Rendering::Renderer::SetTextureResource(opacityMap->GetPlatformObject(), TEXTURE_SLOT_OPACITY);
-			}
-
-			const Rendering::IndexBufferHandle& indexBuffer = meshGeometry.GetIndexBuffer()->GetPlatformObject();
-			Rendering::Renderer::SetVertexBuffer(meshGeometry.GetVertexBuffer()->GetPlatformObject(), 0);
-			Rendering::Renderer::SetIndexBuffer(indexBuffer);
-
-			Rendering::Renderer::DrawIndexed(indexBuffer);
-			hasDrawn = true;
 		}
 	}
+	// Cutouts clip by their mask, so the outline follows the cut-out shape
+	const bool hasDrawn = m_maskBatches.Draw() > 0;
 
 	// Later stages bind it as a depth target again
 	Rendering::Renderer::UnsetTextureResource(k_sceneDepthSlot);

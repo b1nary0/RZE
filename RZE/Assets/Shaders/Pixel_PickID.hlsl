@@ -3,14 +3,9 @@
 #include "Common/ForwardTypes.hlsli"
 #include "Common/Lighting.hlsli"
 
-// Mirrors PickRenderStage::PickBufferLayout: the 64-bit pick ID as (low half, high half)
-cbuffer PickBuffer : register(b0)
-{
-	uint2 PickID;
-};
-
-uint2 PSMain(VertexToPixel input) : SV_Target
+// input.ID: the draw's object's 64-bit pick ID as (low half, high half) (IDMeshBatches)
+uint2 PSMain(IDVertexToPixel input) : SV_Target
 {
 	clip(ApplyOpacityMask(input.UV) - AlphaCutoff);
-	return PickID;
+	return input.ID;
 }

@@ -326,6 +326,20 @@ Things to know on this machine (2026-11-10):
   0 px different (Linux: 0 on all 4), shadows from the sun and the point lights included. 4: the Frame Stats panel's
   stage table starts with a Culling row (record ms only, the rest 0); each stage's draws and instances are as before
   (Linux: equal on Sponza, RenderPerfTest and Stress2500). `close` code 0.
+- **A46. Pick and Outline on instance batches; the ObjectBuffer is gone** (mesh pass performance Step 5:
+  `IDMeshBatches`, `MeshInstanceFormats::ID`, `Vertex_MeshID.hlsl`; `Vertex_NewRenderer.hlsl`, `VertexResources.hlsli`'s
+  `ObjectBuffer` and `VertexShader::GetWorldMatrixBuffer` deleted; `Vertex_Line` uses world positions directly). 1:
+  `GenerateSolutions.bat` (files were added), then A1's three builds: 0 warnings. 2: A2's counts (3 new
+  `MeshBatches` cases). 3: Debug Editor (validation on) on `Sponza.scene` and `RenderPerfTest.scene`: no shader compile
+  error and no `D3D11 (` input-layout message. The ID format is the Depth format's elements, then `IDLOW` and
+  `IDHIGH` as `R32_UINT` in slot 1 at offsets 48 and 52, read as `uint` (a mixed float/uint instance layout), and
+  `Vertex_MeshID` hands a `nointerpolation uint2` to the pixel shaders. 4: click objects in the scene view (Sponza's
+  Nyra, Tank, Nanosuit; a RenderPerfTest pillar; a potted plant's leaf and the gap beside it): each click selects the
+  object under the cursor, and a click through a cutout's gap selects what's behind it, as before (Linux: 720
+  clicks on 3 scenes, the same selection as the commit before on every one). 5: the selection outline is drawn on
+  one object and on three ctrl-clicked ones, the occluded part fainter, as before (Linux: 0 px different on Sponza,
+  RenderTest, RenderPerfTest and Stress2500, framed and scene camera). 6: DrawLineTest's grid and axis lines as
+  before (Linux: 0 px). `close` code 0.
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 

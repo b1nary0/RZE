@@ -17,17 +17,21 @@ void MeshInstanceStream::Initialize()
 	m_buffer.Initialize(m_format.Stride);
 }
 
-void MeshInstanceStream::Build(const std::vector<MeshBatchGrouping::Placement>& placements)
+void MeshInstanceStream::Build(const std::vector<MeshBatchGrouping::Placement>& placements, const std::vector<U64>& ids)
 {
+	AssertExpr(ids.size() == (m_format.CarriesID ? placements.size() : 0));
+
 	m_count = static_cast<U32>(placements.size());
 	m_instances.resize(static_cast<size_t>(m_count) * m_format.Stride);
 
 	// In the placements' order, the draws': reading the draws in order and writing apart is the faster way round
 	std::byte* const instances = m_instances.data();
-	for (const MeshBatchGrouping::Placement& placement : placements)
+	const bool hasIDs = m_format.CarriesID;
+	for (size_t index = 0; index < placements.size(); ++index)
 	{
+		const MeshBatchGrouping::Placement& placement = placements[index];
 		AssertExpr(placement.Instance < m_count);
-		m_format.Fill(*placement.Draw, instances + static_cast<size_t>(placement.Instance) * m_format.Stride);
+		m_format.Fill(*placement.Draw, hasIDs ? ids[index] : 0, instances + static_cast<size_t>(placement.Instance) * m_format.Stride);
 	}
 }
 

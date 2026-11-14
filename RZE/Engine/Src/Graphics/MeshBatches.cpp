@@ -1,5 +1,9 @@
 #include <Graphics/MeshBatches.h>
 
+#include <Graphics/MeshInstanceFormat.h>
+
+#include <Utils/DebugUtils/Debug.h>
+
 MeshBatches::MeshBatches(const MeshInstanceFormat& format)
 	: m_instances(format)
 {
@@ -13,22 +17,32 @@ void MeshBatches::Initialize()
 void MeshBatches::Clear()
 {
 	m_grouping.Clear();
+	m_ids.clear();
 }
 
 void MeshBatches::Add(const MeshDraw& draw, const void* bindKey)
 {
+	AssertExpr(!m_instances.GetFormat().CarriesID);
 	m_grouping.Add(draw, bindKey);
+}
+
+void MeshBatches::Add(const MeshDraw& draw, const void* bindKey, U64 id)
+{
+	AssertExpr(m_instances.GetFormat().CarriesID);
+	m_grouping.Add(draw, bindKey);
+	m_ids.push_back(id);
 }
 
 void MeshBatches::AddUngrouped(const MeshDraw& draw)
 {
+	AssertExpr(!m_instances.GetFormat().CarriesID);
 	m_grouping.AddUngrouped(draw);
 }
 
 void MeshBatches::Upload()
 {
 	m_grouping.Build();
-	m_instances.Build(m_grouping.GetPlacements());
+	m_instances.Build(m_grouping.GetPlacements(), m_ids);
 	m_instances.Upload();
 }
 

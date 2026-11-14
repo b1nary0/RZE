@@ -1,13 +1,8 @@
 #include <Graphics/RenderStages/PickRenderStage.h>
 
-#include <Graphics/IndexBuffer.h>
-#include <Graphics/Material.h>
-#include <Graphics/MaterialSlot.h>
-#include <Graphics/MeshGeometry.h>
+#include <Graphics/MeshInstanceFormat.h>
 #include <Graphics/RenderEngine.h>
 #include <Graphics/Shader.h>
-#include <Graphics/Texture2D.h>
-#include <Graphics/VertexBuffer.h>
 
 #include <Rendering/Renderer.h>
 #include <Rendering/Driver/GFXBuffer.h>
@@ -16,16 +11,8 @@
 
 void PickRenderStage::Initialize()
 {
-	// Same layout as ForwardRenderStage; the forward vertex shader is reused with the pick camera
-	Rendering::ShaderInputLayout inputLayout =
-	{
-		{ "POSITION", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 0 },
-		{ "NORMAL", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 12 },
-		{ "UV", Rendering::EDataFormat::R32G32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 24 },
-		{ "TANGENT", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 32 }
-	};
-
-	m_vertexShader = LoadVertexShader("Vertex_NewRenderer", inputLayout);
+	// Places vertices as the depth prepass does, with the pick camera
+	m_vertexShader = LoadVertexShader("Vertex_MeshID", MeshInstanceFormats::ID().InputLayout);
 
 	m_pixelShader = LoadPixelShader("Pixel_PickID");
 
@@ -48,7 +35,8 @@ void PickRenderStage::Initialize()
 	m_depthTarget = Rendering::Renderer::CreateTextureBuffer2D(depthParams);
 
 	m_cameraBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(RenderCamera), 128, 1);
-	m_pickBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(PickBufferLayout), 16, 1);
+
+	m_batches.Initialize();
 }
 
 void PickRenderStage::Setup(RenderStageBuilder& builder)
@@ -90,16 +78,16 @@ void PickRenderStage::Render(RenderContext& context)
 	Rendering::Renderer::SetVertexShader(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetPixelShader(m_pixelShader->GetPlatformObject());
 	Rendering::Renderer::SetConstantBufferVS(m_cameraBuffer, 0);
-	Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetWorldMatrixBuffer(), 1);
-	Rendering::Renderer::SetConstantBufferPS(m_pickBuffer, 0);
 
 	Rendering::Renderer::SetViewport({ 1.0f, 1.0f });
 	Rendering::Renderer::SetInputLayout(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetPrimitiveTopology(Rendering::EPrimitiveTopology::TriangleList);
 
-	// Only covers the requested pixel, so nearly everything is skipped
+	// Only covers the requested pixel, so nearly everything is skipped. Its own cull rather than the view's
+	// (VisibleDrawsCache): a draw doesn't know its object, and the pick ID is the object's.
 	const Frustum frustum(pickCamera.ClipSpace);
 
+	m_batches.Clear();
 	for (const auto& renderObject : context.Scene.GetRenderObjects())
 	{
 		if (!frustum.Intersects(renderObject->GetBounds()))
@@ -108,43 +96,16 @@ void PickRenderStage::Render(RenderContext& context)
 		}
 
 		// Objects without an ID are still drawn, so they hide what's behind them
-		const PickBufferLayout pickData = { renderObject->GetPickID(), { 0, 0 } };
-		Rendering::Renderer::UploadDataToBuffer<PickBufferLayout>(m_pickBuffer, &pickData);
-
-		// As in ForwardRenderStage: only uploaded when the draw's transform changes
-		const Matrix4x4* uploadedTransform = nullptr;
-
+		const U64 pickID = renderObject->GetPickID();
 		for (const MeshDraw& draw : renderObject->GetDraws())
 		{
-			if (!frustum.Intersects(draw.Bounds))
+			if (frustum.Intersects(draw.Bounds))
 			{
-				continue;
+				m_batches.Add(draw, pickID);
 			}
-
-			// See ForwardRenderStage: uploads the whole ObjectBufferLayout (transform + inverse)
-			if (draw.Transform != uploadedTransform)
-			{
-				Rendering::Renderer::UploadDataToBuffer<Matrix4x4>(m_vertexShader->GetWorldMatrixBuffer(), draw.Transform);
-				uploadedTransform = draw.Transform;
-			}
-
-			const MeshGeometry& meshGeometry = *draw.Geometry;
-			const MaterialInstance& materialInstance = draw.Slot->GetMaterial();
-
-			// For cutout materials, as in ShadowRenderStage
-			Rendering::Renderer::SetConstantBufferPS(materialInstance.GetParamBuffer(), 1);
-			if (const Texture2D* const opacityMap = materialInstance.GetTextureResource(TEXTURE_SLOT_OPACITY))
-			{
-				Rendering::Renderer::SetTextureResource(opacityMap->GetPlatformObject(), TEXTURE_SLOT_OPACITY);
-			}
-
-			const Rendering::IndexBufferHandle& indexBuffer = meshGeometry.GetIndexBuffer()->GetPlatformObject();
-			Rendering::Renderer::SetVertexBuffer(meshGeometry.GetVertexBuffer()->GetPlatformObject(), 0);
-			Rendering::Renderer::SetIndexBuffer(indexBuffer);
-
-			Rendering::Renderer::DrawIndexed(indexBuffer);
 		}
 	}
+	m_batches.Draw();
 
 	Rendering::Renderer::ReadTexel(m_idTarget, 0, 0, pick.Result);
 	if (pick.DepthResult != nullptr)

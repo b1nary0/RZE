@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Graphics/IDMeshBatches.h>
 #include <Graphics/RenderData/DisplayColourData.h>
 #include <Graphics/RenderData/SceneDepthData.h>
 #include <Graphics/RenderStage.h>
@@ -21,7 +22,8 @@ struct RenderOutline;
 // Two passes, only for a view with outlines:
 // - Mask: the outlined objects alone, into a mask the size of the view's target (OutlineMaskState, kept per view).
 //   Each pixel holds which outline and which of its shapes the nearest outlined object there is in, and whether that
-//   object is in front of the scene's depth or behind it. Cutout pixels are clipped as in the shadow pass.
+//   object is in front of the scene's depth or behind it. Cutout pixels are clipped as in the shadow pass. Each draw
+//   carries its outline and shape (IDMeshBatches), so the draws of one geometry are one batch.
 // - Outline: a full-screen pass that draws a shape's outline colour on the pixels within its width of it that aren't
 //   the shape's own, so only the edge of the shape its objects make together is outlined. Where two shapes touch, the
 //   line goes on the farther one's side (by the mask's depth), as against the background. Fainter by the outline's
@@ -36,16 +38,6 @@ public:
 	static constexpr U32 k_maxShapes = (1u << 23) - 1;
 	// Widest a line is drawn, in pixels; the outline pass searches this far around each pixel
 	static constexpr float k_maxWidth = 4.0f;
-
-	// Mirrors OutlineMaskBuffer in Pixel_OutlineMask.hlsl
-	struct MaskBufferLayout
-	{
-		// The outline's index + 1; 0 in the mask means no outlined object there
-		U32 OutlineID;
-		// OutlinedObject::ShapeID
-		U32 ShapeID;
-		U32 _pad[2];
-	};
 
 	// Mirrors OutlineStyle in Pixel_Outline.hlsl: a RenderOutline's look
 	struct OutlineStyleLayout
@@ -71,7 +63,7 @@ public:
 	struct OutlinedObject
 	{
 		U64 LiveID;
-		// MaskBufferLayout::OutlineID
+		// The outline's index + 1; 0 in the mask means no outlined object there
 		U32 OutlineID;
 		// Its shape, numbered from 1 across the view's outlines, so no two outlines' shapes share one
 		U32 ShapeID;
@@ -106,14 +98,17 @@ private:
 	RenderInput<SceneDepthData> m_sceneDepthInput;
 	RenderInOut<DisplayColourData> m_displayColour;
 
-	// The forward pass's, so the mask's depths are the scene depth's, bit for bit, where an object is in front
+	// Places vertices as the depth prepass does, so the mask's depths are the scene depth's, bit for bit, where an
+	// object is in front
 	TypedResourceHandle<VertexShader> m_meshVertexShader;
 	TypedResourceHandle<VertexShader> m_quadVertexShader;
 	TypedResourceHandle<PixelShader> m_maskShader;
 	TypedResourceHandle<PixelShader> m_outlineShader;
 
-	Rendering::ConstantBufferHandle m_maskBuffer;
 	Rendering::ConstantBufferHandle m_outlineBuffer;
+
+	// The mask's draws; their IDs are OutlineID in the low half and ShapeID in the high (Pixel_OutlineMask.hlsl)
+	IDMeshBatches m_maskBatches;
 
 	// The objects of the view being drawn (CollectOutlinedObjects), to look each render object up in. Kept only so its
 	// memory is reused.

@@ -87,11 +87,6 @@ void DebugDrawRenderStage::Render(RenderContext& context)
 
 	Rendering::Renderer::SetInputLayout(m_vertexShader->GetPlatformObject());
 
-	Matrix4x4 transform = Matrix4x4::CreateInPlace(Vector3D(), Vector3D(1.0f), Vector3D());
-
-	Rendering::Renderer::UploadDataToBuffer<Matrix4x4>(m_vertexShader->GetWorldMatrixBuffer(), &transform);
-	Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetWorldMatrixBuffer(), 1);
-
 	Rendering::Renderer::SetPixelShader(m_lineShader->GetPlatformObject());
 
 	Rendering::Renderer::SetVertexBuffer(m_lineBuffer.GetPlatformObject(), 0);

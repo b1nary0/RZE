@@ -35,6 +35,13 @@ namespace
 	constexpr size_t k_columnSize = 3 * sizeof(float);
 	static_assert(sizeof(GraphicsLayouts::MeshDepthInstanceLayout) == 4 * k_columnSize, "MeshDepthInstanceLayout isn't four float3s");
 
+	// The ID format's are the Depth format's, then the ID's two halves, a uint each
+	constexpr size_t k_idHalfSize = sizeof(U32);
+	static_assert(offsetof(GraphicsLayouts::MeshIDInstanceLayout, ID) == sizeof(GraphicsLayouts::MeshDepthInstanceLayout),
+		"MeshIDInstanceLayout's ID doesn't follow its transform");
+	static_assert(sizeof(GraphicsLayouts::MeshIDInstanceLayout) == 4 * k_columnSize + 2 * k_idHalfSize,
+		"MeshIDInstanceLayout isn't four float3s and two uints");
+
 	// The mesh vertex's elements (VertexInput in Common/ForwardTypes.hlsli), where they are in a vertex
 	const ShaderInputLayout::ShaderInputLayoutData k_vertexElements[] =
 	{
@@ -44,10 +51,17 @@ namespace
 		{ "TANGENT", EDataFormat::R32G32B32_FLOAT, EDataClassification::PER_VERTEX, 32 }
 	};
 
+	// Instance elements of one format, side by side: one a semantic, each Size bytes
+	struct InstanceElements
+	{
+		EDataFormat Format;
+		size_t Size;
+		std::initializer_list<const char*> Semantics;
+	};
+
 	// A vertex shader's whole input: the mesh vertex's elements it reads in slot 0, in k_vertexElements' order and at
-	// their places in the vertex, then the instance's in slot 1, one a semantic, each elementSize bytes after the last
-	ShaderInputLayout MakeInputLayout(std::initializer_list<const char*> vertexSemantics, EDataFormat instanceFormat, size_t elementSize,
-		std::initializer_list<const char*> instanceSemantics)
+	// their places in the vertex, then the instance's in slot 1, each run's after the last's
+	ShaderInputLayout MakeInputLayout(std::initializer_list<const char*> vertexSemantics, std::initializer_list<InstanceElements> instanceRuns)
 	{
 		std::vector<ShaderInputLayout::ShaderInputLayoutData> elements;
 		for (const ShaderInputLayout::ShaderInputLayoutData& vertexElement : k_vertexElements)
@@ -63,29 +77,48 @@ namespace
 		AssertExpr(elements.size() == vertexSemantics.size());
 
 		size_t offset = 0;
-		for (const char* semantic : instanceSemantics)
+		for (const InstanceElements& run : instanceRuns)
 		{
-			elements.emplace_back(semantic, instanceFormat, EDataClassification::PER_INSTANCE, offset, MeshInstanceFormats::k_instanceSlot);
-			offset += elementSize;
+			for (const char* semantic : run.Semantics)
+			{
+				elements.emplace_back(semantic, run.Format, EDataClassification::PER_INSTANCE, offset, MeshInstanceFormats::k_instanceSlot);
+				offset += run.Size;
+			}
 		}
 		return ShaderInputLayout(std::move(elements));
 	}
 
-	void FillForward(const MeshDraw& draw, void* out)
+	// The world transform as the depth passes read it: column by column, as glm stores them, each column's first three
+	// values
+	GraphicsLayouts::MeshDepthInstanceLayout BuildDepthInstance(const MeshDraw& draw)
 	{
-		const GraphicsLayouts::MeshInstanceLayout instance = draw.BuildInstance();
-		std::memcpy(out, &instance, sizeof(instance));
-	}
-
-	void FillDepth(const MeshDraw& draw, void* out)
-	{
-		// Column by column, as glm stores them: each column's first three values
 		const float* const transform = draw.Transform->GetValuePtr();
 		GraphicsLayouts::MeshDepthInstanceLayout instance;
 		for (size_t column = 0; column < 4; ++column)
 		{
 			std::memcpy(instance.WorldColumns[column], transform + 4 * column, k_columnSize);
 		}
+		return instance;
+	}
+
+	void FillForward(const MeshDraw& draw, U64 /*id*/, void* out)
+	{
+		const GraphicsLayouts::MeshInstanceLayout instance = draw.BuildInstance();
+		std::memcpy(out, &instance, sizeof(instance));
+	}
+
+	void FillDepth(const MeshDraw& draw, U64 /*id*/, void* out)
+	{
+		const GraphicsLayouts::MeshDepthInstanceLayout instance = BuildDepthInstance(draw);
+		std::memcpy(out, &instance, sizeof(instance));
+	}
+
+	void FillID(const MeshDraw& draw, U64 id, void* out)
+	{
+		GraphicsLayouts::MeshIDInstanceLayout instance;
+		instance.World = BuildDepthInstance(draw);
+		instance.ID[0] = static_cast<U32>(id);
+		instance.ID[1] = static_cast<U32>(id >> 32);
 		std::memcpy(out, &instance, sizeof(instance));
 	}
 }
@@ -96,8 +129,8 @@ const MeshInstanceFormat& MeshInstanceFormats::Forward()
 	static const MeshInstanceFormat format =
 	{
 		static_cast<U32>(sizeof(GraphicsLayouts::MeshInstanceLayout)),
-		MakeInputLayout({ "POSITION", "NORMAL", "UV", "TANGENT" }, EDataFormat::R32G32B32A32_FLOAT, k_registerSize,
-			{ "WORLDA", "WORLDB", "WORLDC", "WORLDD", "INVWORLDA", "INVWORLDB", "INVWORLDC", "INVWORLDD", "MATERIALA", "MATERIALB" }),
+		MakeInputLayout({ "POSITION", "NORMAL", "UV", "TANGENT" }, { { EDataFormat::R32G32B32A32_FLOAT, k_registerSize,
+			{ "WORLDA", "WORLDB", "WORLDC", "WORLDD", "INVWORLDA", "INVWORLDB", "INVWORLDC", "INVWORLDD", "MATERIALA", "MATERIALB" } } }),
 		&FillForward
 	};
 	return format;
@@ -109,8 +142,23 @@ const MeshInstanceFormat& MeshInstanceFormats::Depth()
 	static const MeshInstanceFormat format =
 	{
 		static_cast<U32>(sizeof(GraphicsLayouts::MeshDepthInstanceLayout)),
-		MakeInputLayout({ "POSITION", "UV" }, EDataFormat::R32G32B32_FLOAT, k_columnSize, { "WORLDA", "WORLDB", "WORLDC", "WORLDD" }),
+		MakeInputLayout({ "POSITION", "UV" }, { { EDataFormat::R32G32B32_FLOAT, k_columnSize, { "WORLDA", "WORLDB", "WORLDC", "WORLDD" } } }),
 		&FillDepth
+	};
+	return format;
+}
+
+const MeshInstanceFormat& MeshInstanceFormats::ID()
+{
+	// DepthVertexInput's and MeshIDInstanceInput's semantics, in their order
+	static const MeshInstanceFormat format =
+	{
+		static_cast<U32>(sizeof(GraphicsLayouts::MeshIDInstanceLayout)),
+		MakeInputLayout({ "POSITION", "UV" }, {
+			{ EDataFormat::R32G32B32_FLOAT, k_columnSize, { "WORLDA", "WORLDB", "WORLDC", "WORLDD" } },
+			{ EDataFormat::R32_UINT, k_idHalfSize, { "IDLOW", "IDHIGH" } } }),
+		&FillID,
+		true
 	};
 	return format;
 }

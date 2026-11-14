@@ -42,6 +42,18 @@ struct MeshDepthInstanceInput
 	float3 WorldD : WORLDD;
 };
 
+// A draw's world transform and the ID its stage gave it, as MeshInstanceFormats::ID streams them
+// (GraphicsLayouts::MeshIDInstanceLayout): MeshDepthInstanceInput's columns, then the ID's low half and high half
+struct MeshIDInstanceInput
+{
+	float3 WorldA : WORLDA;
+	float3 WorldB : WORLDB;
+	float3 WorldC : WORLDC;
+	float3 WorldD : WORLDD;
+	uint   IDLow  : IDLOW;
+	uint   IDHigh : IDHIGH;
+};
+
 MeshInstance ReadMeshInstance(MeshInstanceInput input)
 {
 	MeshInstance instance;

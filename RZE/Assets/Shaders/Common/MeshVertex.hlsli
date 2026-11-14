@@ -43,8 +43,7 @@ float4 MeshClipPosition(float3 worldPos)
 }
 
 // A mesh vertex placed in the world by its draw's transform and seen by the camera, with the material values its draw
-// carries. Shared by the shaders that take the transform from the ObjectBuffer (Vertex_NewRenderer) and from the
-// instance stream (Vertex_MeshInstanced), so the two give the same positions.
+// carries (Vertex_MeshInstanced)
 VertexToPixel TransformMeshVertex(VertexInput input, float4x4 world, float4x4 invWorld, InstanceMaterial material)
 {
 	VertexToPixel output;

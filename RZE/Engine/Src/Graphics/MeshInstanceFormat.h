@@ -17,8 +17,11 @@ struct MeshInstanceFormat
 	// What a vertex shader drawn with it takes: the mesh vertex, or the part of it the shader reads, in slot 0, the
 	// instance in slot 1 (MeshInstanceFormats::k_instanceSlot)
 	Rendering::ShaderInputLayout InputLayout;
-	// Writes the draw's instance, as it is now, into Stride bytes at out
-	void (*Fill)(const MeshDraw& draw, void* out) = nullptr;
+	// Writes the draw's instance, as it is now, into Stride bytes at out. id is what the stage gave the draw
+	// (MeshBatches::Add) for a format that CarriesID, and 0 for one that doesn't.
+	void (*Fill)(const MeshDraw& draw, U64 id, void* out) = nullptr;
+	// Whether each instance carries an ID the stage gives its draw, which nothing in the draw knows (which object it is)
+	bool CarriesID = false;
 };
 
 namespace MeshInstanceFormats
@@ -32,4 +35,7 @@ namespace MeshInstanceFormats
 	// What a depth-only pass needs: the vertex's position and UV (for cutouts' masks), and the draw's world transform
 	// (a GraphicsLayouts::MeshDepthInstanceLayout), built without its material slot. Read by MeshDepthInstanceInput.
 	const MeshInstanceFormat& Depth();
+	// What a pass that writes an ID for each draw's pixels needs: Depth's, and the ID the stage gave the draw (a
+	// GraphicsLayouts::MeshIDInstanceLayout), built without its material slot. Read by MeshIDInstanceInput.
+	const MeshInstanceFormat& ID();
 }

@@ -31,16 +31,6 @@ InstanceMaterial UnpackInstanceMaterial(float4 materialA, float4 materialB)
 	return material;
 }
 
-// What a shader that reads none of them is given: a draw whose pixels only say where it is (picking, outlines)
-InstanceMaterial NeutralInstanceMaterial()
-{
-	InstanceMaterial material;
-	material.Tint = float3(1.0f, 1.0f, 1.0f);
-	material.Shininess = 1.0f;
-	material.Opacity = 1.0f;
-	return material;
-}
-
 // Shared VS output / PS input for the forward pass. All vectors are world space.
 struct VertexToPixel
 {
@@ -69,6 +59,15 @@ struct DepthVertexToPixel
 {
 	float4 Position : SV_POSITION;
 	float2 UV       : UV;
+};
+
+// Vertex_MeshID's output, which Pixel_PickID and Pixel_OutlineMask read: DepthVertexToPixel's, and the ID the stage
+// gave the draw (low half, high half)
+struct IDVertexToPixel
+{
+	float4 Position          : SV_POSITION;
+	float2 UV                : UV;
+	nointerpolation uint2 ID : DRAWID;
 };
 
 #endif // FORWARD_TYPES_HLSLI

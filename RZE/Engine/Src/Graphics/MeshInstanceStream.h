@@ -31,8 +31,9 @@ public:
 	void Initialize();
 
 	// Each placed draw's instance, as it is now, at its place, without the GPU. Every instance must be placed once, as
-	// MeshBatchGrouping's are, so there are as many instances as placements.
-	void Build(const std::vector<MeshBatchGrouping::Placement>& placements);
+	// MeshBatchGrouping's are, so there are as many instances as placements. ids are the draws' IDs, one a placement in
+	// the placements' order, for a format that CarriesID; empty for one that doesn't.
+	void Build(const std::vector<MeshBatchGrouping::Placement>& placements, const std::vector<U64>& ids);
 	// What Build built, in one buffer update
 	void Upload();
 

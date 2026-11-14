@@ -8,11 +8,4 @@ cbuffer CameraBuffer : register(b0)
 	float3 CameraPosition;
 };
 
-// Mirrors GraphicsLayouts::ObjectBufferLayout (Graphics/GraphicsLayouts.h)
-cbuffer ObjectBuffer : register(b1)
-{
-	float4x4 World;
-	float4x4 InvWorld;
-};
-
 #endif // VERTEX_RESOURCES_HLSLI

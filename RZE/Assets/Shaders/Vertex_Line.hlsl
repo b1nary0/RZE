@@ -21,10 +21,10 @@ VS_OUT VSMain(VS_IN input)
 {
 	VS_OUT output;
 
-	const float4 worldPos = mul(World, float4(input.Position, 1.0f));
-	output.Position = mul(ViewProjection, worldPos);
+	// Lines are made in world space (DebugDrawRenderStage)
+	output.Position = mul(ViewProjection, float4(input.Position, 1.0f));
 	output.Colour = input.Colour;
-	output.WorldPos = worldPos.xyz;
+	output.WorldPos = input.Position;
 	output.FadeCentre = input.FadeCentre;
 	output.FadeRange = input.FadeRange;
 

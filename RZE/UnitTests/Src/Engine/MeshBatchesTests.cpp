@@ -76,10 +76,18 @@ namespace
 		return instanceDraws;
 	}
 
-	// Builds a stream as MeshBatches does
+	// Builds a stream as MeshBatches does, for a format without an ID
 	void BuildStream(MeshInstanceStream& stream, const MeshBatchGrouping& grouping)
 	{
-		stream.Build(grouping.GetPlacements());
+		stream.Build(grouping.GetPlacements(), {});
+	}
+
+	// An ID stream's instance, as the GPU would read it
+	GraphicsLayouts::MeshIDInstanceLayout ReadIDInstance(const MeshInstanceStream& stream, U32 index)
+	{
+		GraphicsLayouts::MeshIDInstanceLayout instance;
+		std::memcpy(&instance, stream.GetInstance(index), sizeof(instance));
+		return instance;
 	}
 
 	// A Forward stream's instance, as the GPU would read it
@@ -327,7 +335,7 @@ TEST_CASE("A stream's instances are its draws', each where it's placed, as the f
 	const std::vector<const MeshDraw*> instanceDraws = { &draws[2], &draws[0], &draws[1], &draws[0] };
 
 	MeshInstanceStream stream(MeshInstanceFormats::Forward());
-	stream.Build(placements);
+	stream.Build(placements, {});
 	REQUIRE(stream.GetCount() == instanceDraws.size());
 	for (U32 index = 0; index < stream.GetCount(); ++index)
 	{
@@ -440,5 +448,100 @@ TEST_CASE("A Depth instance is its draw's transform's columns without their four
 				CHECK(instance.WorldColumns[column][row] == expected[4 * column + row]);
 			}
 		}
+	}
+}
+
+TEST_CASE("The ID format reads the Depth format's vertex and columns, then the ID's two halves as uints from slot 1")
+{
+	const MeshInstanceFormat& format = MeshInstanceFormats::ID();
+	CHECK(format.CarriesID);
+	CHECK(!MeshInstanceFormats::Forward().CarriesID);
+	CHECK(!MeshInstanceFormats::Depth().CarriesID);
+	CHECK(format.Stride == sizeof(GraphicsLayouts::MeshIDInstanceLayout));
+	CHECK(format.Stride == 56);
+
+	// The Depth format's elements, as they are there: both read Vertex_MeshDepthOnly's way
+	const Rendering::ShaderInputLayout& layout = format.InputLayout;
+	const Rendering::ShaderInputLayout& depth = MeshInstanceFormats::Depth().InputLayout;
+	REQUIRE(layout.GetDataCount() == depth.GetDataCount() + 2);
+	for (size_t index = 0; index < depth.GetDataCount(); ++index)
+	{
+		CAPTURE(index);
+		CHECK(layout[index].Name == depth[index].Name);
+		CHECK(layout[index].DataFormat == depth[index].DataFormat);
+		CHECK(layout[index].Offset == depth[index].Offset);
+		CHECK(layout[index].InputSlot == depth[index].InputSlot);
+		CHECK(layout[index].DataClassification == depth[index].DataClassification);
+	}
+
+	const char* const halves[] = { "IDLOW", "IDHIGH" };
+	for (size_t half = 0; half < 2; ++half)
+	{
+		const Rendering::ShaderInputLayout::ShaderInputLayoutData& element = layout[depth.GetDataCount() + half];
+		CAPTURE(half);
+		CHECK(element.Name == halves[half]);
+		CHECK(element.InputSlot == MeshInstanceFormats::k_instanceSlot);
+		CHECK(element.DataClassification == Rendering::EDataClassification::PER_INSTANCE);
+		CHECK(element.DataFormat == Rendering::EDataFormat::R32_UINT);
+		CHECK(element.Offset == sizeof(GraphicsLayouts::MeshDepthInstanceLayout) + half * sizeof(U32));
+	}
+}
+
+TEST_CASE("An ID instance is its draw's Depth instance and the ID it was given, low half first")
+{
+	const MeshGeometry geometry;
+	std::vector<MeshDraw> draws = MakeDraws(1, geometry);
+	// No slot: an ID instance is built without it
+	draws[0].Slot = nullptr;
+
+	MeshBatchGrouping grouping;
+	grouping.Add(draws[0], nullptr);
+	grouping.Build();
+
+	MeshInstanceStream depthStream(MeshInstanceFormats::Depth());
+	BuildStream(depthStream, grouping);
+	MeshInstanceStream idStream(MeshInstanceFormats::ID());
+	const U64 id = 0x89ABCDEF01234567ull;
+	idStream.Build(grouping.GetPlacements(), { id });
+	REQUIRE(idStream.GetCount() == 1);
+
+	const GraphicsLayouts::MeshIDInstanceLayout instance = ReadIDInstance(idStream, 0);
+	CHECK(std::memcmp(&instance.World, depthStream.GetInstance(0), sizeof(instance.World)) == 0);
+	CHECK(instance.ID[0] == 0x01234567u);
+	CHECK(instance.ID[1] == 0x89ABCDEFu);
+}
+
+TEST_CASE("Each draw's ID goes with it when grouping moves its instance ahead of draws added before it")
+{
+	const MeshGeometry geometryA;
+	const MeshGeometry geometryB;
+	// 0 and 2 of geometry A, 1 of B, and 3 of A but a cutout's batch of its own
+	std::vector<MeshDraw> draws = MakeDraws(4, geometryA);
+	draws[1].Geometry = &geometryB;
+
+	MeshBatchGrouping grouping;
+	grouping.Add(draws[0], nullptr);
+	grouping.Add(draws[1], nullptr);
+	grouping.Add(draws[2], nullptr);
+	grouping.Add(draws[3], &k_materialA);
+	grouping.Build();
+
+	// One an Add, in their order, as MeshBatches keeps them
+	MeshInstanceStream stream(MeshInstanceFormats::ID());
+	stream.Build(grouping.GetPlacements(), { 10, 11, 12, (U64(1) << 40) | 13 });
+	REQUIRE(stream.GetCount() == 4);
+
+	// Instances: draw 0, draw 2 (joined 0's batch, ahead of 1), draw 1, draw 3
+	const std::vector<const MeshDraw*> instanceDraws = InstanceDraws(grouping);
+	REQUIRE(instanceDraws.size() == 4);
+	REQUIRE(instanceDraws[1] == &draws[2]);
+	const U64 expected[] = { 10, 12, 11, (U64(1) << 40) | 13 };
+	for (U32 index = 0; index < 4; ++index)
+	{
+		CAPTURE(index);
+		const GraphicsLayouts::MeshIDInstanceLayout instance = ReadIDInstance(stream, index);
+		CHECK((static_cast<U64>(instance.ID[1]) << 32 | instance.ID[0]) == expected[index]);
+		// And its own transform's translation, so the ID didn't land on another draw's instance
+		CHECK(instance.World.WorldColumns[3][0] == instanceDraws[index]->Transform->GetValuePtr()[12]);
 	}
 }
