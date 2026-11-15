@@ -17,16 +17,20 @@ void RenderPipeline::AddStage(std::unique_ptr<IRenderStage> stage)
 
 	stage->Initialize();
 	m_stages.push_back(std::move(stage));
+#ifdef RZE_RENDER_STATS
 	m_stageTimes.push_back(0.0);
 	m_stageDrawCounts.push_back(Rendering::DrawCounts());
+#endif
 	m_isDirty = true;
 }
 
 void RenderPipeline::Clear()
 {
 	m_stages.clear();
+#ifdef RZE_RENDER_STATS
 	m_stageTimes.clear();
 	m_stageDrawCounts.clear();
+#endif
 	m_compiled = CompiledRenderPipeline();
 	m_isDirty = true;
 }
@@ -37,28 +41,38 @@ void RenderPipeline::Render(RenderView& view, RenderScene& scene, float deltaTim
 
 	view.m_frameBlackboard.BeginFrame();
 	m_visibleDraws.Reset();
+#ifdef RZE_RENDER_STATS
 	RenderContext context(view, scene, deltaTime, frameIndex, m_workCounts, m_visibleDraws);
+#else
+	RenderContext context(view, scene, deltaTime, frameIndex, m_visibleDraws);
+#endif
 
 	for (size_t stageIndex : m_compiled.ExecutionOrder)
 	{
 		const bool runsInView = m_compiled.Declarations[stageIndex].ViewFilter == ERenderViewFilter::All || view.IsMainView();
-		if (runsInView)
+		if (!runsInView)
 		{
-			const double stageStart = TimeUtils::GetSeconds();
-			const Rendering::DrawCounts drawsBefore = Rendering::Renderer::GetDrawCounts();
-			// The stage's index is its GPU scope's id, so TakeStageStats finds its GPU time
-			Rendering::Renderer::BeginGPUScope(static_cast<U32>(stageIndex));
-			m_stages[stageIndex]->Render(context);
-			Rendering::Renderer::EndGPUScope();
-			// Culling for whichever stages share the result is counted apart from the stage that asked first
-			const double cullSeconds = m_visibleDraws.TakeCullSeconds();
-			m_stageTimes[stageIndex] += TimeUtils::GetSeconds() - stageStart - cullSeconds;
-			m_cullTime += cullSeconds;
-			m_stageDrawCounts[stageIndex] += Rendering::Renderer::GetDrawCounts() - drawsBefore;
+			continue;
 		}
+#ifdef RZE_RENDER_STATS
+		const double stageStart = TimeUtils::GetSeconds();
+		const Rendering::DrawCounts drawsBefore = Rendering::Renderer::GetDrawCounts();
+		// The stage's index is its GPU scope's id, so TakeStageStats finds its GPU time
+		Rendering::Renderer::BeginGPUScope(static_cast<U32>(stageIndex));
+#endif
+		m_stages[stageIndex]->Render(context);
+#ifdef RZE_RENDER_STATS
+		Rendering::Renderer::EndGPUScope();
+		// Culling for whichever stages share the result is counted apart from the stage that asked first
+		const double cullSeconds = m_visibleDraws.TakeCullSeconds();
+		m_stageTimes[stageIndex] += TimeUtils::GetSeconds() - stageStart - cullSeconds;
+		m_cullTime += cullSeconds;
+		m_stageDrawCounts[stageIndex] += Rendering::Renderer::GetDrawCounts() - drawsBefore;
+#endif
 	}
 }
 
+#ifdef RZE_RENDER_STATS
 std::vector<RenderStageStats> RenderPipeline::TakeStageStats()
 {
 	const Rendering::RenderThreadStats renderThreadStats = Rendering::Renderer::GetRenderThreadStats();
@@ -101,6 +115,7 @@ RenderWorkCounts RenderPipeline::TakeWorkCounts()
 	m_workCounts = RenderWorkCounts();
 	return workCounts;
 }
+#endif
 
 void RenderPipeline::CompileIfDirty()
 {

@@ -1,5 +1,8 @@
 #include <Rendering/Driver/OpenGL/GLGPUTimestamps.h>
 
+// Render stats only (its header is empty without them)
+#ifdef RZE_RENDER_STATS
+
 #include <Rendering/Driver/OpenGL/GLCommon.h>
 
 namespace Rendering
@@ -56,3 +59,5 @@ namespace Rendering
 		return EGPUQueryReadResult::Ready;
 	}
 }
+
+#endif // RZE_RENDER_STATS

@@ -142,5 +142,7 @@ private:
 	FramePacer m_framePacer;
 	PreciseSleep m_frameSleep;
 
+#ifdef RZE_RENDER_STATS
 	FrameTimeCapture m_frameTimeCapture;
+#endif
 };

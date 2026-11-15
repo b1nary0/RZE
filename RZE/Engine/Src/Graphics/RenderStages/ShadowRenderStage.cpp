@@ -355,7 +355,6 @@ void ShadowRenderStage::BeginShadowPass()
 
 void ShadowRenderStage::RenderDirectionalShadow(RenderContext& context, bool redrawStatic, const ShadowMapState& state)
 {
-	RenderWorkCounts& workCounts = context.WorkCounts;
 	const Matrix4x4& viewProjection = state.Fit.ViewProjection;
 	const float size = static_cast<float>(k_shadowMapSize);
 	Rendering::Renderer::SetViewport({ size, size });
@@ -363,21 +362,22 @@ void ShadowRenderStage::RenderDirectionalShadow(RenderContext& context, bool red
 	{
 		Rendering::Renderer::ClearDepthStencilBuffer(state.StaticShadowMap);
 		Rendering::Renderer::SetDepthTarget(state.StaticShadowMap);
-		workCounts.ShadowDraws += DrawCasters(context, viewProjection, ERenderMobilityFilter::Static);
-		++workCounts.SunShadowMapsRendered;
+		DrawCasters(context, viewProjection, ERenderMobilityFilter::Static);
+#ifdef RZE_RENDER_STATS
+		++context.WorkCounts.SunShadowMapsRendered;
+#endif
 	}
 
 	// Unbound before it's copied out of: 64 MB, far cheaper than drawing the Static casters again
 	Rendering::Renderer::ClearRenderTargets();
 	Rendering::Renderer::CopyTextureSlice(state.StaticShadowMap, 0, state.ShadowMap, 0);
 	Rendering::Renderer::SetDepthTarget(state.ShadowMap);
-	workCounts.ShadowDraws += DrawCasters(context, viewProjection, ERenderMobilityFilter::Movable);
+	DrawCasters(context, viewProjection, ERenderMobilityFilter::Movable);
 	Rendering::Renderer::ClearRenderTargets();
 }
 
 void ShadowRenderStage::RenderPointShadow(RenderContext& context, const LightObject& light, U32 cubeIndex, U32 staticFaces, U32 movableFaces, const ShadowMapState& state, GraphicsLayouts::PointShadowLayout& outShadow)
 {
-	RenderWorkCounts& workCounts = context.WorkCounts;
 	const Matrix4x4 projection = Matrix4x4::CreatePerspectiveMatrixZeroToOne(90.0f, 1.0f, k_pointShadowNear, CalculatePointShadowFar(light));
 
 	const float size = static_cast<float>(k_pointShadowSize);
@@ -398,15 +398,17 @@ void ShadowRenderStage::RenderPointShadow(RenderContext& context, const LightObj
 		{
 			Rendering::Renderer::ClearDepthStencilSlice(state.StaticPointShadowCubes, slice);
 			Rendering::Renderer::SetDepthTarget(state.StaticPointShadowCubes, slice);
-			workCounts.ShadowDraws += DrawCasters(context, viewProjection, ERenderMobilityFilter::Static);
+			DrawCasters(context, viewProjection, ERenderMobilityFilter::Static);
 		}
 
 		// Unbound before it's copied out of. A slice is 1 MB, so it's copied even with no Movable casters in view.
 		Rendering::Renderer::ClearRenderTargets();
 		Rendering::Renderer::CopyTextureSlice(state.StaticPointShadowCubes, slice, state.PointShadowCubes, slice);
 		Rendering::Renderer::SetDepthTarget(state.PointShadowCubes, slice);
-		workCounts.ShadowDraws += DrawCasters(context, viewProjection, ERenderMobilityFilter::Movable);
-		++workCounts.PointShadowFacesRendered;
+		DrawCasters(context, viewProjection, ERenderMobilityFilter::Movable);
+#ifdef RZE_RENDER_STATS
+		++context.WorkCounts.PointShadowFacesRendered;
+#endif
 	}
 	Rendering::Renderer::ClearRenderTargets();
 
@@ -420,7 +422,7 @@ void ShadowRenderStage::RenderPointShadow(RenderContext& context, const LightObj
 	outShadow.NormalOffsetPerMetre = 2.0f / size * k_normalOffsetTexels;
 }
 
-U32 ShadowRenderStage::DrawCasters(RenderContext& context, const Matrix4x4& viewProjection, ERenderMobilityFilter casters)
+void ShadowRenderStage::DrawCasters(RenderContext& context, const Matrix4x4& viewProjection, ERenderMobilityFilter casters)
 {
 	// Only ClipSpace is used by the caster shaders
 	RenderCamera lightCamera;
@@ -438,7 +440,11 @@ U32 ShadowRenderStage::DrawCasters(RenderContext& context, const Matrix4x4& view
 	{
 		m_casters.Add(*draw);
 	}
-	return m_casters.Draw();
+#ifdef RZE_RENDER_STATS
+	context.WorkCounts.ShadowDraws += m_casters.Draw();
+#else
+	m_casters.Draw();
+#endif
 }
 
 bool ShadowRenderStage::FitDirectionalShadow(const RenderScene& scene, const Vector3D& lightDirection, DirectionalFit& outFit) const

@@ -37,12 +37,15 @@ namespace Rendering
 
 		// The render thread uses the device from here on
 		m_device->DetachFromCurrentThread();
+#ifdef RZE_RENDER_STATS
 		// Before the thread starts, which makes it visible there
 		m_gpuStatisticsMode = deviceOptions.GPUStatistics;
+#endif
 		auto threadExec = [this]()
 			{
 				OPTICK_THREAD("Render Thread");
 				m_device->AttachToCurrentThread();
+#ifdef RZE_RENDER_STATS
 				GPUStatisticsFactory createStatistics;
 				if (m_gpuStatisticsMode == EGPUStatisticsMode::Off)
 				{
@@ -58,13 +61,16 @@ namespace Rendering
 					std::lock_guard lock(m_statsMutex);
 					m_stats.CanCountGPUStatistics = m_gpuProfiler.CanCountStatistics();
 				}
+#endif
 				bool isRunning = true;
 				while (isRunning)
 				{
 					isRunning = Update();
 				}
+#ifdef RZE_RENDER_STATS
 				// Its queries are the render thread's, so they go while the device is still attached to it
 				m_gpuProfiler.Release();
+#endif
 				m_device->DetachFromCurrentThread();
 			};
 
@@ -134,11 +140,13 @@ namespace Rendering
 		return *m_imguiRenderer;
 	}
 
+#ifdef RZE_RENDER_STATS
 	RenderThreadStats RenderThread::GetStats() const
 	{
 		std::lock_guard lock(m_statsMutex);
 		return m_stats;
 	}
+#endif
 
 	void RenderThread::InitializeImGui()
 	{
@@ -189,14 +197,18 @@ namespace Rendering
 		OPTICK_EVENT();
 		AssertExpr(m_processSignal == true);
 
+#ifdef RZE_RENDER_STATS
 		const double batchStart = TimeUtils::GetSeconds();
 		bool hasPresented = false;
+#endif
 
 		// Markers are only made when a profiler is listening (some APIs convert each name).
 		// Checked once per batch: a batch is a whole frame, so every BeginEvent below still gets its EndEvent.
 		m_emitProfilerMarkers = m_device->IsProfilerAttached();
+#ifdef RZE_RENDER_STATS
 		// A batch is a frame, so this opens a frame each batch; one that didn't present keeps its frame open
 		m_gpuProfiler.BeginFrameIfNeeded();
+#endif
 
 		for (RenderCommand* command : m_consumerQueue)
 		{
@@ -207,12 +219,19 @@ namespace Rendering
 			case RenderCommandType::EndFrame: Execute(static_cast<RenderCommand_EndFrame&>(*command)); break;
 			case RenderCommandType::Begin: Execute(static_cast<RenderCommand_Begin&>(*command)); break;
 			case RenderCommandType::End: Execute(static_cast<RenderCommand_End&>(*command)); break;
-			case RenderCommandType::DevicePresent: Execute(static_cast<RenderCommand_DevicePresent&>(*command)); hasPresented = true; break;
-			case RenderCommandType::BeginGPUScope: Execute(static_cast<RenderCommand_BeginGPUScope&>(*command)); break;
-			case RenderCommandType::EndGPUScope: Execute(static_cast<RenderCommand_EndGPUScope&>(*command)); break;
+			case RenderCommandType::DevicePresent:
+				Execute(static_cast<RenderCommand_DevicePresent&>(*command));
+#ifdef RZE_RENDER_STATS
+				hasPresented = true;
+#endif
+				break;
 			case RenderCommandType::HandleWindowResize: Execute(static_cast<RenderCommand_HandleWindowResize&>(*command)); break;
 			case RenderCommandType::SetSyncInterval: Execute(static_cast<RenderCommand_SetSyncInterval&>(*command)); break;
+#ifdef RZE_RENDER_STATS
+			case RenderCommandType::BeginGPUScope: Execute(static_cast<RenderCommand_BeginGPUScope&>(*command)); break;
+			case RenderCommandType::EndGPUScope: Execute(static_cast<RenderCommand_EndGPUScope&>(*command)); break;
 			case RenderCommandType::SetGPUStatistics: Execute(static_cast<RenderCommand_SetGPUStatistics&>(*command)); break;
+#endif
 			case RenderCommandType::CreateVertexBuffer: Execute(static_cast<RenderCommand_CreateVertexBuffer&>(*command)); break;
 			case RenderCommandType::CreateIndexBuffer: Execute(static_cast<RenderCommand_CreateIndexBuffer&>(*command)); break;
 			case RenderCommandType::CreateConstantBuffer: Execute(static_cast<RenderCommand_CreateConstantBuffer&>(*command)); break;
@@ -280,8 +299,12 @@ namespace Rendering
 
 		m_device->FinishReadbacks();
 
+#ifdef RZE_RENDER_STATS
 		UpdateStats(batchStart, hasPresented);
+#endif
 	}
+
+#ifdef RZE_RENDER_STATS
 
 	void RenderThread::UpdateStats(double batchStart, bool hasPresented)
 	{
@@ -384,6 +407,7 @@ namespace Rendering
 		}
 		m_windowGPUFrameStatistics += profile.FrameStatistics;
 	}
+#endif
 
 	void RenderThread::BeginProfilerEvent(const char* name)
 	{

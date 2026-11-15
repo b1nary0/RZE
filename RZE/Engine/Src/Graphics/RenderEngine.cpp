@@ -21,6 +21,7 @@
 
 #include "Rendering/Graphics/RenderTarget.h"
 
+#ifdef RZE_RENDER_STATS
 namespace
 {
 	RenderWorkCounts PerFrame(const StatsWindow& window, const RenderWorkCounts& totals)
@@ -38,6 +39,7 @@ namespace
 		return perFrame;
 	}
 }
+#endif
 
 RenderEngine::RenderEngine()
 	: m_pipeline(std::make_unique<RenderPipeline>())
@@ -74,11 +76,13 @@ void RenderEngine::Render(const char* frameName)
 	OPTICK_EVENT();
 	AssertNotNull(m_mainView.Target);
 
+#ifdef RZE_RENDER_STATS
 	// Before recording, so a frame's and a window's stage times and draw calls are their own frames'
 	const double renderStart = TimeUtils::GetSeconds();
 	EndFrameCounts();
 	UpdateStats(renderStart);
 	ApplyGPUStatisticsRequest();
+#endif
 
 	Rendering::Renderer::BeginFrame(frameName);
 
@@ -91,7 +95,9 @@ void RenderEngine::Render(const char* frameName)
 
 	Rendering::Renderer::EndFrame();
 
+#ifdef RZE_RENDER_STATS
 	m_frameRecordTime += TimeUtils::GetSeconds() - renderStart;
+#endif
 }
 
 void RenderEngine::Finish()
@@ -168,7 +174,9 @@ void RenderEngine::RenderSecondaryView(const char* frameName, RenderView& view, 
 	AssertNotNull(view.Target);
 	AssertExpr(view.ViewportSize != Vector2D::ZERO);
 
+#ifdef RZE_RENDER_STATS
 	const double renderStart = TimeUtils::GetSeconds();
+#endif
 
 	Rendering::Renderer::Begin(frameName);
 
@@ -177,7 +185,9 @@ void RenderEngine::RenderSecondaryView(const char* frameName, RenderView& view, 
 
 	Rendering::Renderer::End();
 
+#ifdef RZE_RENDER_STATS
 	m_frameRecordTime += TimeUtils::GetSeconds() - renderStart;
+#endif
 }
 
 void RenderEngine::InternalAddRenderStage(IRenderStage* stage)
@@ -185,6 +195,7 @@ void RenderEngine::InternalAddRenderStage(IRenderStage* stage)
 	m_pipeline->AddStage(std::unique_ptr<IRenderStage>(stage));
 }
 
+#ifdef RZE_RENDER_STATS
 void RenderEngine::EndFrameCounts()
 {
 	m_lastFrame.RecordTimeMS = m_frameRecordTime * 1000.0;
@@ -240,3 +251,4 @@ void RenderEngine::ApplyGPUStatisticsRequest()
 		m_areGPUStatisticsOn = isRequested;
 	}
 }
+#endif

@@ -1,5 +1,10 @@
 #pragma once
 
+#include <Utils/DebugUtils/DebugConfig.h>
+
+// Render stats only
+#ifdef RZE_RENDER_STATS
+
 namespace Rendering
 {
 	// What reading back one frame of GPU queries found (IGPUTimestamps::Read, IGPUStatistics::Read)
@@ -13,3 +18,5 @@ namespace Rendering
 		Invalid
 	};
 }
+
+#endif // RZE_RENDER_STATS

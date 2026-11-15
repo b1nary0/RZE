@@ -1,5 +1,10 @@
 #pragma once
 
+#include <Utils/DebugUtils/DebugConfig.h>
+
+// Render stats only
+#ifdef RZE_RENDER_STATS
+
 #include <Rendering/Driver/GPUQueryReadResult.h>
 
 #include <Utils/PrimitiveDefs.h>
@@ -56,3 +61,5 @@ namespace Rendering
 		virtual EGPUQueryReadResult Read(U32 count, std::vector<GPUPipelineStatistics>& outSegments) = 0;
 	};
 }
+
+#endif // RZE_RENDER_STATS

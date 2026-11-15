@@ -1,5 +1,8 @@
 #include <DebugUtils/FrameTimeCapture.h>
 
+// Render stats only (its header is empty without them)
+#ifdef RZE_RENDER_STATS
+
 #include <Graphics/RenderEngine.h>
 
 #include <Utils/Platform/CmdLine.h>
@@ -132,3 +135,5 @@ void FrameTimeCapture::WriteStages() const
 		file << '\n';
 	}
 }
+
+#endif // RZE_RENDER_STATS

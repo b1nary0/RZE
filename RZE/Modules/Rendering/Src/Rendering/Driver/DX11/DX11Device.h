@@ -52,8 +52,10 @@ namespace Rendering
 		std::shared_ptr<IVertexShader> CreateVertexShader() override;
 		std::shared_ptr<IPixelShader> CreatePixelShader() override;
 		std::shared_ptr<IComputeShader> CreateComputeShader() override;
+#ifdef RZE_RENDER_STATS
 		std::unique_ptr<IGPUTimestamps> CreateGPUTimestamps(U32 capacity) override;
 		std::unique_ptr<IGPUStatistics> CreateGPUStatistics(U32 capacity) override;
+#endif
 
 		void Present() override;
 		void HandleWindowResize(U32 newWidth, U32 newHeight) override;

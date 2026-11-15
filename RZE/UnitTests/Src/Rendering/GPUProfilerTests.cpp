@@ -1,5 +1,10 @@
 #include <doctest/doctest.h>
 
+#include <Utils/DebugUtils/DebugConfig.h>
+
+// GPUProfiler is render stats, which Retail doesn't have
+#ifdef RZE_RENDER_STATS
+
 #include <Rendering/GPUProfiler.h>
 
 #include <memory>
@@ -647,3 +652,5 @@ TEST_CASE("Without a statistics factory, turning statistics on does nothing")
 
 	profiler.Release();
 }
+
+#endif // RZE_RENDER_STATS

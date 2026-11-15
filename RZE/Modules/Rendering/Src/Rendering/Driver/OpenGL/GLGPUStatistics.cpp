@@ -1,5 +1,8 @@
 #include <Rendering/Driver/OpenGL/GLGPUStatistics.h>
 
+// Render stats only (its header is empty without them)
+#ifdef RZE_RENDER_STATS
+
 #include <Rendering/Driver/OpenGL/GLCommon.h>
 
 #include <array>
@@ -123,3 +126,5 @@ namespace Rendering
 		return EGPUQueryReadResult::Ready;
 	}
 }
+
+#endif // RZE_RENDER_STATS

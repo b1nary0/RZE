@@ -1,5 +1,8 @@
 #include <Rendering/Driver/DX11/DX11GPUTimestamps.h>
 
+// Render stats only (its header is empty without them)
+#ifdef RZE_RENDER_STATS
+
 #include <Rendering/Driver/DX11/DX11Device.h>
 
 #include <Rendering/Driver/DX11/DX11.h>
@@ -95,3 +98,5 @@ namespace Rendering
 		return EGPUQueryReadResult::Ready;
 	}
 }
+
+#endif // RZE_RENDER_STATS

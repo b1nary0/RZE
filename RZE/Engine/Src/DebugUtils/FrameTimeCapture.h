@@ -1,5 +1,10 @@
 #pragma once
 
+#include <Utils/DebugUtils/DebugConfig.h>
+
+// Render stats only
+#ifdef RZE_RENDER_STATS
+
 #include <Rendering/Driver/GPUStatistics.h>
 
 #include <Utils/PrimitiveDefs.h>
@@ -87,3 +92,5 @@ private:
 	// The frames m_stageTotals has added up
 	size_t m_stageFrameCount = 0;
 };
+
+#endif // RZE_RENDER_STATS

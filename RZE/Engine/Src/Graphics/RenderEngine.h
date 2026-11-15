@@ -9,6 +9,7 @@
 
 #include <Rendering/BufferHandle.h>
 
+#include <Utils/DebugUtils/DebugConfig.h>
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector3D.h>
@@ -25,6 +26,7 @@ namespace Rendering
 
 class IRenderStage;
 
+#ifdef RZE_RENDER_STATS
 // RenderEngine's frames, averaged over a StatsWindow, for display. Measured on the main thread, where the render stages
 // record commands for the render thread. A frame runs from one Render() to the next.
 struct RenderStats
@@ -57,6 +59,7 @@ struct RenderFrameCounts
 	U32 DrawCalls = 0;
 	U32 Instances = 0;
 };
+#endif
 
 class RenderEngine
 {
@@ -124,6 +127,7 @@ public:
 	// must have a Target.
 	void RenderSecondaryView(const char* frameName, RenderView& view, RenderScene& scene);
 
+#ifdef RZE_RENDER_STATS
 	// Empty until the first window of frames has passed. Main thread only.
 	const RenderStats& GetStats() const { return m_stats; }
 	// The last frame that finished: the one before the frame being rendered. Main thread only.
@@ -132,9 +136,11 @@ public:
 	// Has the GPU count pipeline statistics (RenderStats::GPUStatistics) while it's called, once a frame, e.g. while
 	// they're shown. They reach the stats a stats window or so after the first call. Main thread only.
 	void RequestGPUStatistics() { m_isGPUStatisticsRequested = true; }
+#endif
 
 private:
 	void InternalAddRenderStage(IRenderStage* stage);
+#ifdef RZE_RENDER_STATS
 	// Ends the frame so far as the next one starts rendering: it becomes the last frame, and is added to the stats window
 	void EndFrameCounts();
 	// Ends the stats window's frame as the next one starts rendering; the first frame only starts the window
@@ -142,6 +148,7 @@ private:
 	// Turns the GPU's statistics on or off for the frame about to be recorded, as RequestGPUStatistics asked since the
 	// last frame, telling the render thread only when that changes
 	void ApplyGPUStatisticsRequest();
+#endif
 
 private:
 	RenderScene* m_mainScene = nullptr;
@@ -154,6 +161,7 @@ private:
 	U64 m_frameIndex = 0;
 	GlobalIlluminationSettings m_globalIlluminationSettings;
 
+#ifdef RZE_RENDER_STATS
 	RenderStats m_stats;
 	RenderFrameCounts m_lastFrame;
 	// Seconds recording the frame so far: the main view, and secondary views rendered since the last main view
@@ -166,6 +174,7 @@ private:
 	// RequestGPUStatistics since the last frame, and what the render thread was last told
 	bool m_isGPUStatisticsRequested = false;
 	bool m_areGPUStatisticsOn = false;
+#endif
 };
 
 template <typename TRenderStageType, typename... Args>

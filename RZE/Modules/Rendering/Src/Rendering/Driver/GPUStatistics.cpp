@@ -1,5 +1,8 @@
 #include <Rendering/Driver/GPUStatistics.h>
 
+// Render stats only (its header is empty without them)
+#ifdef RZE_RENDER_STATS
+
 namespace Rendering
 {
 	GPUPipelineStatistics& GPUPipelineStatistics::operator+=(const GPUPipelineStatistics& other)
@@ -21,3 +24,5 @@ namespace Rendering
 		return scaled;
 	}
 }
+
+#endif // RZE_RENDER_STATS

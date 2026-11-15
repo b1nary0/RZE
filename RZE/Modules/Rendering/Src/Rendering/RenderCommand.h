@@ -9,6 +9,7 @@
 #include <Rendering/Driver/ShaderTypes.h>
 #include <Rendering/Driver/GFXBuffer.h>
 
+#include <Utils/DebugUtils/DebugConfig.h>
 #include <Utils/PrimitiveDefs.h>
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector4D.h>
@@ -32,9 +33,11 @@ namespace Rendering
 		DevicePresent,
 		HandleWindowResize,
 		SetSyncInterval,
+#ifdef RZE_RENDER_STATS
 		BeginGPUScope,
 		EndGPUScope,
 		SetGPUStatistics,
+#endif
 		CreateVertexBuffer = 500,
 		CreateIndexBuffer,
 		CreateConstantBuffer,
@@ -129,6 +132,7 @@ namespace Rendering
 		RenderCommand_End() { type = RenderCommandType::End; }
 	};
 
+#ifdef RZE_RENDER_STATS
 	struct RenderCommand_BeginGPUScope : RenderCommand
 	{
 		RenderCommand_BeginGPUScope() { type = RenderCommandType::BeginGPUScope; }
@@ -140,6 +144,7 @@ namespace Rendering
 	{
 		RenderCommand_EndGPUScope() { type = RenderCommandType::EndGPUScope; }
 	};
+#endif
 
 	struct RenderCommand_DevicePresent : RenderCommand
 	{
@@ -160,12 +165,14 @@ namespace Rendering
 		U32 interval = 0;
 	};
 
+#ifdef RZE_RENDER_STATS
 	struct RenderCommand_SetGPUStatistics : RenderCommand
 	{
 		RenderCommand_SetGPUStatistics() { type = RenderCommandType::SetGPUStatistics; }
 
 		bool count = false;
 	};
+#endif
 
 	struct RenderCommand_CreateVertexBuffer : RenderCommand
 	{

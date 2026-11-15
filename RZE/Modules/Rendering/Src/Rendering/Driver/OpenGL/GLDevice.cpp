@@ -283,6 +283,7 @@ namespace Rendering
 		return std::make_shared<GLComputeShader>(*this);
 	}
 
+#ifdef RZE_RENDER_STATS
 	std::unique_ptr<IGPUTimestamps> GLDevice::CreateGPUTimestamps(U32 capacity)
 	{
 		return std::make_unique<GLGPUTimestamps>(capacity);
@@ -297,6 +298,7 @@ namespace Rendering
 		}
 		return std::make_unique<GLGPUStatistics>(capacity);
 	}
+#endif
 
 	void GLDevice::DeleteLater(EObjectType type, U32 name)
 	{

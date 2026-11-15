@@ -21,12 +21,18 @@ class RenderContext
 	template <typename T> friend class RenderInOut;
 
 public:
+#ifdef RZE_RENDER_STATS
 	RenderContext(RenderView& view, RenderScene& scene, float deltaTime, U64 frameIndex, RenderWorkCounts& workCounts, VisibleDrawsCache& visibleDraws)
+#else
+	RenderContext(RenderView& view, RenderScene& scene, float deltaTime, U64 frameIndex, VisibleDrawsCache& visibleDraws)
+#endif
 		: View(view)
 		, Scene(scene)
 		, DeltaTime(deltaTime)
 		, FrameIndex(frameIndex)
+#ifdef RZE_RENDER_STATS
 		, WorkCounts(workCounts)
+#endif
 		, m_view(view)
 		, m_scene(scene)
 		, m_visibleDraws(visibleDraws) {}
@@ -44,8 +50,10 @@ public:
 	// Counts frames: the same for every view rendered in one frame, so a stage can do a scene's work once a frame
 	// whichever view draws it first
 	const U64 FrameIndex;
+#ifdef RZE_RENDER_STATS
 	// What the stage did that a scene change caused (probe captures, shadow maps), added to as it's recorded
 	RenderWorkCounts& WorkCounts;
+#endif
 
 	// This view's state that lasts across frames. Each value should only be used by the stage that owns it.
 	RenderBlackboard& Persistent() { return m_view.m_persistentBlackboard; }

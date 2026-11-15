@@ -1,5 +1,10 @@
 #pragma once
 
+#include <Utils/DebugUtils/DebugConfig.h>
+
+// Render stats only
+#ifdef RZE_RENDER_STATS
+
 #include <Rendering/Driver/GPUTimestamps.h>
 
 struct ID3D11Query;
@@ -29,3 +34,5 @@ namespace Rendering
 		std::vector<ID3D11Query*> m_timestamps;
 	};
 }
+
+#endif // RZE_RENDER_STATS

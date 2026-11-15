@@ -9,6 +9,7 @@
 #include <Rendering/RenderThread.h>
 #include <Rendering/Driver/GraphicsAPI.h>
 
+#include <Utils/DebugUtils/DebugConfig.h>
 #include <Utils/PrimitiveDefs.h>
 #include <Utils/Platform/Filepath.h>
 
@@ -52,10 +53,12 @@ namespace Rendering
 		static void Begin(const char* drawSetName);
 		static void End();
 
+#ifdef RZE_RENDER_STATS
 		// Times what's recorded between them on the GPU, summed per id over each frame, in GetRenderThreadStats a few
 		// frames later (GPUScopeTimesMS[id]). The ids are the caller's: RenderPipeline's stage indices. Scopes nest.
 		static void BeginGPUScope(U32 id);
 		static void EndGPUScope();
+#endif
 
 		static void DevicePresent();
 		// Hands what's been recorded so far (e.g. uploads) to the render thread with no frame and no present, such as
@@ -67,19 +70,23 @@ namespace Rendering
 		// How many vertical blanks each present waits for: 0 presents at once (vsync off), 1 on every refresh (vsync on).
 		// Takes effect from the next frame the render thread runs.
 		static void SetSyncInterval(U32 interval);
+#ifdef RZE_RENDER_STATS
 		// Whether the GPU counts pipeline statistics, from the next frame the render thread begins, when they're on
 		// demand (EGPUStatisticsMode::OnDemand). They cost GPU time, so only while something shows them. Ignored when
 		// they're off or always on.
 		static void SetGPUStatistics(bool count);
+#endif
 		// Blocks until the swap chain can queue another frame, which keeps at most two frames in flight, or until
 		// timeoutMS passes (false), e.g. while the window is minimised. Call once per frame, before reading its input.
 		static bool WaitForPresentSlot(U32 timeoutMS);
+#ifdef RZE_RENDER_STATS
 		// How much of each frame the render thread is busy
 		static RenderThreadStats GetRenderThreadStats();
 		// Draws recorded since the last call, then starts over. The UI's aren't counted. Main thread only.
 		static DrawCounts TakeDrawCounts();
 		// Draws recorded since TakeDrawCounts, without starting over, e.g. to count one stage's. Main thread only.
 		static DrawCounts GetDrawCounts() { return m_drawCounts; }
+#endif
 
 		// Each UI frame, on the main thread, before ImGui::NewFrame: ImGui's renderer side of the new frame
 		static void ImGuiNewFrame();
@@ -217,8 +224,10 @@ namespace Rendering
 		static int m_uiFrameNumber;
 		// The textures the UI frame being drawn draws, which m_uiFrameData takes when it's copied
 		static std::vector<TextureBuffer2DHandle> m_uiTextures;
+#ifdef RZE_RENDER_STATS
 		// Draws recorded since TakeDrawCounts()
 		static DrawCounts m_drawCounts;
+#endif
 		// ReadBackBuffer's requests, which DevicePresent records before it presents
 		static std::vector<std::shared_ptr<TextureReadback>> m_backBufferReadbacks;
 	};

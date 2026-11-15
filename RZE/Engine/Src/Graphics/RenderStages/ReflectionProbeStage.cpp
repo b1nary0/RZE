@@ -316,8 +316,12 @@ void ReflectionProbeStage::Render(RenderContext& context)
 				const float farDistance = std::max(scene.GetBounds().GetRadius() * 2.0f, 1.0f);
 				m_capture.BeginBatch(k_probeWidth, k_faceSize);
 				m_capture.AddProbe(probe.GetPosition(), farDistance, 0, 0, faceMask);
+#ifdef RZE_RENDER_STATS
 				context.WorkCounts.ReflectionCaptureDraws += m_capture.Flush(scene);
 				++context.WorkCounts.ReflectionProbesCaptured;
+#else
+				m_capture.Flush(scene);
+#endif
 				Rendering::Renderer::ClearRenderTargets();
 				// Only the faces captured: the others keep what they had
 				for (U32 face = 0; face < ProbeCapture::k_faceCount; ++face)
@@ -397,7 +401,9 @@ void ReflectionProbeStage::Render(RenderContext& context)
 				Rendering::Renderer::SetTextureResourceCS(state.Atlas, k_captureAtlasSlot);
 				Rendering::Renderer::SetUnorderedAccess(state.Radiance, 0, 0);
 				Rendering::Renderer::Dispatch(DivideRoundingUp(k_faceSize, k_groupSize), DivideRoundingUp(k_faceSize, k_groupSize), relit.Count * ProbeCapture::k_faceCount);
+#ifdef RZE_RENDER_STATS
 				context.WorkCounts.ReflectionProbesRelit += relit.Count;
+#endif
 				Rendering::Renderer::UnsetUnorderedAccess(0);
 				for (U32 slot : { k_shadowMapSlot, k_pointShadowCubesSlot, k_shRedSlot, k_shRedSlot + 1, k_shRedSlot + 2, k_visibilitySlot, k_captureAtlasSlot })
 				{

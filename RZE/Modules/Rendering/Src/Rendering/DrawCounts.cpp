@@ -1,5 +1,8 @@
 #include <Rendering/DrawCounts.h>
 
+// Render stats only (its header is empty without them)
+#ifdef RZE_RENDER_STATS
+
 namespace Rendering
 {
 	DrawCounts& DrawCounts::operator+=(const DrawCounts& other)
@@ -17,3 +20,5 @@ namespace Rendering
 		return since;
 	}
 }
+
+#endif // RZE_RENDER_STATS

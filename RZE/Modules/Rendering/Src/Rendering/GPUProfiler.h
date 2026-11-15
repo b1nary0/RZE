@@ -1,5 +1,10 @@
 #pragma once
 
+#include <Utils/DebugUtils/DebugConfig.h>
+
+// Render stats only
+#ifdef RZE_RENDER_STATS
+
 #include <Rendering/Driver/GPUStatistics.h>
 #include <Rendering/Driver/GPUTimestamps.h>
 
@@ -115,3 +120,5 @@ namespace Rendering
 		std::vector<GPUPipelineStatistics> m_segments;
 	};
 }
+
+#endif // RZE_RENDER_STATS

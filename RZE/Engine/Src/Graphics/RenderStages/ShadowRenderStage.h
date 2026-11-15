@@ -116,8 +116,8 @@ private:
 	// have their Movable casters drawn on top
 	void RenderPointShadow(RenderContext& context, const LightObject& light, U32 cubeIndex, U32 staticFaces, U32 movableFaces, const ShadowMapState& state, GraphicsLayouts::PointShadowLayout& outShadow);
 	// Depth of every caster of that mobility that's in view and isn't blended, into the bound depth target, instanced
-	// (DepthOnlyMeshBatches). Shared by every light type's views. Returns how many draw calls it made.
-	U32 DrawCasters(RenderContext& context, const Matrix4x4& viewProjection, ERenderMobilityFilter casters);
+	// (DepthOnlyMeshBatches). Shared by every light type's views. Counts its draw calls into context.WorkCounts.
+	void DrawCasters(RenderContext& context, const Matrix4x4& viewProjection, ERenderMobilityFilter casters);
 
 	// Fits the directional map around the Static casters as seen along lightDirection, with room to spare; false
 	// (outFit not fitted) if there are none to cast shadows

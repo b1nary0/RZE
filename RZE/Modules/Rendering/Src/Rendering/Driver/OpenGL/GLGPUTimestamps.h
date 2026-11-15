@@ -1,5 +1,10 @@
 #pragma once
 
+#include <Utils/DebugUtils/DebugConfig.h>
+
+// Render stats only
+#ifdef RZE_RENDER_STATS
+
 #include <Rendering/Driver/GPUTimestamps.h>
 
 namespace Rendering
@@ -23,3 +28,5 @@ namespace Rendering
 		std::vector<U32> m_queries;
 	};
 }
+
+#endif // RZE_RENDER_STATS

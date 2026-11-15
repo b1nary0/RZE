@@ -1,5 +1,10 @@
 #pragma once
 
+#include <Utils/DebugUtils/DebugConfig.h>
+
+// Render stats only
+#ifdef RZE_RENDER_STATS
+
 #include <Rendering/Driver/GPUStatistics.h>
 
 namespace Rendering
@@ -30,3 +35,5 @@ namespace Rendering
 		bool m_isSegmentOpen = false;
 	};
 }
+
+#endif // RZE_RENDER_STATS

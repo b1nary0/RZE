@@ -37,6 +37,7 @@ namespace
 	constexpr int k_firstFrameCount = 3;
 
 	// -name turns a switch on and -name 0 off; without either, it keeps defaultValue
+#if defined(RZE_RENDER_STATS) || defined(RZE_GFX_VALIDATION_AVAILABLE)
 	bool ReadSwitch(const char* name, bool defaultValue)
 	{
 		std::string_view value;
@@ -49,7 +50,9 @@ namespace
 		CmdLine::Arguments::GetInt(name, enabled);
 		return enabled != 0;
 	}
+#endif
 
+#ifdef RZE_RENDER_STATS
 	// -gpustats (or -gpustats 1): the GPU counts pipeline statistics every frame, e.g. for a capture's triangle counts.
 	// -gpustats 0: never. Without either, only while something shows them (Rendering::EGPUStatisticsMode::OnDemand):
 	// counting costs GPU time, about 0.08 ms a frame on Sponza (NVIDIA, GL), which would skew every frame-time
@@ -63,14 +66,18 @@ namespace
 		}
 		return ReadSwitch("-gpustats", true) ? Rendering::EGPUStatisticsMode::Always : Rendering::EGPUStatisticsMode::Off;
 	}
+#endif
 
 	// How the renderer's device is made (DebugConfig.h). Validation is Debug's default, or -gfxvalidation (on) and
 	// -gfxvalidation 0 (off). -gfxliveobjects logs the graphics objects still alive at shutdown; the report comes from
-	// the validation layer, so it turns validation on too. -gpustats works in every configuration (ReadGPUStatisticsMode).
+	// the validation layer, so it turns validation on too. -gpustats works wherever there are render stats
+	// (RZE_RENDER_STATS: ReadGPUStatisticsMode).
 	Rendering::GFXDeviceOptions GetGraphicsDeviceOptions()
 	{
 		Rendering::GFXDeviceOptions options;
+#ifdef RZE_RENDER_STATS
 		options.GPUStatistics = ReadGPUStatisticsMode();
+#endif
 #ifdef RZE_GFX_VALIDATION_AVAILABLE
 #ifdef RZE_GFX_VALIDATION_BY_DEFAULT
 		const bool validateByDefault = true;
@@ -150,7 +157,9 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 
 		m_programTimer.Start();
 
+#ifdef RZE_RENDER_STATS
 		m_frameTimeCapture.Initialize();
+#endif
 		// After the capture, which turns pacing off
 		InitializeFramePacing();
 
@@ -162,7 +171,9 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 		m_window->Reveal();
 		m_splashScreen.reset();
 
+#ifdef RZE_RENDER_STATS
 		double lastUpdateMS = 0.0;
+#endif
 
 		while (!m_shouldExit)
 		{
@@ -171,6 +182,7 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 			const double frameStart = m_programTimer.GetElapsed<double>();
 			BeginFrame(frameStart);
 
+#ifdef RZE_RENDER_STATS
 			if (m_frameTimeCapture.IsEnabled())
 			{
 				const RenderFrameCounts& renderFrame = m_renderEngine->GetLastFrame();
@@ -192,10 +204,15 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 					break;
 				}
 			}
+#endif
 
 			{
 				OPTICK_EVENT("RZE_Engine::Run");
+#ifdef RZE_RENDER_STATS
 				lastUpdateMS = RunFrame(frameStart);
+#else
+				RunFrame(frameStart);
+#endif
 			}
 
 			WaitForNextFrame();
@@ -479,6 +496,7 @@ void RZE_Engine::InitializeFramePacing()
 {
 	FrameSettings settings = GetResourceHandler().GetResource<EngineConfig>(m_engineConfig)->GetFrameSettings();
 
+#ifdef RZE_RENDER_STATS
 	// A capture measures what frames cost, comparable with captures from before frames were paced, so it runs
 	// unpaced unless the command line asks for pacing too
 	if (m_frameTimeCapture.IsEnabled())
@@ -488,6 +506,7 @@ void RZE_Engine::InitializeFramePacing()
 		settings.UnfocusedFrameRate = 0.0;
 		settings.UIFrameRate = 0.0;
 	}
+#endif
 
 	int vsync = 0;
 	if (CmdLine::Arguments::GetInt("-vsync", vsync))

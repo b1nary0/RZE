@@ -44,6 +44,7 @@ namespace Rendering
 		EndProfilerEvent();
 	}
 
+#ifdef RZE_RENDER_STATS
 	void RenderThread::Execute(RenderCommand_BeginGPUScope& command)
 	{
 		m_gpuProfiler.BeginScope(command.id);
@@ -53,11 +54,13 @@ namespace Rendering
 	{
 		m_gpuProfiler.EndScope();
 	}
+#endif
 
 	void RenderThread::Execute(RenderCommand_DevicePresent&)
 	{
 		OPTICK_EVENT("Device Present");
 
+#ifdef RZE_RENDER_STATS
 		// Before Present: GL's copy of the back buffer to the window, inside Present, isn't in the frame's GPU time
 		if (m_gpuProfiler.EndFrame(m_gpuFrameProfile))
 		{
@@ -67,6 +70,9 @@ namespace Rendering
 		const double presentStart = TimeUtils::GetSeconds();
 		m_device->Present();
 		m_framePresentTime += TimeUtils::GetSeconds() - presentStart;
+#else
+		m_device->Present();
+#endif
 	}
 
 	void RenderThread::Execute(RenderCommand_HandleWindowResize& command)
@@ -80,11 +86,13 @@ namespace Rendering
 		m_device->SetSyncInterval(command.interval);
 	}
 
+#ifdef RZE_RENDER_STATS
 	void RenderThread::Execute(RenderCommand_SetGPUStatistics& command)
 	{
 		// Off, the profiler has no way to make them; always on, nothing turns them off
 		m_gpuProfiler.SetCountStatistics(command.count || m_gpuStatisticsMode == EGPUStatisticsMode::Always);
 	}
+#endif
 
 	void RenderThread::Execute(RenderCommand_CreateVertexBuffer& command)
 	{

@@ -27,8 +27,8 @@ namespace Editor
 	// of its size, in yellow or red as it fills up, and the most any frame has used.
 	//
 	// The frame stats are the frame time, frames per second and idle time per frame, averaged over half a second
-	// (FrameStats, StatsWindow), and how long the render thread is busy each frame (Rendering::RenderThreadStats).
-	// Hovering shows the frame in detail, in tables (FrameStatsView).
+	// (FrameStats, StatsWindow), and how long the render thread is busy each frame (Rendering::RenderThreadStats; only
+	// with render stats, RZE_RENDER_STATS). Hovering shows the frame in detail, in tables (FrameStatsView).
 	//
 	// The tasks area starts with a circle that says how the tasks are doing at a glance (ETaskStatus): green when the
 	// last one succeeded or none has run, yellow while any is running, orange when the last had warnings or was

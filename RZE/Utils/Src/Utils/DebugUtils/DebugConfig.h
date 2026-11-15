@@ -41,6 +41,14 @@
 #define RZE_DEBUG_DRAW_ENABLED
 #endif
 
+// Render stats: the draw and state counts Renderer records, the GPU's timings and pipeline statistics (GPUProfiler), the
+// render thread's busy times, the stages' record times and work counts (RenderPipeline, RenderEngine's RenderStats),
+// the frame-stats tooltip's rendering half and -perfcapture (FrameTimeCapture). Without it none of them exist, so
+// nothing can show a zero for them. The frame pacer's times (FramePacer) aren't stats: it paces frames with them.
+#ifdef RZE_DEVEL
+#define RZE_RENDER_STATS
+#endif
+
 // RZE_DISABLE_OPTIMIZATION (Debug.h). Without it, the macro is a compile error, so one left in code can't ship.
 #ifdef RZE_DEVEL
 #define RZE_OPTIMIZATION_SWITCH_ENABLED

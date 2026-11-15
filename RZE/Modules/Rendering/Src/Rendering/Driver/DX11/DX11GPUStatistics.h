@@ -1,5 +1,10 @@
 #pragma once
 
+#include <Utils/DebugUtils/DebugConfig.h>
+
+// Render stats only
+#ifdef RZE_RENDER_STATS
+
 #include <Rendering/Driver/GPUStatistics.h>
 
 struct ID3D11Query;
@@ -30,3 +35,5 @@ namespace Rendering
 		ID3D11Query* m_openQuery = nullptr;
 	};
 }
+
+#endif // RZE_RENDER_STATS

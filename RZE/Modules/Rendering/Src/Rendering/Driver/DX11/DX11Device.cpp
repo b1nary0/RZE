@@ -619,6 +619,7 @@ namespace Rendering
 		return shader;
 	}
 
+#ifdef RZE_RENDER_STATS
 	std::unique_ptr<IGPUTimestamps> DX11Device::CreateGPUTimestamps(U32 capacity)
 	{
 		return std::make_unique<DX11GPUTimestamps>(*this, capacity);
@@ -629,6 +630,7 @@ namespace Rendering
 		// Every D3D11 device has them
 		return std::make_unique<DX11GPUStatistics>(*this, capacity);
 	}
+#endif
 
 	void DX11Device::BeginDrawSet()
 	{

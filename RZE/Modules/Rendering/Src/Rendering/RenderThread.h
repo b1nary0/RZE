@@ -10,6 +10,7 @@
 #include <Rendering/GPUProfiler.h>
 #include <Rendering/RenderCommand.h>
 
+#include <Utils/DebugUtils/DebugConfig.h>
 #include <Utils/PrimitiveDefs.h>
 #include <Utils/StatsWindow.h>
 
@@ -18,6 +19,8 @@ namespace Rendering
 	class IGFXDevice;
 	class IImGuiRenderer;
 	struct GFXDeviceOptions;
+
+#ifdef RZE_RENDER_STATS
 	enum class EGPUStatisticsMode;
 
 	// The render thread's frames, averaged over a StatsWindow, for display, and the last frame alone, for measuring
@@ -53,6 +56,7 @@ namespace Rendering
 		GPUPipelineStatistics GPUFrameStatistics;
 		GPUPipelineStatistics LastFrameGPUStatistics;
 	};
+#endif
 
 	class RenderThread
 	{
@@ -73,8 +77,10 @@ namespace Rendering
 		// Blocks until the swap chain can queue another frame, or timeoutMS passes (false). Safe from any thread.
 		bool WaitForPresentSlot(U32 timeoutMS);
 
+#ifdef RZE_RENDER_STATS
 		// Zero until the first window of frames has passed. Safe from any thread.
 		RenderThreadStats GetStats() const;
+#endif
 
 		// Blocks until the render thread has finished processing its queue, then has the render thread run func, and
 		// returns once it has. For the rare work that needs the device between frames: it runs where the device is
@@ -93,10 +99,12 @@ namespace Rendering
 		void InitializeImGui();
 
 		void ProcessCommands();
+#ifdef RZE_RENDER_STATS
 		// Adds the batch of commands that started at batchStart to the current frame, which ends if the batch presented
 		void UpdateStats(double batchStart, bool hasPresented);
 		// A frame the GPU timer read back, into the window and the last frame's GPU time
 		void AddGPUFrame(const GPUFrameProfile& profile);
+#endif
 
 		// What each command does (RenderThreadCommands.cpp). ProcessCommands calls the one for its type.
 		// The frame
@@ -106,11 +114,13 @@ namespace Rendering
 		void Execute(RenderCommand_Begin& command);
 		void Execute(RenderCommand_End& command);
 		void Execute(RenderCommand_DevicePresent& command);
-		void Execute(RenderCommand_BeginGPUScope& command);
-		void Execute(RenderCommand_EndGPUScope& command);
 		void Execute(RenderCommand_HandleWindowResize& command);
 		void Execute(RenderCommand_SetSyncInterval& command);
+#ifdef RZE_RENDER_STATS
+		void Execute(RenderCommand_BeginGPUScope& command);
+		void Execute(RenderCommand_EndGPUScope& command);
 		void Execute(RenderCommand_SetGPUStatistics& command);
+#endif
 
 		// Resources
 		void Execute(RenderCommand_CreateVertexBuffer& command);
@@ -210,6 +220,7 @@ namespace Rendering
 		bool m_vertexShaderBound = false;
 		bool m_computeShaderBound = false;
 
+#ifdef RZE_RENDER_STATS
 		// The frame so far, on the render thread, since the last present
 		double m_frameBusyTime = 0.0;
 		double m_framePresentTime = 0.0;
@@ -238,5 +249,6 @@ namespace Rendering
 		// any thread
 		RenderThreadStats m_stats;
 		mutable std::mutex m_statsMutex;
+#endif
 	};
 }

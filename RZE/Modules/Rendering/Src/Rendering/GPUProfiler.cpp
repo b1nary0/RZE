@@ -1,5 +1,8 @@
 #include <Rendering/GPUProfiler.h>
 
+// Render stats only (its header is empty without them)
+#ifdef RZE_RENDER_STATS
+
 #include <Utils/DebugUtils/Debug.h>
 
 #include <algorithm>
@@ -300,3 +303,5 @@ namespace Rendering
 		}
 	}
 }
+
+#endif // RZE_RENDER_STATS

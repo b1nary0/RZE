@@ -2,6 +2,7 @@
 
 #include <Graphics/GraphicsDefines.h>
 
+#include <Utils/DebugUtils/DebugConfig.h>
 #include <Utils/Math/Frustum.h>
 
 #include <cstddef>
@@ -60,8 +61,10 @@ public:
 	// What request sees of scene: culled the first time it's asked for since Reset, the same draws after that
 	VisibleDraws Get(const RenderScene& scene, const CullRequest& request);
 
+#ifdef RZE_RENDER_STATS
 	// Seconds spent culling since the last call, then starts over
 	double TakeCullSeconds();
+#endif
 
 	// How many different requests have been culled since Reset
 	size_t GetResultCount() const { return m_resultCount; }
@@ -81,5 +84,7 @@ private:
 	// Kept across Reset with their lists' capacity: the first m_resultCount are this view's.
 	std::vector<Result> m_results;
 	size_t m_resultCount = 0;
+#ifdef RZE_RENDER_STATS
 	double m_cullSeconds = 0.0;
+#endif
 };

@@ -36,7 +36,9 @@ VisibleDraws VisibleDrawsCache::Get(const RenderScene& scene, const CullRequest&
 		}
 	}
 
+#ifdef RZE_RENDER_STATS
 	const double cullStart = TimeUtils::GetSeconds();
+#endif
 
 	if (m_resultCount == m_results.size())
 	{
@@ -66,16 +68,20 @@ VisibleDraws VisibleDrawsCache::Get(const RenderScene& scene, const CullRequest&
 	}
 	result.Opaque.resize(opaqueCount);
 
+#ifdef RZE_RENDER_STATS
 	m_cullSeconds += TimeUtils::GetSeconds() - cullStart;
+#endif
 	return ViewOf(result);
 }
 
+#ifdef RZE_RENDER_STATS
 double VisibleDrawsCache::TakeCullSeconds()
 {
 	const double cullSeconds = m_cullSeconds;
 	m_cullSeconds = 0.0;
 	return cullSeconds;
 }
+#endif
 
 VisibleDraws VisibleDrawsCache::ViewOf(const Result& result)
 {

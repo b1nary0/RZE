@@ -1,5 +1,10 @@
 #pragma once
 
+#include <Utils/DebugUtils/DebugConfig.h>
+
+// Render stats only
+#ifdef RZE_RENDER_STATS
+
 #include <Utils/PrimitiveDefs.h>
 
 namespace Rendering
@@ -17,3 +22,5 @@ namespace Rendering
 		DrawCounts operator-(const DrawCounts& earlier) const;
 	};
 }
+
+#endif // RZE_RENDER_STATS

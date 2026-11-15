@@ -71,6 +71,8 @@ TEST_CASE("VisibleDrawsCache culls again after Reset")
 	CHECK(cache.GetResultCount() == 1);
 }
 
+// The cull time is render stats, which Retail doesn't have
+#ifdef RZE_RENDER_STATS
 TEST_CASE("VisibleDrawsCache counts time only while culling")
 {
 	RenderScene scene;
@@ -82,3 +84,4 @@ TEST_CASE("VisibleDrawsCache counts time only while culling")
 	cache.Get(scene, MakeRequest(0.0f));
 	CHECK(cache.TakeCullSeconds() == 0.0);
 }
+#endif

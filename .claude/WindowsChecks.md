@@ -340,6 +340,18 @@ Things to know on this machine (2026-11-10):
   one object and on three ctrl-clicked ones, the occluded part fainter, as before (Linux: 0 px different on Sponza,
   RenderTest, RenderPerfTest and Stress2500, framed and scene camera). 6: DrawLineTest's grid and axis lines as
   before (Linux: 0 px). `close` code 0.
+- **A47. Render stats only in Debug and Development** (mesh pass performance S0a: `RZE_RENDER_STATS` in
+  `DebugConfig.h`; the GPU profiler, `DX11GPUTimestamps`/`DX11GPUStatistics`, `DX11Device::CreateGPUTimestamps`/
+  `CreateGPUStatistics`, `Renderer`'s draw counts and GPU scopes, the render thread's stats, `RenderStats`,
+  `FrameTimeCapture` and the frame-stats tooltip's rendering half compile out of Retail). 1: A1's three builds: 0
+  warnings. Retail now compiles four DX11/stats `.cpp` files to empty objects: no `C4206` or other warning. 2: A2's
+  counts: Debug and Development unchanged, Retail 15 fewer (`GPUProfilerTests`' 14 and `VisibleDrawsCache counts time
+  only while culling`). 3: Development Editor on `Sponza.scene`: the status bar reads "ms · FPS · idle … ms · render …
+  ms" and its tooltip has the stage table with GPU counts, scene updates and render thread, as before. 4: Retail
+  Editor on `Sponza.scene` with `-gpustats -perfcapture <file>`: runs, no capture file is written, the status bar
+  ends at "idle … ms", the tooltip has only the main-thread table; `close` code 0. 5: a Development
+  `-perfcapture <file> -gpustats -perfwarmup 1 -perfduration 2` run still writes `<file>` and `<file>.stages.csv` with
+  GPU counts.
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 

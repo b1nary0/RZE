@@ -4,6 +4,7 @@
 #include <Rendering/Driver/GPUStatistics.h>
 #include <Rendering/Driver/GPUTimestamps.h>
 
+#include <Utils/DebugUtils/DebugConfig.h>
 #include <Utils/PrimitiveDefs.h>
 
 #include <memory>
@@ -22,6 +23,7 @@ namespace Rendering
 	struct TexelReadback;
 	struct TextureReadback;
 
+#ifdef RZE_RENDER_STATS
 	// When the render thread counts the GPU's pipeline statistics (GPUProfiler). Counting costs GPU time at every scope
 	// boundary, where the driver drains the pipeline to count exactly, so it's done only while something shows them.
 	enum class EGPUStatisticsMode
@@ -33,6 +35,7 @@ namespace Rendering
 		// Every frame, e.g. for a capture's counts
 		Always
 	};
+#endif
 
 	// How IGFXDevice::Initialize makes the device
 	struct GFXDeviceOptions
@@ -43,9 +46,11 @@ namespace Rendering
 		// At shutdown, once the device has released its own objects, it logs every API object still alive: what the
 		// engine never released. Needs Validate. D3D11 only: OpenGL has no such report.
 		bool ReportLiveObjects = false;
+#ifdef RZE_RENDER_STATS
 		// When the render thread counts the GPU's pipeline statistics in each GPU scope, where the API has them. Read by
 		// the render thread, not the device.
 		EGPUStatisticsMode GPUStatistics = EGPUStatisticsMode::OnDemand;
+#endif
 	};
 
 	// A graphics API, as the render thread uses it: the device and what's bound to it. One per process, made by
@@ -79,12 +84,14 @@ namespace Rendering
 		virtual std::shared_ptr<IVertexShader> CreateVertexShader() = 0;
 		virtual std::shared_ptr<IPixelShader> CreatePixelShader() = 0;
 		virtual std::shared_ptr<IComputeShader> CreateComputeShader() = 0;
+#ifdef RZE_RENDER_STATS
 		// Unlike the others, made and used on the render thread alone (GPUProfiler); capacity is how many timestamps a
 		// frame can write
 		virtual std::unique_ptr<IGPUTimestamps> CreateGPUTimestamps(U32 capacity) = 0;
 		// The same for pipeline statistics, with room for capacity segments a frame. None where the API or driver can't
 		// count them (OpenGL without ARB_pipeline_statistics_query).
 		virtual std::unique_ptr<IGPUStatistics> CreateGPUStatistics(U32 capacity) = 0;
+#endif
 
 		// The frame
 		virtual void Present() = 0;

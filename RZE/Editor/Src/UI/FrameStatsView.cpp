@@ -10,6 +10,7 @@
 
 #include <Rendering/Renderer.h>
 
+#include <Utils/DebugUtils/DebugConfig.h>
 #include <Utils/StatsWindow.h>
 #include <Utils/StringUtils.h>
 
@@ -23,9 +24,11 @@ namespace Editor
 	{
 		// The widest each kind of figure usually gets, which fixes its column's width. A wider one still shows, and only
 		// pushes what's after it along.
+#ifdef RZE_RENDER_STATS
 		constexpr char k_widestMS[] = "000.00";
 		// StringUtils::FormatCount's widest
 		constexpr char k_widestCount[] = "00.0M";
+#endif
 		// The label tables' values: the widest of the above
 		constexpr char k_widestValue[] = "0000.00";
 		// The label tables' units, after their values. The probe table ends in an empty column this wide too, so its
@@ -44,9 +47,11 @@ namespace Editor
 
 		// UTF-8, spelled out so they don't depend on the source file's encoding
 		constexpr char k_dot[] = " \xC2\xB7 ";
+#ifdef RZE_RENDER_STATS
 		// In the GPU's columns: what it can't count, and what it hasn't counted yet
 		constexpr char k_notCounted[] = "\xE2\x80\x94";
 		constexpr char k_counting[] = "\xE2\x80\xA6";
+#endif
 
 		std::string FormatFixed(double value, int decimals)
 		{
@@ -76,6 +81,15 @@ namespace Editor
 			return x + ImGui::CalcTextSize(text).x;
 		}
 
+		bool BeginFiguresTable(const char* id, int columnCount, ImGuiTableFlags extraFlags)
+		{
+			ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(k_figuresCellPadding, ImGui::GetStyle().CellPadding.y));
+			const bool isOpen = ImGui::BeginTable(id, columnCount, k_tableFlags | extraFlags);
+			ImGui::PopStyleVar();
+			return isOpen;
+		}
+
+#ifdef RZE_RENDER_STATS
 		// The GPU's counts for a cell: the count, or why there isn't one
 		std::string FormatGPUCount(const RenderStats& stats, double count)
 		{
@@ -114,14 +128,6 @@ namespace Editor
 					EditorUI::TextAlignedRight(ImGui::TableGetColumnName(column), true);
 				}
 			}
-		}
-
-		bool BeginFiguresTable(const char* id, int columnCount, ImGuiTableFlags extraFlags)
-		{
-			ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(k_figuresCellPadding, ImGui::GetStyle().CellPadding.y));
-			const bool isOpen = ImGui::BeginTable(id, columnCount, k_tableFlags | extraFlags);
-			ImGui::PopStyleVar();
-			return isOpen;
 		}
 
 		void DrawStageTable(const RenderStats& stats)
@@ -213,6 +219,7 @@ namespace Editor
 
 			ImGui::EndTable();
 		}
+#endif
 
 		// A table of labelled values, with their units after them. Pair with ImGui::EndTable if it returns true.
 		bool BeginLabelTable(const char* id)
@@ -255,7 +262,6 @@ namespace Editor
 		void DrawLine(const ImVec2& position)
 		{
 			const FrameStats& stats = RZE().GetFramePacer().GetStats();
-			const Rendering::RenderThreadStats renderThreadStats = Rendering::Renderer::GetRenderThreadStats();
 
 			ImDrawList& drawList = *ImGui::GetWindowDrawList();
 			const ImU32 colour = ImGui::GetColorU32(ImGuiCol_TextDisabled);
@@ -269,21 +275,19 @@ namespace Editor
 			x = DrawWords(drawList, x, y, colour, k_dot);
 			x = DrawWords(drawList, x, y, colour, "idle ");
 			x = DrawFigure(drawList, x, y, colour, FormatFixed(stats.IdleTimeMS, 1), k_widestBarMS);
+#ifdef RZE_RENDER_STATS
 			x = DrawWords(drawList, x, y, colour, " ms");
 			x = DrawWords(drawList, x, y, colour, k_dot);
 			x = DrawWords(drawList, x, y, colour, "render ");
+			const Rendering::RenderThreadStats renderThreadStats = Rendering::Renderer::GetRenderThreadStats();
 			x = DrawFigure(drawList, x, y, colour, FormatFixed(renderThreadStats.BusyTimeMS, 1), k_widestBarMS);
+#endif
 			DrawWords(drawList, x, y, colour, " ms");
 		}
 
 		void DrawDetails()
 		{
-			// Counted while this shows, and for a frame or so after
-			RZE().GetRenderEngine().RequestGPUStatistics();
-
 			const FrameStats& stats = RZE().GetFramePacer().GetStats();
-			const RenderStats& renderStats = RZE().GetRenderEngine().GetStats();
-			const Rendering::RenderThreadStats renderThreadStats = Rendering::Renderer::GetRenderThreadStats();
 
 			ImGui::SeparatorText("Main thread");
 			if (BeginLabelTable("##MainThread"))
@@ -296,6 +300,12 @@ namespace Editor
 				LabelRow("waiting for the next frame", FormatMS(std::max(0.0, stats.IdleTimeMS - stats.IdleWorkMS)), "ms", true);
 				ImGui::EndTable();
 			}
+
+#ifdef RZE_RENDER_STATS
+			// Counted while this shows, and for a frame or so after
+			RZE().GetRenderEngine().RequestGPUStatistics();
+			const RenderStats& renderStats = RZE().GetRenderEngine().GetStats();
+			const Rendering::RenderThreadStats renderThreadStats = Rendering::Renderer::GetRenderThreadStats();
 
 			ImGui::SeparatorText("Rendering");
 			if (BeginLabelTable("##Rendering"))
@@ -341,9 +351,13 @@ namespace Editor
 			}
 			ImGui::Unindent();
 
+#endif
+
 			ImGui::Spacing();
 			ImGui::TextDisabled("Averaged over %.1f s. Frames only have idle time with vsync or a frame rate cap.", StatsWindow::k_windowSeconds);
+#ifdef RZE_RENDER_STATS
 			ImGui::TextDisabled("The GPU counts what it draws only while this shows, which adds a little to its time.");
+#endif
 		}
 	}
 }

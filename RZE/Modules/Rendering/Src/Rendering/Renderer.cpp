@@ -27,7 +27,9 @@ namespace Rendering
 	std::shared_ptr<UIFrameData> Renderer::m_uiFrameData;
 	int Renderer::m_uiFrameNumber = -1;
 	std::vector<TextureBuffer2DHandle> Renderer::m_uiTextures;
+#ifdef RZE_RENDER_STATS
 	DrawCounts Renderer::m_drawCounts;
+#endif
 	std::vector<std::shared_ptr<TextureReadback>> Renderer::m_backBufferReadbacks;
 
 	inline void* AllocateCommandData(void* src, size_t dataTypeSize, size_t count)
@@ -89,6 +91,7 @@ namespace Rendering
 		m_renderThread.PushCommand(command);
 	}
 
+#ifdef RZE_RENDER_STATS
 	void Renderer::BeginGPUScope(U32 id)
 	{
 		RenderCommand_BeginGPUScope* command = MemArena::AllocType<RenderCommand_BeginGPUScope>();
@@ -103,6 +106,7 @@ namespace Rendering
 
 		m_renderThread.PushCommand(command);
 	}
+#endif
 
 	void Renderer::DevicePresent()
 	{
@@ -135,6 +139,7 @@ namespace Rendering
 		m_renderThread.PushCommand(command);
 	}
 
+#ifdef RZE_RENDER_STATS
 	void Renderer::SetGPUStatistics(bool count)
 	{
 		RenderCommand_SetGPUStatistics* command = MemArena::AllocType<RenderCommand_SetGPUStatistics>();
@@ -142,12 +147,14 @@ namespace Rendering
 
 		m_renderThread.PushCommand(command);
 	}
+#endif
 
 	bool Renderer::WaitForPresentSlot(U32 timeoutMS)
 	{
 		return m_renderThread.WaitForPresentSlot(timeoutMS);
 	}
 
+#ifdef RZE_RENDER_STATS
 	RenderThreadStats Renderer::GetRenderThreadStats()
 	{
 		return m_renderThread.GetStats();
@@ -159,6 +166,7 @@ namespace Rendering
 		m_drawCounts = DrawCounts();
 		return counts;
 	}
+#endif
 
 	void Renderer::HandleWindowResize(const Vector2D& newSize)
 	{
@@ -670,8 +678,10 @@ namespace Rendering
 		command->count = count;
 
 		m_renderThread.PushCommand(command);
+#ifdef RZE_RENDER_STATS
 		++m_drawCounts.DrawCalls;
 		++m_drawCounts.Instances;
+#endif
 	}
 
 	void Renderer::DrawIndexed(const IndexBufferHandle& indexBuffer)
@@ -680,8 +690,10 @@ namespace Rendering
 		command->indexBuffer = indexBuffer;
 
 		m_renderThread.PushCommand(command);
+#ifdef RZE_RENDER_STATS
 		++m_drawCounts.DrawCalls;
 		++m_drawCounts.Instances;
+#endif
 	}
 
 	void Renderer::DrawIndexedInstanced(const IndexBufferHandle& indexBuffer, U32 instanceCount, U32 startInstance)
@@ -692,8 +704,10 @@ namespace Rendering
 		command->startInstance = startInstance;
 
 		m_renderThread.PushCommand(command);
+#ifdef RZE_RENDER_STATS
 		++m_drawCounts.DrawCalls;
 		m_drawCounts.Instances += instanceCount;
+#endif
 	}
 
 	void Renderer::DrawFullScreenQuad()
@@ -701,8 +715,10 @@ namespace Rendering
 		RenderCommand_DrawFullScreenQuad* command = MemArena::AllocType<RenderCommand_DrawFullScreenQuad>();
 
 		m_renderThread.PushCommand(command);
+#ifdef RZE_RENDER_STATS
 		++m_drawCounts.DrawCalls;
 		++m_drawCounts.Instances;
+#endif
 	}
 
 	void Renderer::SetComputeShader(const ComputeShaderHandle& computeShader)

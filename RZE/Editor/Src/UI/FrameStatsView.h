@@ -14,6 +14,9 @@ namespace Editor
 	// total; the scene's probe and shadow work; and the render thread's busy time and the GPU's frame time
 	// (Rendering::RenderThreadStats). Every table spans the panel, with its figures against the right edge. The GPU
 	// only counts while the details are shown (RenderEngine::RequestGPUStatistics): counting costs GPU time.
+	//
+	// Without render stats (RZE_RENDER_STATS, DebugConfig.h: Retail), only the frame pacer's figures: the line has no
+	// render thread time, and the details only the main thread's table.
 	namespace FrameStatsView
 	{
 		// The line of figures, its text's top left at position
