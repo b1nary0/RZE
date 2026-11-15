@@ -1,14 +1,11 @@
 #include <Graphics/RenderStages/ForwardRenderStage.h>
 
 #include <Graphics/GraphicsLayouts.h>
-#include <Graphics/IndexBuffer.h>
 #include <Graphics/Material.h>
-#include <Graphics/MaterialDefines.h>
 #include <Graphics/MaterialSlot.h>
+#include <Graphics/MeshGeometry.h>
 #include <Graphics/RenderEngine.h>
 #include <Graphics/Shader.h>
-#include <Graphics/Texture2D.h>
-#include <Graphics/VertexBuffer.h>
 
 #include <Rendering/Renderer.h>
 #include <Rendering/Graphics/RenderTarget.h>
@@ -228,21 +225,7 @@ void ForwardRenderStage::DrawBatch(const MeshBatches::Batch& batch, const PixelS
 		Rendering::Renderer::SetPixelShader(pixelShader->GetPlatformObject());
 		boundPixelShader = pixelShader;
 	}
-	Rendering::Renderer::SetConstantBufferPS(materialInstance.GetParamBuffer(), 1);
+	materialInstance.Bind();
 
-	// @TODO Really need to get to texture infrastructure refactor soon - 2/6/2022
-	for (U8 textureSlot = 0; textureSlot < TEXTURE_SLOT_COUNT; ++textureSlot)
-	{
-		if (const Texture2D* const texture = materialInstance.GetTextureResource(textureSlot))
-		{
-			// @TODO Should solve this better by providing an API that will provide a texture resource array
-			Rendering::Renderer::SetTextureResource(texture->GetPlatformObject(), textureSlot);
-		}
-	}
-
-	const Rendering::IndexBufferHandle& indexBuffer = meshGeometry.GetIndexBuffer()->GetPlatformObject();
-	Rendering::Renderer::SetVertexBuffer(meshGeometry.GetVertexBuffer()->GetPlatformObject(), 0);
-	Rendering::Renderer::SetIndexBuffer(indexBuffer);
-
-	Rendering::Renderer::DrawIndexedInstanced(indexBuffer, batch.InstanceCount, batch.FirstInstance);
+	meshGeometry.Draw(batch.InstanceCount, batch.FirstInstance);
 }

@@ -3,6 +3,8 @@
 #include <Graphics/IndexBuffer.h>
 #include <Graphics/VertexBuffer.h>
 
+#include <Rendering/Renderer.h>
+
 #include <Utils/Math/Math.h>
 
 namespace
@@ -156,4 +158,14 @@ const std::shared_ptr<VertexBuffer>& MeshGeometry::GetVertexBuffer() const
 const std::shared_ptr<IndexBuffer>& MeshGeometry::GetIndexBuffer() const
 {
 	return m_indexBuffer;
+}
+
+void MeshGeometry::Draw(U32 instanceCount, U32 firstInstance) const
+{
+	AssertExpr(IsAllocated());
+
+	const Rendering::IndexBufferHandle& indexBuffer = m_indexBuffer->GetPlatformObject();
+	Rendering::Renderer::SetVertexBuffer(m_vertexBuffer->GetPlatformObject(), 0);
+	Rendering::Renderer::SetIndexBuffer(indexBuffer);
+	Rendering::Renderer::DrawIndexedInstanced(indexBuffer, instanceCount, firstInstance);
 }

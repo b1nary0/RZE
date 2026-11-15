@@ -145,9 +145,35 @@ void MaterialInstance::CommitPropertyChanges()
 	Rendering::Renderer::UploadDataToBuffer<GraphicsLayouts::MaterialBufferLayout>(m_paramBuffer, &m_bufferData);
 }
 
-const Rendering::ConstantBufferHandle& MaterialInstance::GetParamBuffer() const
+bool MaterialInstance::HasOpacityMap() const
 {
-	return m_paramBuffer;
+	return GetTextureResource(TEXTURE_SLOT_OPACITY) != nullptr;
+}
+
+void MaterialInstance::Bind() const
+{
+	Rendering::Renderer::SetConstantBufferPS(m_paramBuffer, k_bufferSlot);
+	for (U8 textureSlot = 0; textureSlot < TEXTURE_SLOT_COUNT; ++textureSlot)
+	{
+		BindTexture(static_cast<ETextureSlot>(textureSlot));
+	}
+}
+
+void MaterialInstance::Bind(std::initializer_list<ETextureSlot> textureSlots) const
+{
+	Rendering::Renderer::SetConstantBufferPS(m_paramBuffer, k_bufferSlot);
+	for (const ETextureSlot textureSlot : textureSlots)
+	{
+		BindTexture(textureSlot);
+	}
+}
+
+void MaterialInstance::BindTexture(ETextureSlot textureSlot) const
+{
+	if (const Texture2D* const texture = GetTextureResource(textureSlot))
+	{
+		Rendering::Renderer::SetTextureResource(texture->GetPlatformObject(), textureSlot);
+	}
 }
 
 void MaterialInstance::DescribeProperties(PropertyBuilder<MaterialInstance>& properties)

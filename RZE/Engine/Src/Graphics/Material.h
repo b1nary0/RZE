@@ -11,6 +11,7 @@
 #include <Graphics/MaterialValues.h>
 
 #include <array>
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <vector>
@@ -41,6 +42,9 @@ public:
 		// A normal map, with or without diffuse and specular maps (HasDiffuseMap, HasSpecularMap)
 		NormalMapped
 	};
+
+	// Where the pixel shaders read a material's buffer (MaterialBuffer in Common/PixelResources.hlsli)
+	static constexpr U32 k_bufferSlot = 1;
 
 public:
 	MaterialInstance(const std::string& name);
@@ -78,6 +82,9 @@ public:
 	// The loaded texture in a slot, or nullptr if the slot is empty. Use this when drawing: it's resolved
 	// when the slot is set, so it doesn't look the resource up by path.
 	const Texture2D* GetTextureResource(U8 textureSlot) const;
+	// It has an opacity texture, whatever its blend mode: a blended material can have one too, so this isn't
+	// EBlendMode::Cutout
+	bool HasOpacityMap() const;
 
 	const std::string& GetName() const { return m_name; }
 
@@ -94,7 +101,11 @@ public:
 	// Commit property changes to GPU buffer
 	void CommitPropertyChanges();
 
-	const Rendering::ConstantBufferHandle& GetParamBuffer() const;
+	// Binds what a pixel shader reads of the material for a draw: its buffer, and each texture it has, in that
+	// texture's slot. An empty slot keeps whatever was bound there.
+	void Bind() const;
+	// As above, with only the given textures, for shaders that read fewer
+	void Bind(std::initializer_list<ETextureSlot> textureSlots) const;
 		
 private:
 	std::string m_name;
@@ -109,4 +120,8 @@ private:
 	std::array<TypedResourceHandle<Texture2D>, TEXTURE_SLOT_COUNT> m_textures;
 
 	Rendering::ConstantBufferHandle m_paramBuffer;
+
+private:
+	// Binds the texture in a slot, if it has one
+	void BindTexture(ETextureSlot textureSlot) const;
 };

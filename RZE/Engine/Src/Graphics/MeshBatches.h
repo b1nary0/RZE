@@ -17,7 +17,7 @@ struct MeshInstanceFormat;
 // instances and which draws can share a batch.
 //
 // A frame: Clear, Add each draw, Upload, BindInstances, then draw each of GetBatches with
-// Renderer::DrawIndexedInstanced(indexBuffer, InstanceCount, FirstInstance).
+// MeshGeometry::Draw(InstanceCount, FirstInstance).
 class MeshBatches
 {
 public:

@@ -1,15 +1,13 @@
 #include <Graphics/ProbeCapture.h>
 
 #include <Graphics/CubeMap.h>
-#include <Graphics/IndexBuffer.h>
 #include <Graphics/Material.h>
 #include <Graphics/MaterialDefines.h>
 #include <Graphics/MaterialSlot.h>
 #include <Graphics/MeshDraw.h>
+#include <Graphics/MeshGeometry.h>
 #include <Graphics/RenderEngine.h>
 #include <Graphics/Shader.h>
-#include <Graphics/Texture2D.h>
-#include <Graphics/VertexBuffer.h>
 
 #include <Rendering/Renderer.h>
 
@@ -318,21 +316,9 @@ U32 ProbeCapture::Flush(const RenderScene& scene)
 
 		// Only the albedo and the cutout mask are read: the tint from the draw, the rest from its material
 		const MaterialInstance& materialInstance = draw.Slot->GetMaterial();
-		Rendering::Renderer::SetConstantBufferPS(materialInstance.GetParamBuffer(), 1);
-		if (const Texture2D* const diffuseMap = materialInstance.GetTextureResource(TEXTURE_SLOT_DIFFUSE))
-		{
-			Rendering::Renderer::SetTextureResource(diffuseMap->GetPlatformObject(), TEXTURE_SLOT_DIFFUSE);
-		}
-		if (const Texture2D* const opacityMap = materialInstance.GetTextureResource(TEXTURE_SLOT_OPACITY))
-		{
-			Rendering::Renderer::SetTextureResource(opacityMap->GetPlatformObject(), TEXTURE_SLOT_OPACITY);
-		}
+		materialInstance.Bind({ TEXTURE_SLOT_DIFFUSE, TEXTURE_SLOT_OPACITY });
 
-		const MeshGeometry& meshGeometry = *draw.Geometry;
-		const Rendering::IndexBufferHandle& indexBuffer = meshGeometry.GetIndexBuffer()->GetPlatformObject();
-		Rendering::Renderer::SetVertexBuffer(meshGeometry.GetVertexBuffer()->GetPlatformObject(), 0);
-		Rendering::Renderer::SetIndexBuffer(indexBuffer);
-		Rendering::Renderer::DrawIndexedInstanced(indexBuffer, batchDraw.InstanceCount, batchDraw.FirstInstance);
+		draw.Geometry->Draw(batchDraw.InstanceCount, batchDraw.FirstInstance);
 	}
 
 	return static_cast<U32>(batch.Draws.size());

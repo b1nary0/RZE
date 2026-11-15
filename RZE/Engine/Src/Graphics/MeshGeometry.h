@@ -63,6 +63,10 @@ public:
 	const std::shared_ptr<VertexBuffer>& GetVertexBuffer() const;
 	const std::shared_ptr<IndexBuffer>& GetIndexBuffer() const;
 
+	// Binds its vertices and indices and draws them instanced: instanceCount instances from firstInstance in the
+	// instance stream bound beside them. After AllocateData.
+	void Draw(U32 instanceCount, U32 firstInstance) const;
+
 private:
 	void CalculateBounds();
 	// Its vertices and indices are on the GPU, and the CPU copies are gone
