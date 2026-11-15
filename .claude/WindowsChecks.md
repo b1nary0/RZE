@@ -1,8 +1,20 @@
 # Windows checks
 
-Checks that only a Windows machine can do, for changes made and tested on Linux. **Linux Claude maintains this file**:
-it adds a check for every change it can't verify on Windows, and removes checks once their results are in. **Windows
-Claude runs them** when the user asks ("follow `.claude/WindowsChecks.md`").
+Checks that only a Windows machine can do, for changes made and tested on Linux. **The checks themselves are Linear
+issues** in the RZE team's **Windows** project, titled `[Windows] Check <ID>: ...`. Each is a sub-issue of one of these
+parents (the same groups this file used to hold):
+
+- **RZE-225** Checks, harness: changes made on Linux (the `driver.ps1 -Harness` checks)
+- **RZE-226** Checks, hands-on session 1: Visual Studio and the debugger (person)
+- **RZE-227** Checks, hands-on session 2: the Game (person)
+- **RZE-228** Checks, hands-on session 3: the Editor with real input (person)
+- **RZE-229** Checks, hands-on session 4: CubeMap on DX11 (person)
+
+This file keeps how to run them and the steps every run starts with. **Linux Claude maintains both**: it adds a check
+issue for every change it can't verify on Windows, and closes it once it passes. **Windows Claude runs them** when the
+user asks ("follow `.claude/WindowsChecks.md`"). Windows Claude reads and updates the issues through the Linear MCP
+server (`linear`, registered at user scope with `claude mcp add`); if its tools aren't available, stop and ask the user
+to set it up rather than working from an old copy of the checks.
 
 ## How to run this file (Windows Claude)
 
@@ -10,17 +22,19 @@ Claude runs them** when the user asks ("follow `.claude/WindowsChecks.md`").
    put it back after the pull: the pull that untracks it deletes it (or stops, if it has local changes). Then
    `git pull`, then note the commit you're testing (`git log -1 --oneline`). If a check compares against the old build
    (e.g. a burn's hashes), do its "before" part now, with the binaries already in `_build`, before building.
-2. Do the checks in **To check**, in order. Use the `run-rze` skill (`driver.ps1`, `-Harness` where a check doesn't
-   need the real mouse) for anything in the Editor. `driver.ps1` backs up `RZE/Config/imgui.ini` (local and untracked)
-   at `launch` and puts it back after the session; if you start the Editor any other way, back it up first and restore
-   it at the end (CLAUDE.md). Group checks that use the same scene and configuration into one session.
-3. Record each result in **Results**: the check's ID, the date, the commit, `pass` / `fail` / `skipped`, and what you
-   saw. For a failure, give the exact error, the screenshot's path, or the log lines. Report failures; the user decides
-   who fixes them.
-4. Remove checks that passed from **To check**, and adjust any whose steps no longer match the code. Don't commit
-   unless the user says so (CLAUDE.md).
+2. Do **Every run** below, then the open check issues: the sub-issues of RZE-225, then the hands-on sessions
+   (RZE-226 to RZE-229), each in identifier order. Use the `run-rze` skill (`driver.ps1`, `-Harness` where a check
+   doesn't need the real mouse) for anything in the Editor. `driver.ps1` backs up `RZE/Config/imgui.ini` (local and
+   untracked) at `launch` and puts it back after the session; if you start the Editor any other way, back it up first
+   and restore it at the end (CLAUDE.md). Group checks that use the same scene and configuration into one session.
+3. Record each result as a **comment on its issue**: the date, the commit, `pass` / `fail` / `skipped`, and what you
+   saw. For a failure, give the exact error, the screenshot's path, or the log lines. Record **Every run**'s results
+   (A1, A2, A3, Smoke) in one comment on RZE-225. Report failures; the user decides who fixes them.
+4. Leave the issues open, and their state alone: Linux Claude reads the comments and closes the checks that passed,
+   or turns a failure into a work item. If a check's steps no longer match the code, say so in its comment. Don't
+   commit unless the user says so (CLAUDE.md).
 
-Checks marked **(person)** need someone at the machine (judging a picture, a GUI tool, a physical key, a debugger): do
+Hands-on sessions (person) need someone at the machine (judging a picture, a GUI tool, a physical key, a debugger): do
 what you can, then list the rest for the user.
 
 Things to know on this machine (2026-11-10):
@@ -31,396 +45,23 @@ Things to know on this machine (2026-11-10):
 - `driver.ps1` has no `move` command (`driver.py` has one). To hover the scene view without clicking, use
   `scroll -X <x> -Y <y> -Notches 0`. The Editor only takes keys (W/E/R, Esc) while the pointer is over the scene view.
 
-## To check
-
-### Every run: build and tests
+## Every run
 
 - **A1. Generate and build.** `GenerateSolutions.bat`, then build Debug, Development and Retail (`/W3 /WX`). Expect no
   errors or warnings.
 - **A2. Unit tests.** `UnitTests.exe` in `RZE\_build\debug`, `development` and `retail`: exit code 0. Afterwards
   `RZE\_build\debug\ProjectData` and `RZE\_build\development\ProjectData` don't exist. Expected now: 493 test cases
   in Debug and Development, 485 in Retail. Linux runs 9 more, in `Utils\Linux` and `Rendering\OpenGL`, which Windows
-  doesn't build. The counts in the checks below are Linux's from when each was written; this one is current.
+  doesn't build. The counts in the check issues are Linux's from when each was written; this one is current.
 - **A3. Burn.** `RZE\_build\debug\SourceAssetBurner.exe`: exit code 0, no `[Error]` line.
 - **Smoke.** `driver.ps1 launch -Harness -Config debug -Scene Sponza.scene -SettleSeconds 20 -AppArgs
   '-gfxliveobjects'`, `shot`, `close`: the scene renders, `closed code=0`, the log has no `[Error]` line and ends
   "encountered 0 live resources". Shaders compile at start-up, so this is where an fxc failure shows. **A8.4:** the log
   also says "No D3D11 objects outlived shutdown besides the device."
 
-### Harness checks for new changes
+## Earlier results
 
-- **D13. The render command arena is 256 MB a buffer** (`MEM_ARENA_SIZE`, `Renderer.cpp`). The 64 MB version passed at
-  a979e2f1 (D13 in Results); this branch raised it to 256 MB, as one load step can need more, and the merge kept
-  that. 1: Sponza settled 20 s, Debug and Development: private bytes about 384 MB (2 × 192) above the D13 row's (so
-  about 1970 and 1963 MB); working set about the same, as only what's written is touched. 2: the status bar reads
-  `/ 256.00 MB`, the peak still about 12090 KB on Sponza. 3: Debug `Mountain.scene` (its mesh is the largest single
-  load step, 28821 KB peak on Linux) loads and shows the terrain. 4: no `arena was full`, `exceeds the arena` or
-  `too large to upload` line in any of these logs. 5: `closed code=0`, 0 live.
-- **A15. No C4748 suppression.** `RZE_PRAGMA_OPTIMIZE_OFF/ON` (`Platform.h`) is now only `optimize("", off/on)`: A13
-  saw no C4748 on x64 without the suppression, and Microsoft's current warning tables (MSVC 14.0 on) don't list it. 1:
-  A1's Development build compiles `OptimizationSwitchTests.cpp` with no C4748 and passes `-tc="RZE_DISABLE*"`. 2:
-  temporarily wrap `Octahedral::Decode` in `RZE_DISABLE_OPTIMIZATION` / `RZE_ENABLE_OPTIMIZATION` (as A13.3 did), build
-  Development: no warning; revert and rebuild.
-- **A16. RZE_DEVEL is the root switch; RZE_Config.h is gone.** `DebugConfig.h` defines `RZE_DEVEL` (Debug and
-  Development), and every switch there, plus the new `RZE_DEBUG_DRAW_ENABLED` (`RenderEngine.cpp`), comes from it.
-  `RZE_Config.h` (its always-1 `RZE_DEBUG`) and `EnginePCH.h`'s DebugServices include were deleted. 1: A1's three
-  builds cover the deleted header and PCH include (MSVC's PCH differs from clang's). 2: A2's counts match Linux:
-  436 test cases in Debug and Development, 435 in Retail. 3: Development DrawLineTest shows the grid and axis lines
-  (debug lines), and Retail `Game.exe -scene DrawLineTest.scene` runs with `closed code=0`.
-- **A17. The Object Browser draws only the rows in view.** `ObjectBrowserPanel::Draw` walks the tree with an
-  `ImGuiListClipper` (ImGui's large-tree pattern); open parents scrolled off are `TreePush`ed by the walk, not drawn.
-  Platform-neutral ImGui code, so only a smoke test, in **Debug** (ImGui's asserts: ID stack, tree push/pop balance): 1:
-  RenderPerfTest, scroll the Object Browser to the bottom (last row is the last pillar) and back to the top: no assert,
-  rows shaded alternately throughout. 2: DrawLineTest, drag M4 onto NeckMech, expand NeckMech: M4 shows under it,
-  indented one level; scroll so NeckMech is just off the top if the panel allows, M4 stays indented; Ctrl+Z puts M4 back
-  as a root. `close` gives `closed code=0`.
-- **A18. OscillatorComponent, a development-only component.** New `Engine/Src/Game/World/GameObjectComponents/
-  OscillatorComponent.{h,cpp}`, the whole file inside `#ifdef RZE_DEVEL`, registered in `EngineApp.cpp` the same way.
-  Run `GenerateSolutions.bat` first (new files). 1: A1's three builds (MSVC compiles the empty Retail translation unit
-  and the `std::fmod`/`std::sin` code). 2: tests: 443 test cases in Debug and Development (7 new, `-sf="*Oscillator*"`),
-  435 in Retail. 3: Retail `Game.exe` has no `OscillatorComponent` (e.g. `findstr /m OscillatorComponent
-  RZE\_build\retail\Game.exe` finds nothing). 4: Development Editor, open any scene, Add Component > OscillatorComponent
-  on an object: it bobs 1 m up and down every 2 s; untick Enabled, it goes back to where it was. Ctrl+Z, close without
-  saving. Also new: Optick scopes in `ObjectBrowserPanel::Draw`, `SceneViewPanel::PreRender` and `DrawObjectIcons`,
-  covered by the builds.
-- **A19. GameObject keeps its TransformComponent.** `GetComponent<TransformComponent>` returns a pointer kept as the
-  component is added (an `if constexpr` branch in the `GameObject.h` template, with the search in its `else` so MSVC
-  doesn't warn C4702 for unreachable code), `IsRoot()` reads the object's own parent, and removing a TransformComponent
-  asserts and is refused. Run `GenerateSolutions.bat` first (new test file). 1: A1's three builds, no C4702 or other
-  warnings. 2: 446 test cases in Debug and Development, 438 in Retail (3 new, `-sf="*GameObjectTransform*"`). 3:
-  Development DrawLineTest, drag M4 onto NeckMech in the Object Browser: M4 goes under it and stays where it was in the
-  world; Ctrl+Z puts it back as a root. No asserts in the log, `close` gives `closed code=0`.
-- **A20. Engine.h's "include-before issue" is gone.** The comment above `#include <Events/EventHandler.h>` in
-  `Engine/Src/EngineCore/Engine.h` was deleted after clang compiled `EventHandler.h` on its own and `Engine.h` with that
-  include moved to the top. Check MSVC the same way: temporarily move `#include <Events/EventHandler.h>` above
-  `#include <Utils/Platform/File.h>` in `Engine.h`, build Development (A1): no errors or warnings. Put the line back
-  (`git checkout -- RZE/Engine/Src/EngineCore/Engine.h` after `git status --short`, then `touch` it).
-- **A21. Every path written into a file is in the serialized form (`\`).** Mesh assets' material paths, material
-  assets' texture paths, Game.ini's Icon and the trash's `Original` records now go through
-  `Filepath::GetSerializedPath()`; `MeshAssetImporter` names a material by `Filepath::GetStem()`. 1 (before building):
-  copy `RZE\ProjectData` aside. 2: build, then A3's burn, and compare with the copy: the same files and sizes; on
-  Windows only `.meshasset` files should differ (their material paths had `/`; texture paths were already `\` here),
-  and only by `/` becoming `\`. 3: 449 test cases in Debug and Development, 441 in Retail. 4: Development Editor on
-  RenderPerfTest.scene (pillars keep their own tints: the `DefaultMaterial` overrides found their slot) and
-  Sponza.scene (textured), no errors in the log, `close` gives `closed code=0`.
-- **A22. Asset writers report a file they couldn't open.** `AssetWriter::Write` returns bool; the mesh and material
-  writers, the burner's embedded-texture write and `GameScene::Serialize` check `File::Open`. 1: 451 test cases in
-  Debug and Development, 443 in Retail (2 new: a writer whose file is blocked by a folder returns false). 2: Mark
-  `RZE\ProjectData\Material\Cube\DefaultMaterial.materialasset` read-only (Properties > Read-only), run A3's burn:
-  exit code 1, `[Error] MaterialAssetWriter : ... not written: it couldn't be opened for writing.` and `1 of N
-  sources failed`. Clear Read-only and burn again: exit 0. 3: Development Editor, DrawLineTest.scene: change NeckMech's
-  Rotation Y, Ctrl+S (the file has the new value, no `.tmp` left in `Assets\Scenes`), Ctrl+Z, Ctrl+S: `git status`
-  shows the scene unchanged.
-- **A23. A failed scene save stays unsaved.** `GameScene::Serialize` returns bool and takes the new path only once it's
-  written; `SceneDocument::Save`/`SaveAs` mark it saved only then, and `SaveWithPrompt` passes the result on. 1: 452
-  test cases in Debug and Development, 444 in Retail. 2: Development Editor, DrawLineTest.scene, with a folder made
-  at `RZE\Assets\Scenes\DrawLineTest.scene.tmp`: change Rotation Y, Ctrl+S: `[Error] Couldn't save scene ...`, the
-  title keeps its `*`, the file is unchanged. Close the window, choose Save in the prompt: the Editor stays open. Also
-  on Windows only: delete the folder, open `DrawLineTest.scene` in another program that locks it (or set it
-  read-only), Ctrl+S: `Couldn't save scene`, still `*`. Then unlock, Ctrl+S, Ctrl+Z, Ctrl+S: `git status` shows the
-  scene unchanged.
-- **A24. No friend between the application and the engine.** `RZE_Application::Initialize(Window&)` is public and
-  calls the virtual `OnInitialize`, which `EditorApp` and `GameApp` now override instead of `Initialize`. 1: 452 test
-  cases in Debug and Development, 444 in Retail (MSVC builds `EditorApp`/`GameApp` with the new override). 2:
-  Development Editor, DrawLineTest.scene: the custom title bar, maximized, the Scene View draws the scene; the log has
-  `RZE_Application::Initialize() called.` once. The Game: the scene draws and the window has the game's icon.
-- **A25. Object Browser: create and rename in place.** Create GameObject makes `GameObject` and puts a text box over
-  its row; F2 and the row menu's Rename open the same box. 1: 452 test cases in Debug and Development, 444 in Retail.
-  2: Development Editor, DrawLineTest.scene: right-click empty space in the Object Browser > Create GameObject: a
-  `GameObject` row with its name selected in a box; type `Crate`, Enter: renamed. Ctrl+Z gives `GameObject` back,
-  Ctrl+Z again removes it. A second create while `GameObject` exists is `GameObject (1)`. Escape, or a click
-  elsewhere, keeps the name; Backspace then Enter keeps the box open with a red border. Stress2500.scene: click the
-  first row, scroll the panel down a long way, F2: the panel scrolls back to it with the box focused. Undo
-  everything; `git status` shows the scenes unchanged.
-- **A26. ScenePanel is now ObjectBrowserPanel ("Object Browser").** The files moved, so run `GenerateSolutions.bat`
-  first; the build must not still list `ScenePanel.cpp`. 1: 452 test cases in Debug and Development, 444 in Retail. 2:
-  Development Editor: the panel is titled "Object Browser" and View > Windows lists it. If this machine's
-  `RZE\Config\imgui.ini` still names it `[Window][Scene]`, it opens floating once: dock it top-right (above Object
-  Inspector) and the layout keeps it. With no `imgui.ini`, the default layout docks it there.
-- **A27. Object Browser: Add GameObject button.** The panel has a toolbar (its menu bar) with an "Add GameObject" button
-  at its right end, in the same place with or without the scrollbar; the rows sit below it. 1: 452 test cases in Debug
-  and Development, 444 in Retail. 2: Development Editor, Stress2500.scene: click Camera, scroll the panel to the bottom:
-  the toolbar stays put. Click Add GameObject: a `GameObject` row at the bottom, scrolled into view, its name in a
-  focused box; type `Probe`, Enter. Ctrl+Z twice, Ctrl+Y twice: `GameObject`, gone, `GameObject`, `Probe`. Click the
-  toolbar to the left of the button: `Probe` stays selected. DrawLineTest.scene: a click on the empty space under the
-  rows clears the selection; a right-click there still opens Create GameObject. Undo everything and close with Don't
-  Save. The rows moved down, so re-measure the Object Browser coordinates in the run-rze skill's Windows table.
-- **A28. `imgui.ini` is untracked; the drivers handle there being none.** 1: after the pull (step 1 above),
-  `git status --short` doesn't list `RZE/Config/imgui.ini`, and `git check-ignore RZE/Config/imgui.ini` prints it. 2:
-  copy `RZE\Config\imgui.ini` to `%TEMP%\imgui.ini.mine` and delete it. `driver.ps1 launch -Harness -Scene
-  DrawLineTest.scene`: the default layout (Scene View, Object Browser top right, Object Inspector below it, Content
-  Browser and Log as bottom tabs). `close`: `closed code=0 (harness); imgui.ini restored`, and there's no
-  `RZE\Config\imgui.ini` and no `%TEMP%\rze-driver\imgui.ini.absent` afterwards. Copy `imgui.ini.mine` back, then
-  `launch` and `close` again: the file is the same as `imgui.ini.mine` (`fc /b`).
-- **A29. Selected objects are outlined (OutlineRenderStage).** New files, so run `GenerateSolutions.bat` first. 1: A2's
-  counts (8 tests are new: `-sf="*SelectionOutline*,*RenderView*"` runs them). The shader translation tests aren't built
-  on Windows, so check the log has no shader compile error for `Pixel_OutlineMask` or `Pixel_Outline`. 2: Development
-  Editor, DrawLineTest.scene: the log's `Render pipeline:` line has `DebugDrawRenderStage -> OutlineRenderStage ->
-  ImGuiRenderStage`. Click M4: a yellow line about 3 px wide around its silhouette, and the Mesh Bounds checkbox stays
-  off (no wire box); the slots through its stock are traced too, as on Linux. Click empty space: no line. Drag M4 onto
-  NeckMech in the Object Browser, select NeckMech: both outlined. Undo that, set NeckMech's Position to the point 60% of
-  the way from the editor camera (`EditorCam`) to M4, select M4: where M4 is behind NeckMech its line is faint over
-  NeckMech, full elsewhere. Delete M4 from the row menu: the line goes; Ctrl+Z: it's back. Close with Don't Save. On
-  DX11 the depth comparison and the R32_UINT mask are the cross-API risks: compare against Linux's look.
-- **A30. Harness clicks and drags can hold modifiers (`-Mods`).** `driver.ps1 launch -Harness -Scene
-  DrawLineTest.scene`, then click M4's row: `state` selection is `M4`. `click` NeckMech's row `-Mods ctrl`: the output
-  ends `with ctrl held (harness)` and the selection is `M4, NeckMech`. `click` Camera's row `-Mods shift`: a range from
-  NeckMech up to Camera. `-Mods ctrl,shift` is accepted as two (PowerShell's `string[]`, sent as a JSON array even with
-  one entry: `-Mods ctrl` must not reach the harness as a string, which it refuses with `"mods" is an array`). With no
-  session, `driver.ps1 click -X 1 -Y 1 -Mods ctrl` stops with `-Mods needs a harness session`. Close.
-- **A31. Outlines are made of shapes (`RenderOutlineObject::Shape`), each edged on its own.** A new test file, so run
-  `GenerateSolutions.bat` first. 1: A2's counts (7 test cases are new: `-tc="Outlined objects*"` runs them). 2: the
-  log has no shader compile error for `Pixel_OutlineMask` or `Pixel_Outline` (the mask now packs a shape ID in its top
-  23 bits, and the outline pass declares the mask's depth at t1). 3: A29's M4 and NeckMech checks look as they did:
-  the Editor still puts the whole selection in shape 0, so nothing on screen changes yet. The mask depth read is
-  checked with the next item.
-- **A32. Each selected object is outlined on its own, also inside or in front of another.** 1: A2's counts (3 test
-  cases are new: `-tc="*SelectionOutline*,*selected*"`). 2: `driver.ps1 launch -Harness -Scene Sponza.scene
-  -SettleSeconds 20 -AppArgs '-gfxvalidation'`: click Tank's row, then Sponza's with `-Mods ctrl`. Tank has its line
-  (before this change it had none): outside Tank against the floor, and on Tank's side along the green banner that's
-  in front of it, the same width (about 3 px) on both. The log has no D3D11 error or warning about a resource bound
-  as an input and as a depth target (the mask's depth is read at t1). 3: DrawLineTest, NeckMech's Position set to
-  (12.98, 9.77, -15.79) so it's in front of M4; click M4, then NeckMech with `-Mods ctrl`: NeckMech's edge over M4 has
-  a line, as on Linux. Undo the edits and close with nothing to save.
-- **A33. The merge of origin's shutdown and probe work (ad7edf72) is repaired.** Its conflicts had been settled by
-  taking one side: `RenderView::ReleaseStageState` and `RenderPipeline`'s `RenderWorkCounts` argument are back, on
-  the renamed `m_frameBlackboard`/`m_persistentBlackboard`; `OscillatorComponent` is this branch's (Axis, Amplitude,
-  Period, Phase, Origin, `RZE_DEVEL` only), registered once, and `RenderPerfTest.scene`'s two oscillators are in its
-  format. 1: A1's three builds (MSVC compiles `RenderView.cpp` and `RenderPipeline.cpp` as merged). 2: A2's counts.
-  3: the Smoke check, with `-gfxliveobjects`: "No D3D11 objects outlived shutdown besides the device." (the thumbnail
-  view's `ReleaseStageState` is what this needs). 4: Development Editor, `RenderPerfTest.scene`: tick Enabled on
-  PointLight_Shadowed_0's and Nanosuit_0's OscillatorComponent: the light swings 4 m along Z every 6 s, Nanosuit 2 m
-  along X every 4 s, and the status bar's Scene updates count probe captures and shadow faces. Untick both: each is
-  back where it started. Ctrl+Z twice, close with nothing to save.
-- **A34. Perf capture columns, per-stage draw calls and GPU times, `-framescene`** (branch
-  `look-what-claude-can-do-batch-refactor`, draw batching Steps 0 and 0b). New files (`GPUTimer`, `GPUTimestamps.h`,
-  `DX11GPUTimestamps`), so run `GenerateSolutions.bat` first. **`DX11GPUTimestamps.cpp` was never compiled on Linux:**
-  check it first. 1: A1's three builds; A2's counts (5 new `GPUTimer` cases, which Windows builds too). 2: Development
-  Editor on the desktop (not harness): `driver.ps1 launch -Scene RenderPerfTest.scene -AppArgs '-framescene
-  -perfcapture %TEMP%\rze-perf\rpt.csv -perfwarmup 25 -perfduration 15 -vsync 0'` (make the folder first): the camera
-  glides to frame the whole grid, and the Editor exits by itself; `rpt.csv` starts
-  `frameMs,updateMs,recordMs,renderBusyMs,renderPresentMs,gpuMs,drawCalls`, its `gpuMs` above 0 and below `frameMs`;
-  `rpt.csv.stages.csv` has `stage,timeMs,drawCalls,gpuMs` rows, DepthPrepassStage and ForwardRenderStage at about 947
-  and 950 draw calls (Linux's, framed). 3: Editor, `RenderPerfTest.scene`, hover the status bar's frame stats: every
-  stage shows "..., N ms on the GPU", the ones that draw meshes their draw calls too, and under Render thread "N ms of
-  each frame on the GPU, up to presenting"; the forward pass's GPU time is the largest. 4: Debug with `-gfxliveobjects`
-  (the Smoke check): "No D3D11 objects outlived shutdown besides the device." (the timestamp queries are released on
-  the render thread). 5: **measured, for the later A/B (DX11 baseline):** generate `Stress2500.scene` (`python
-  Tools\StressScene\GenerateStressScene.py 2500`), then two captures each of RenderPerfTest and Stress2500 as in 2
-  (with `-framescene`), alternated, on the desktop: record each column's mean and p95, and the prepass/forward/shadow
-  draws, record and GPU times.
-- **A35. Line endings from `.gitattributes`** (LF everywhere, CRLF for `.bat`). A **fresh clone** (not this working
-  copy: an existing checkout keeps its old endings until files are checked out again), whatever `core.autocrlf` is
-  set to: 1: `git status` is clean straight after cloning. 2: `git ls-files --eol` shows `w/lf` for sources (`.h`,
-  `.cpp`, `.hlsl`, `.cs`) and `w/crlf` for `RZE\BuildGame.bat`. Vendored paths (`RZE\Externals`, `RZE\ThirdParty`,
-  `SMAA.hlsl`, `Tools\Assimp`, `Optick`, `Sharpmake`) show `attr/-text` and keep their committed endings, so the four
-  SMAA files stay `w/crlf`; any other `w/crlf` is a fail.
-  3: `GenerateSolutions.bat` and `BuildGame.bat` run as before. 4: A1's three builds and A2's tests from that clone.
-  5: Open a `.cpp` in Visual Studio, edit and save it: `git diff` shows only that edit, not every line (VS keeps LF
-  files LF).
-- **A36. Instanced mesh vertex path in the depth prepass and forward pass** (draw batching Step 1: `MeshBatches`,
-  `Vertex_MeshInstanced.hlsl`, `Common/MeshVertex.hlsli`). New files, so run `GenerateSolutions.bat` first. 1: A1's
-  three builds; A2's counts (4 new `MeshBatches` cases). 2: Debug Editor (validation on) on `Sponza.scene` and
-  `RenderPerfTest.scene`, harness, 20 s: the log has no `doesn't take the vertex layout`, no `CreateInputLayout`
-  failure and no `D3D11 (` error for the new input layout (12 elements, `WORLDA..D` / `INVWORLDA..D` in slot 1);
-  Sponza and the RenderPerfTest pillars render as before (shaded, shadowed, nothing stretched or missing: a transposed
-  matrix shows as geometry flung across the screen). 3: **identical images:** with `AutoExposure=0` in `Engine.ini`
-  (put it back after), `shot` RenderPerfTest and Sponza with this commit and with the commit before (each with
-  `-framescene`, and once from the scene's camera): pixel-identical scene views (two runs of one build were identical
-  on Linux once auto exposure was off). 4: the status bar's DepthPrepassStage and ForwardRenderStage draw calls match
-  before and after (Linux, framed RenderPerfTest: ~947 / ~950). 5: Debug with `-gfxliveobjects`, closed: "No D3D11
-  objects outlived shutdown besides the device." (the instance buffers).
-- **A37. Grouped mesh batches** (draw batching Step 2: draws with the same geometry and material are one instanced
-  draw). No new files. 1: A1's three builds; A2's counts (7 `MeshBatches` cases, 3 more than A36). 2: Development,
-  framed (`-framescene`), the status bar's draw calls: RenderPerfTest's DepthPrepassStage **~25** (Linux 25, was
-  ~947) and ForwardRenderStage **~912**; `Stress2500.scene` (generate it as in A34) DepthPrepassStage **~32** and
-  ForwardRenderStage **~350** (one a blended draw: those are never grouped). Linux's in brackets; DX11 should match.
-  3: **images:** as A36.3, but shoot the commit before and this one **back to back**, not against older shots (on
-  Linux an image shifted between sessions hours apart with the same code). Expect identical images, except a few
-  pixels one level apart on Stress2500, where overlapping objects tie and the draw order decides (Linux: 4 framed,
-  1 from the camera). 4: Debug harness on RenderPerfTest: no `D3D11 (` error.
-- **A38. Instanced shadow casters, shared scene walk** (draw batching Step 3: `DepthOnlyMeshBatches`,
-  `RenderScene::ForEachDrawIn`; `Pixel_DepthPrepass.hlsl` and `Pixel_ShadowCaster.hlsl` became
-  `Pixel_DepthOnlyCutout.hlsl`). Files added and removed, so run `GenerateSolutions.bat` first. 1: A1's three builds;
-  A2's counts (2 new `ForEachDrawIn` cases). 2: Debug harness (validation on) on `Sponza.scene` and
-  `RenderPerfTest.scene`, 20 s: no `D3D11 (` error, and none about a pixel shader or input layout while
-  ShadowRenderStage draws with **no pixel shader bound** for opaque casters (new on DX11 for this stage; the prepass
-  already does it). 3: **shadows unchanged:** images as A37.3, back to back against the commit before, framed and
-  from the camera: identical (Linux: 0 pixels on 7 of 8, 4 pixels one level apart on framed Sponza). Look at Sponza's
-  cutout shadows in particular (leaves, chains: cut out, not solid quads) and RenderPerfTest's point-light shadows
-  on every side of a pillar. 4: the status bar's shadow draws while RenderPerfTest loads are far below the commit
-  before (Linux, load + 20 s framed: ~34,400 draws → ~770).
-- **A39. Per-instance material values** (draw batching Step 4: `GraphicsLayouts::MeshInstanceLayout`, 160 B an
-  instance; tint, shininess and opacity left `MaterialBuffer` for the instance stream and `VertexToPixel`;
-  `ProbeCapture` has its own per-draw buffer). `MeshDraw.cpp` is new, so run `GenerateSolutions.bat` first. 1: A1's
-  three builds; A2's counts (4 new cases). 2: Debug harness (validation on) on `Sponza.scene` and
-  `RenderPerfTest.scene`, 20 s: no `D3D11 (` error. Watch for: the input layout's two new elements (`MATERIALA`,
-  `MATERIALB`, 14 in all) not matching `Vertex_MeshInstanced`; a vertex/pixel **signature mismatch** on any pixel
-  shader taking `VertexToPixel` (the three forward ones, `Pixel_DepthOnlyCutout`, `Pixel_PickID`,
-  `Pixel_OutlineMask`) or `CaptureVertexToPixel`, which gained `nointerpolation` members; a constant buffer smaller
-  than a shader expects (`MaterialBuffer` is now 32 B, `CaptureDraw` 160 B at vertex b1 of `Vertex_ProbeCapture`).
-  3: images as A37.3 against the commit before: identical but for run-to-run variation (Linux: 0 pixels on 5 of 8, the rest
-  one level apart on at most 148 pixels; framed Sponza also has 2 pixels 8 apart between some runs of the same
-  build, so repeat a shot before reading a difference into it). RenderPerfTest's pillars keep their
-  tints, the blended ones their see-through look, and the probes' bounce light keeps the tints' colours (it comes
-  through `ProbeCapture`'s new buffer). 4: the status bar's forward draws on framed RenderPerfTest: 912 → 28
-  (Linux). 5: by hand, change a pillar's Tint and Shininess in the inspector: it changes at once, and resetting the
-  override puts it back; picking and the selection outline still work on it.
-- **A40. GPU pipeline statistics per stage** (mesh pass performance Step 1b: `DX11GPUStatistics`, one
-  `D3D11_QUERY_PIPELINE_STATISTICS` a segment; `GPUTimer` became `GPUProfiler`; `-gpustats`, off by default). Files added and
-  renamed, so run `GenerateSolutions.bat` first. 1: A1's three builds, **`DX11GPUStatistics.cpp` compiled for the
-  first time here** (Linux can't build it); A2's counts (7 new `GPUProfiler` cases). 2: Debug harness (validation on)
-  on `Sponza.scene` and `RenderPerfTest.scene`, 20 s: no `D3D11 (` error or warning about a query (Begin while
-  active, End without Begin, GetData on a query that never began). 3: Development, `-framescene -vsync 0
-  -gpustats -perfcapture <file> -perfwarmup 20 -perfduration 5` on `Sponza.scene`: in `<file>.stages.csv`, ForwardRenderStage
-  `triangles` **361805** (Linux GL, exactly the sum of Sponza's index counts / 3), DepthPrepassStage 361593 (forward
-  less `Walker_Glas`, 212), `trianglesInView` equal to `triangles` (framed: all in view), `verticesShaded` about 1.5 a
-  triangle (vertex reuse, which varies by driver: report it, don't fail on it), forward `pixelsShaded` a fraction of
-  PostProcessRenderStage's (3 full-viewport passes). None of the four columns zero in those stages. 4: the same without
-  `-gpustats` (on demand since 1c, so nothing counts in a capture): the four columns are 0. Report run 3's and run 4's
-  mean `gpuMs` (Linux GL: counting adds ~0.08 ms on Sponza, +9.8%; it decided the default). With `-gpustats 0` the log
-  says "GPU pipeline statistics are off (-gpustats 0)". 5: `close` code 0, and with `-gfxliveobjects` (Debug) no `ID3D11Query` outlives shutdown.
-
-- **A41. Frame stats in tables, GPU counts on demand** (mesh pass performance Step 1c: `FrameStatsView`,
-  `RenderCommand_SetGPUStatistics`, `StringUtils.cpp`). Files added, so run `GenerateSolutions.bat` first. 1: A1's
-  three builds. `StringUtils.h` no longer includes `<cstdio>`, `<cstring>` or `<vector>`, so a Windows-only file that
-  leaned on it for those fails here (add the include to that file); A2's counts (2 new `GPUProfiler` cases, 3 new
-  `StringUtils` cases). 2: Debug Editor (validation on) on `Sponza.scene`: hover the frame stats in the status bar.
-  The GPU columns show "…" for about half a second, then counts (forward triangles about 362K from the scene camera);
-  "…" and "—" are drawn, not boxes or "?". Move off, wait, hover again: counts come back. No `D3D11 (` message about a
-  query. 3: while hovering, the columns and the tooltip's edges don't move as the figures change (Linux: every column's
-  right edge the same to the pixel across 3 shots a second apart); the status bar's line keeps its words in place.
-  4: `close` code 0; with `-gfxliveobjects` no `ID3D11Query` outlives shutdown after a hover (the queries are made then).
-- **A42. Mesh batches split into grouping, formats and streams** (mesh pass performance Step 2: `MeshBatchGrouping`,
-  `MeshInstanceFormat`, `MeshInstanceStream`, `Common/MeshInstance.hlsli`). Files added, so run
-  `GenerateSolutions.bat` first. 1: A1's three builds (`ShaderInputLayout` gained a constructor from a vector); A2's
-  counts (1 new `MeshBatches` case). 2: Debug Editor (validation on) on `RenderPerfTest.scene` and `Sponza.scene`,
-  settled: renders as before, and no `D3D11 (` message about the input layout (`Vertex_MeshInstanced` now takes
-  `MeshInstanceInput` from the include; the layout's 14 elements are unchanged). 3: `Vertex_ProbeCapture`'s
-  `CaptureDraw` is now `MeshInstance Draw;`, a struct in a cbuffer: FXC compiles it (no shader compile error in the
-  log), and RenderPerfTest's irradiance and reflection probes light the scene as at 71a50741 (Linux: 0 px different
-  on 4 framed scenes, probe capture counts identical). 4: `close` code 0, 0 live.
-- **A43. Depth-only vertex path** (mesh pass performance Step 3: `Vertex_MeshDepthOnly`, `MeshInstanceFormats::Depth`,
-  `MeshClipPosition` with `precise` in `Common/MeshVertex.hlsli`). 1: A1's three builds; A2's counts (2 new
-  `MeshBatches` cases). 2: Debug Editor (validation on) on `Sponza.scene` and `RenderPerfTest.scene`: no shader
-  compile error (FXC takes `precise` on locals), and no `D3D11 (` message about an input layout: the Depth format's
-  names only POSITION and UV of the 44-byte vertex, then four `R32G32B32_FLOAT` columns 12 bytes apart. 3: **the
-  prepass's and forward's depths are equal on DX11**, which only `precise` guarantees there (GL also marks the
-  position invariant): temporarily change `DX11Device`'s `ReadOnlyLessEqual` comparison to `D3D11_COMPARISON_EQUAL`,
-  then compare framed shots of `Sponza`, `RenderTest`, `RenderPerfTest` and `Stress2500` against the same build with
-  `LESS_EQUAL`: 0 px different (Linux: 0 on all 4; a z nudged by ~5 ULPs dropped 260K px, so the test catches it).
-  Revert. If any differ, report the count and where; no holes may show in the normal build either. 4: shadows and
-  cutouts (Sponza's leaves and chains) look as before; `close` code 0, 0 live.
-- **A44. Math types' one-statement functions inline** (mesh pass performance Step 4.1: getters, setters,
-  constructors and one-expression operators of `Vector3D`, `Vector4D`, `Plane`, `BoundingBox`, `Matrix4x4` and
-  `VectorUtils::Dot/Min/Max` moved to their headers as `inline`; `Plane.cpp` deleted). 1: `GenerateSolutions.bat`
-  (a file was removed), then A1's three builds: 0 warnings (MSVC sees the bodies in many more files now). 2: A2's
-  counts (no new cases). 3: Development `Editor.exe` with `/Ob2`: `dumpbin /disasm` of `Frustum::Intersects` calls
-  nothing (Linux: no call left, and none of `Vector3D::X`, `Plane::SignedDistance`, `BoundingBox::IsEmpty`,
-  `VectorUtils::Min` exists as a symbol). 4: framed shots of `Sponza`, `RenderTest`, `RenderPerfTest` and
-  `Stress2500` against the commit before: 0 px different (Linux: 0 on all 4).
-- **A45. Cull cache shared by the mesh passes** (mesh pass performance Step 4a: `VisibleDrawsCache`,
-  `RenderContext::GetVisibleDraws`, `RenderScene::CollectDrawsIn` in place of `ForEachDrawIn`, a "Culling" row in the
-  stage stats; results handed out as `MeshDrawSpan`s). 1: `GenerateSolutions.bat` (files were added), then A1's three builds: 0 warnings. 2: A2's counts (5
-  new cases). 3: framed shots of `Sponza`, `RenderTest`, `RenderPerfTest` and `Stress2500` against the commit before:
-  0 px different (Linux: 0 on all 4), shadows from the sun and the point lights included. 4: the Frame Stats panel's
-  stage table starts with a Culling row (record ms only, the rest 0); each stage's draws and instances are as before
-  (Linux: equal on Sponza, RenderPerfTest and Stress2500). `close` code 0.
-- **A46. Pick and Outline on instance batches; the ObjectBuffer is gone** (mesh pass performance Step 5:
-  `IDMeshBatches`, `MeshInstanceFormats::ID`, `Vertex_MeshID.hlsl`; `Vertex_NewRenderer.hlsl`, `VertexResources.hlsli`'s
-  `ObjectBuffer` and `VertexShader::GetWorldMatrixBuffer` deleted; `Vertex_Line` uses world positions directly). 1:
-  `GenerateSolutions.bat` (files were added), then A1's three builds: 0 warnings. 2: A2's counts (3 new
-  `MeshBatches` cases). 3: Debug Editor (validation on) on `Sponza.scene` and `RenderPerfTest.scene`: no shader compile
-  error and no `D3D11 (` input-layout message. The ID format is the Depth format's elements, then `IDLOW` and
-  `IDHIGH` as `R32_UINT` in slot 1 at offsets 48 and 52, read as `uint` (a mixed float/uint instance layout), and
-  `Vertex_MeshID` hands a `nointerpolation uint2` to the pixel shaders. 4: click objects in the scene view (Sponza's
-  Nyra, Tank, Nanosuit; a RenderPerfTest pillar; a potted plant's leaf and the gap beside it): each click selects the
-  object under the cursor, and a click through a cutout's gap selects what's behind it, as before (Linux: 720
-  clicks on 3 scenes, the same selection as the commit before on every one). 5: the selection outline is drawn on
-  one object and on three ctrl-clicked ones, the occluded part fainter, as before (Linux: 0 px different on Sponza,
-  RenderTest, RenderPerfTest and Stress2500, framed and scene camera). 6: DrawLineTest's grid and axis lines as
-  before (Linux: 0 px). `close` code 0.
-- **A47. Render stats only in Debug and Development** (mesh pass performance S0a: `RZE_RENDER_STATS` in
-  `DebugConfig.h`; the GPU profiler, `DX11GPUTimestamps`/`DX11GPUStatistics`, `DX11Device::CreateGPUTimestamps`/
-  `CreateGPUStatistics`, `Renderer`'s draw counts and GPU scopes, the render thread's stats, `RenderStats`,
-  `FrameTimeCapture` and the frame-stats tooltip's rendering half compile out of Retail). 1: A1's three builds: 0
-  warnings. Retail now compiles four DX11/stats `.cpp` files to empty objects: no `C4206` or other warning. 2: A2's
-  counts: Debug and Development unchanged, Retail 15 fewer (`GPUProfilerTests`' 14 and `VisibleDrawsCache counts time
-  only while culling`). 3: Development Editor on `Sponza.scene`: the status bar reads "ms · FPS · idle … ms · render …
-  ms" and its tooltip has the stage table with GPU counts, scene updates and render thread, as before. 4: Retail
-  Editor on `Sponza.scene` with `-gpustats -perfcapture <file>`: runs, no capture file is written, the status bar
-  ends at "idle … ms", the tooltip has only the main-thread table; `close` code 0. 5: a Development
-  `-perfcapture <file> -gpustats -perfwarmup 1 -perfduration 2` run still writes `<file>` and `<file>.stages.csv` with
-  GPU counts.
-
-### Hands-on session 1: Visual Studio and the debugger (person)
-
-One Visual Studio session covers these. Each temporary edit is reverted (`git status --short` first, then
-`git checkout -- <that file>`) and rebuilt before the next.
-- **A9.4. The Development assert box.** Temporarily add `AssertMsg(false, "probe");` at the top of
-  `EditorApp::Initialize`, build Development, run `RZE\_build\development\Editor.exe` under the debugger: a box titled
-  "RZE: Assertion Failed" with the expression, file and line. Retry stops in the debugger on that line, and Ignore
-  carries on to the Editor. Then run it without a debugger and press Abort: the process ends.
-- **A12.4.** Pick Development in the configuration list, close the solution and open it again: Development is still
-  selected.
-- **A13.3 (debugger part).** Temporarily wrap `Octahedral::Decode` (`Utils/Src/Utils/Math/Octahedral.cpp`, include
-  `<Utils/DebugUtils/Debug.h>`) in `RZE_DISABLE_OPTIMIZATION` / `RZE_ENABLE_OPTIMIZATION`, each on its own line, and
-  build Development. Break in `Decode` (`UnitTests.exe -tc="Directions come back*"`): Locals shows `x`, `y`, `z`,
-  `fold` and `point` with values at every line, while a breakpoint in `Encode` shows its locals optimized away. (The
-  Retail `static_assert` and the Development build passed 2026-11-08.) Development now inlines any function (`/Ob2`,
-  F2), so this macro is the only way to step one through.
-
-### Hands-on session 2: the Game (person)
-
-`RZE\_build\debug\Game.exe`, then the Development and Retail builds.
-- **C12. Keyboard and mouse separately.** Debug: F1 / F2 / F3 resize the window to 1280x720 / 1600x900 / 1920x1080;
-  holding W, A, S, D flies the camera; with the pointer over ImGui's demo window, F1 still resizes; Escape quits with
-  exit code 0. Repeat the resize, WASD and Escape with `RZE\_build\development\Game.exe`.
-- **C11. The camera keeps the window's shape.** Drag a window edge to make it much wider, then much taller: Nyra keeps
-  her proportions, never stretched.
-- **C13.3.** Right after launch, hold W without touching the mouse: the camera moves straight ahead.
-- **A13.4 (Retail part).** `RZE\_build\retail\Game.exe -scene DrawLineTest.scene` shows the scene with no ImGui.
-  (Development showing the ImGui demo window over DrawLineTest passed 2026-11-08, from the Editor's Launch Game.)
-- **A8.5.** Each Game run above ends with the newest `RZE\Logs\RZELOG_*.txt` saying "encountered 0 live resources".
-- **C7 (Game part).** A Game built with an icon set in Project Settings shows that icon.
-
-### Hands-on session 3: the Editor with real input (person)
-
-`driver.ps1 launch -Scene DrawLineTest.scene` (not `-Harness`), then use the Editor by hand.
-- **C1. Startup.** The splash shows with its status text, then the Editor appears with no white flash. **E3:** while
-  the splash shows, the taskbar entry already says `RZEStudio`.
-- **C2. Title bar.** Dragging the menu bar moves the window and Aero Snap works. Double-clicking it maximizes and
-  restores. Hovering maximize shows the Snap Layouts flyout. Minimize, maximize and close work.
-- **C3. Sizes.** Restore, then maximize: the same sizes as before the SDL port (maximized to the work area without
-  covering the taskbar). Resizing from each edge and corner works.
-- **C4. Keyboard.** WASD moves the editor camera. Typing into a field works, with Ctrl+A, Ctrl+C and Ctrl+V. Alt menu
-  mode and Alt+Space work. Alt and F10 now reach the Editor: note whether anything reacts badly.
-- **C5. Mouse.** The wheel zooms the scene view. The back and forward buttons are seen. Cursor shapes change: resize
-  arrows on panel splitters and window edges, the I-beam in text fields.
-- **C6. Close.** The window's close button and Alt+F4 both close it, and with unsaved changes both ask first.
-- **C7. Icons.** The Alt+Tab icon is RZE's, and the icons are sharp at both sizes.
-- **C8. DPI and refresh.** On a monitor scaled above 100 %, the Editor is the same size as before the port. The frame
-  rate holds at the monitor's rate (59.94 shows as 59.94, not 59).
-- **C9. Monitors.** With `LaunchMonitor` set in `Engine.ini`, the Editor opens on that monitor at its work area's
-  top-left. `-console` puts the console beside it.
-- **Camera flying (E5, C13.1, C13.2, C10.2, C10.3).** With the right button held in the scene view, hold each of W,
-  A, S, D, Q and E past the key-repeat delay: smooth movement, no stop when repeat starts; R speeds up and Space slows
-  down while held. Right-drag turns the camera smoothly, middle-drag orbits, Shift+middle pans, Ctrl+middle dollies,
-  with no jump on any drag's first frame, nor when the pointer leaves the scene view and comes back mid-drag. Either
-  drag stops a double-click focus animation part way. While right-dragging, E moves the camera up and the gizmo mode
-  stays. Click the title bar's maximize button as fast as you can several times: each click toggles. With NeckMech
-  selected and the pointer over the scene view, hold Q for two seconds: Local/World flips once.
-- **F1. Optick.** With a Debug or Development Editor running, `Tools\Optick\Optick.exe` connects and takes a capture
-  with frames in it.
-
-### Hands-on session 4: CubeMap on DX11 (person)
-
-- **A4.** `RenderPerfTest.scene` (8 shadowed point lights): move one light next to a pillar and look from each side.
-  The pillar casts a shadow away from the light on every side, with no face missing, rotated or swapped. Then add a
-  `ReflectionProbeComponent` to an object in `Sponza.scene` (don't save): the reflections are the right way up and the
-  sky is on top.
-
-## Results
+Results from before the checks moved to Linear (2026-11-14). New results go in comments on the check issues.
 
 Results already read by Linux Claude are removed from this table; they're in this file's git history (the last full
 table is at b17556af).
