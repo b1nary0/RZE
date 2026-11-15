@@ -32,6 +32,14 @@ namespace Rendering
 #endif
 	std::vector<std::shared_ptr<TextureReadback>> Renderer::m_backBufferReadbacks;
 
+#ifdef RZE_RENDER_STATS
+	// Counts a draw call of instances instances
+#define RZE_COUNT_DRAW(instances) do { ++m_drawCounts.DrawCalls; m_drawCounts.Instances += (instances); } while (0)
+#else
+// Without render stats the counting is gone, its argument with it: it isn't worked out
+#define RZE_COUNT_DRAW(instances) do {} while (0)
+#endif
+
 	inline void* AllocateCommandData(void* src, size_t dataTypeSize, size_t count)
 	{
 		if (src == nullptr)
@@ -678,10 +686,7 @@ namespace Rendering
 		command->count = count;
 
 		m_renderThread.PushCommand(command);
-#ifdef RZE_RENDER_STATS
-		++m_drawCounts.DrawCalls;
-		++m_drawCounts.Instances;
-#endif
+		RZE_COUNT_DRAW(1);
 	}
 
 	void Renderer::DrawIndexed(const IndexBufferHandle& indexBuffer)
@@ -690,10 +695,7 @@ namespace Rendering
 		command->indexBuffer = indexBuffer;
 
 		m_renderThread.PushCommand(command);
-#ifdef RZE_RENDER_STATS
-		++m_drawCounts.DrawCalls;
-		++m_drawCounts.Instances;
-#endif
+		RZE_COUNT_DRAW(1);
 	}
 
 	void Renderer::DrawIndexedInstanced(const IndexBufferHandle& indexBuffer, U32 instanceCount, U32 startInstance)
@@ -704,10 +706,7 @@ namespace Rendering
 		command->startInstance = startInstance;
 
 		m_renderThread.PushCommand(command);
-#ifdef RZE_RENDER_STATS
-		++m_drawCounts.DrawCalls;
-		m_drawCounts.Instances += instanceCount;
-#endif
+		RZE_COUNT_DRAW(instanceCount);
 	}
 
 	void Renderer::DrawFullScreenQuad()
@@ -715,10 +714,7 @@ namespace Rendering
 		RenderCommand_DrawFullScreenQuad* command = MemArena::AllocType<RenderCommand_DrawFullScreenQuad>();
 
 		m_renderThread.PushCommand(command);
-#ifdef RZE_RENDER_STATS
-		++m_drawCounts.DrawCalls;
-		++m_drawCounts.Instances;
-#endif
+		RZE_COUNT_DRAW(1);
 	}
 
 	void Renderer::SetComputeShader(const ComputeShaderHandle& computeShader)

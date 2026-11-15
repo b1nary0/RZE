@@ -365,10 +365,8 @@ void IrradianceProbeStage::Render(RenderContext& context)
 				Rendering::Renderer::ReadTexture(state.Activity, activity.Readback);
 				state.PendingActivity.push_back(std::move(activity));
 
-#ifdef RZE_RENDER_STATS
-				context.WorkCounts.IrradianceProbesCaptured += captured.Count;
-				context.WorkCounts.IrradianceCaptureDraws += draws;
-#endif
+				RZE_COUNT_WORK(context, IrradianceProbesCaptured, captured.Count);
+				RZE_COUNT_WORK(context, IrradianceCaptureDraws, draws);
 				state.CaptureDraws += draws;
 				++state.CaptureFrames;
 				if (!scheduler.IsFilling() && !state.HasLoggedCaptures)
@@ -416,9 +414,7 @@ void IrradianceProbeStage::Render(RenderContext& context)
 				Rendering::Renderer::SetTextureResourceCS(state.Atlas, k_captureAtlasSlot);
 
 				Rendering::Renderer::Dispatch(relit.Count);
-#ifdef RZE_RENDER_STATS
-				context.WorkCounts.IrradianceProbesRelit += relit.Count;
-#endif
+				RZE_COUNT_WORK(context, IrradianceProbesRelit, relit.Count);
 
 				// The shadow maps are drawn into and the probes copied over next frame
 				for (U32 channel = 0; channel < 3; ++channel)

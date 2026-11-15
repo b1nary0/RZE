@@ -363,9 +363,7 @@ void ShadowRenderStage::RenderDirectionalShadow(RenderContext& context, bool red
 		Rendering::Renderer::ClearDepthStencilBuffer(state.StaticShadowMap);
 		Rendering::Renderer::SetDepthTarget(state.StaticShadowMap);
 		DrawCasters(context, viewProjection, ERenderMobilityFilter::Static);
-#ifdef RZE_RENDER_STATS
-		++context.WorkCounts.SunShadowMapsRendered;
-#endif
+		RZE_COUNT_WORK(context, SunShadowMapsRendered, 1);
 	}
 
 	// Unbound before it's copied out of: 64 MB, far cheaper than drawing the Static casters again
@@ -406,9 +404,7 @@ void ShadowRenderStage::RenderPointShadow(RenderContext& context, const LightObj
 		Rendering::Renderer::CopyTextureSlice(state.StaticPointShadowCubes, slice, state.PointShadowCubes, slice);
 		Rendering::Renderer::SetDepthTarget(state.PointShadowCubes, slice);
 		DrawCasters(context, viewProjection, ERenderMobilityFilter::Movable);
-#ifdef RZE_RENDER_STATS
-		++context.WorkCounts.PointShadowFacesRendered;
-#endif
+		RZE_COUNT_WORK(context, PointShadowFacesRendered, 1);
 	}
 	Rendering::Renderer::ClearRenderTargets();
 

@@ -9,6 +9,14 @@ template <typename T> class RenderInput;
 template <typename T> class RenderOutput;
 template <typename T> class RenderInOut;
 
+// Adds amount to one of the context's RenderWorkCounts fields, e.g. RZE_COUNT_WORK(context, ShadowDraws, 3). Without
+// render stats it's gone, with the amount: nothing in it is worked out, so don't count with a call that has to run.
+#ifdef RZE_RENDER_STATS
+#define RZE_COUNT_WORK(context, field, amount) do { (context).WorkCounts.field += (amount); } while (0)
+#else
+#define RZE_COUNT_WORK(context, field, amount) do {} while (0)
+#endif
+
 // Everything a render stage can use while rendering one view. Built by RenderPipeline for each render.
 //
 // The view's inputs are read-only. Data from other stages is reached through the stage's ports

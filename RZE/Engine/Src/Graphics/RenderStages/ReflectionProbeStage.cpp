@@ -401,9 +401,7 @@ void ReflectionProbeStage::Render(RenderContext& context)
 				Rendering::Renderer::SetTextureResourceCS(state.Atlas, k_captureAtlasSlot);
 				Rendering::Renderer::SetUnorderedAccess(state.Radiance, 0, 0);
 				Rendering::Renderer::Dispatch(DivideRoundingUp(k_faceSize, k_groupSize), DivideRoundingUp(k_faceSize, k_groupSize), relit.Count * ProbeCapture::k_faceCount);
-#ifdef RZE_RENDER_STATS
-				context.WorkCounts.ReflectionProbesRelit += relit.Count;
-#endif
+				RZE_COUNT_WORK(context, ReflectionProbesRelit, relit.Count);
 				Rendering::Renderer::UnsetUnorderedAccess(0);
 				for (U32 slot : { k_shadowMapSlot, k_pointShadowCubesSlot, k_shRedSlot, k_shRedSlot + 1, k_shRedSlot + 2, k_visibilitySlot, k_captureAtlasSlot })
 				{
