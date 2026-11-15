@@ -20,8 +20,8 @@ VS Code lists it under File > Open Recent afterwards. When it asks, install the 
 | | |
 |---|---|
 | Ctrl+Shift+B | **RZE: build development**: `make -C RZE config=development`, optimized with asserts and symbols, after regenerating `compile_commands.json`. Errors open in the Problems panel. |
-| F5 | **Editor** (asks which scene to open) or **UnitTests** (asks which test cases), with gdb, in Development or Debug. Each builds its configuration first. Debug is unoptimized, for stepping through code the optimizer rearranges. |
-| Tasks | **build debug**, **unit tests** and **burn assets** (Development), **generate Makefiles** (again after adding or removing a source file), **compile_commands.json**. |
+| F5 | **Editor** (asks which scene to open) or **UnitTests** (asks which test cases), with gdb, in Development, Debug or Retail. Each builds its configuration first. Debug is unoptimized, for stepping through code the optimizer rearranges. Retail is what ships: fully optimized (`-O3 -mavx2`), with symbols but without asserts, logging or render stats. |
+| Tasks | **build debug**, **build retail**, **unit tests** and **burn assets** (Development), **generate Makefiles** (again after adding or removing a source file), **compile_commands.json**. |
 | IntelliSense | Reads `compile_commands.json` at the repository root, written by `Tools/Linux/GenerateCompileCommands.py` from the Makefiles, so it uses the build's own flags. The file is gitignored. |
 
 Settings of your own go in your VS Code user settings, or in the repository's `.vscode/`, which is untracked.

@@ -1,6 +1,6 @@
 // VS Code on Linux: open this file (code Tools/Linux/VSCode/RZE.code-workspace), not the repository folder.
 // Ctrl+Shift+B builds Development (optimized, with asserts and symbols) through the Sharpmake Makefiles, F5 debugs the
-// Editor or UnitTests with gdb, in Development or Debug, and IntelliSense reads compile_commands.json, which every
+// Editor or UnitTests with gdb, in Development, Debug or Retail, and IntelliSense reads compile_commands.json, which every
 // Development build regenerates (Tools/Linux/GenerateCompileCommands.py).
 // Setup (once) is in README.md. Settings of your own go in your user settings or the repository's .vscode/.
 {
@@ -60,6 +60,18 @@
                 "detail": "Unoptimized, for stepping through code the optimizer rearranges",
                 "type": "shell",
                 "command": "make -C RZE config=debug -j\"$(nproc)\"",
+                "options": {
+                    "cwd": "${workspaceFolder:RZE}",
+                    "env": { "CXXFLAGS": "-fdiagnostics-absolute-paths -fdiagnostics-color=always" }
+                },
+                "problemMatcher": { "base": "$gcc", "fileLocation": "absolute" },
+                "group": "build"
+            },
+            {
+                "label": "RZE: build retail",
+                "detail": "What ships: fully optimized, without asserts, logging or render stats",
+                "type": "shell",
+                "command": "make -C RZE config=retail -j\"$(nproc)\"",
                 "options": {
                     "cwd": "${workspaceFolder:RZE}",
                     "env": { "CXXFLAGS": "-fdiagnostics-absolute-paths -fdiagnostics-color=always" }
@@ -154,6 +166,34 @@
                     { "description": "Pretty-print STL types", "text": "-enable-pretty-printing", "ignoreFailures": true }
                 ],
                 "preLaunchTask": "RZE: build debug"
+            },
+            {
+                "name": "Editor (retail)",
+                "type": "cppdbg",
+                "request": "launch",
+                "program": "${workspaceFolder:RZE}/RZE/_build/retail/Editor",
+                "args": [ "-scene", "${input:scene}" ],
+                "cwd": "${workspaceFolder:RZE}/RZE/_build/retail",
+                "MIMode": "gdb",
+                "miDebuggerPath": "/usr/bin/gdb",
+                "setupCommands": [
+                    { "description": "Pretty-print STL types", "text": "-enable-pretty-printing", "ignoreFailures": true }
+                ],
+                "preLaunchTask": "RZE: build retail"
+            },
+            {
+                "name": "UnitTests (retail)",
+                "type": "cppdbg",
+                "request": "launch",
+                "program": "${workspaceFolder:RZE}/RZE/_build/retail/UnitTests",
+                "args": [ "-tc=${input:testCases}" ],
+                "cwd": "${workspaceFolder:RZE}/RZE/_build/retail",
+                "MIMode": "gdb",
+                "miDebuggerPath": "/usr/bin/gdb",
+                "setupCommands": [
+                    { "description": "Pretty-print STL types", "text": "-enable-pretty-printing", "ignoreFailures": true }
+                ],
+                "preLaunchTask": "RZE: build retail"
             }
         ],
         "inputs": [
