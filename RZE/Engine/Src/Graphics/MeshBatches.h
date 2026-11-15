@@ -43,8 +43,9 @@ public:
 	// The same, for a format that CarriesID: id goes in the draw's instance, so draws of one batch can each have their
 	// own (which object they are)
 	void Add(const MeshDraw& draw, const void* bindKey, U64 id);
-	// As MeshBatchGrouping::AddUngrouped: a batch of its own, where it's added. For a format without an ID.
-	void AddUngrouped(const MeshDraw& draw);
+	// As MeshBatchGrouping::AddInOrder: drawn where it's added, joining the batch before it only if that one was added
+	// in order with the same bindKey and geometry. For a format without an ID.
+	void AddInOrder(const MeshDraw& draw, const void* bindKey);
 
 	// Builds the batches and their instances, then uploads the instances in one buffer update
 	void Upload();

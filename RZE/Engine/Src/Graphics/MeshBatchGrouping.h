@@ -42,12 +42,15 @@ public:
 	void Clear();
 	// Batched with the draws added with the same bindKey and the same geometry. bindKey stands for everything else the
 	// stage binds per batch, so draws with equal keys must draw identically; it's only compared, never read. A grouped
-	// draw joins its batch wherever that batch is, so it can move ahead of draws added before it, ungrouped ones too.
+	// draw joins its batch wherever that batch is, so it can move ahead of draws added before it, in-order ones too.
 	// The draw must stay put until the batches are drawn, as a RenderObject's draws do for the frame.
 	void Add(const MeshDraw& draw, const void* bindKey);
-	// A batch of its own, where it's added, never joined by another: for draws whose order matters (sorted blended
-	// draws). Add them after the grouped draws they must be drawn after.
-	void AddUngrouped(const MeshDraw& draw);
+	// Drawn where it's added, for draws whose order matters (blended draws, sorted back to front): never moved ahead of
+	// anything added before it. It joins the batch just before it, as its next instance, only if that batch's draw was
+	// also added in order, last, with the same bindKey and geometry: an instanced draw runs its instances in order on
+	// both APIs, so the order holds. Anything added between two ends their run. Add them after the grouped draws they
+	// must be drawn after.
+	void AddInOrder(const MeshDraw& draw, const void* bindKey);
 
 	// Groups what was added into batches
 	void Build();
@@ -66,6 +69,7 @@ private:
 	{
 		const MeshDraw* Draw = nullptr;
 		const void* BindKey = nullptr;
+		// Add's, rather than AddInOrder's
 		bool IsGrouped = true;
 	};
 

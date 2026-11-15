@@ -33,10 +33,10 @@ void MeshBatches::Add(const MeshDraw& draw, const void* bindKey, U64 id)
 	m_ids.push_back(id);
 }
 
-void MeshBatches::AddUngrouped(const MeshDraw& draw)
+void MeshBatches::AddInOrder(const MeshDraw& draw, const void* bindKey)
 {
 	AssertExpr(!m_instances.GetFormat().CarriesID);
-	m_grouping.AddUngrouped(draw);
+	m_grouping.AddInOrder(draw, bindKey);
 }
 
 void MeshBatches::Upload()

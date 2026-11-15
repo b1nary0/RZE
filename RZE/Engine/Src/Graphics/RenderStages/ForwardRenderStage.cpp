@@ -133,11 +133,12 @@ void ForwardRenderStage::Render(RenderContext& context)
 		transparentDraw.Draw = draw;
 	}
 
-	// After everything opaque, farthest first, each on its own so the order holds
+	// After everything opaque, farthest first, in that order: neighbours of one material and geometry share a draw
 	SortBackToFront(m_transparentDraws);
 	for (const TransparentDraw& transparentDraw : m_transparentDraws)
 	{
-		m_batches.AddUngrouped(*transparentDraw.Draw);
+		const MeshDraw& draw = *transparentDraw.Draw;
+		m_batches.AddInOrder(draw, &draw.Slot->GetMaterial());
 	}
 
 	m_batches.Upload();

@@ -14,9 +14,9 @@ void MeshBatchGrouping::Add(const MeshDraw& draw, const void* bindKey)
 	m_entries.push_back({ &draw, bindKey, true });
 }
 
-void MeshBatchGrouping::AddUngrouped(const MeshDraw& draw)
+void MeshBatchGrouping::AddInOrder(const MeshDraw& draw, const void* bindKey)
 {
-	m_entries.push_back({ &draw, nullptr, false });
+	m_entries.push_back({ &draw, bindKey, false });
 }
 
 void MeshBatchGrouping::Build()
@@ -28,6 +28,8 @@ void MeshBatchGrouping::Build()
 
 	// Each entry's batch (in its placement's Instance for now), a batch made where its first entry is, and how many
 	// instances each has. A stable counting sort: no keys are compared for order, so the order is the same every run.
+	// The entry before, if it was added in order: the one an in-order entry with the same key can join
+	const Entry* lastInOrder = nullptr;
 	for (const Entry& entry : m_entries)
 	{
 		U32 batchIndex = static_cast<U32>(m_batches.size());
@@ -39,10 +41,21 @@ void MeshBatchGrouping::Build()
 			{
 				m_batches.push_back({ entry.Draw, 0, 0 });
 			}
+			lastInOrder = nullptr;
 		}
 		else
 		{
-			m_batches.push_back({ entry.Draw, 0, 0 });
+			const bool joinsLast = lastInOrder != nullptr && lastInOrder->BindKey == entry.BindKey && lastInOrder->Draw->Geometry == entry.Draw->Geometry;
+			if (joinsLast)
+			{
+				// The last in-order entry's batch is the newest: nothing was added after it
+				batchIndex = static_cast<U32>(m_batches.size() - 1);
+			}
+			else
+			{
+				m_batches.push_back({ entry.Draw, 0, 0 });
+			}
+			lastInOrder = &entry;
 		}
 
 		++m_batches[batchIndex].InstanceCount;
