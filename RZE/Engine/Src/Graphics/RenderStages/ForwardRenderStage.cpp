@@ -117,8 +117,10 @@ void ForwardRenderStage::Render(RenderContext& context)
 	m_batches.Clear();
 	for (const MeshDraw* draw : visibleDraws.Opaque)
 	{
-		// The material decides everything bound besides the geometry, its shader included
-		m_batches.Add(*draw, &draw->Slot->GetMaterial());
+		// The material decides everything bound besides the geometry, its shader included. Batches of one shader are
+		// drawn together, as it's what changes least often.
+		const MaterialInstance& materialInstance = draw->Slot->GetMaterial();
+		m_batches.Add(*draw, &materialInstance, materialInstance.GetPixelShader());
 	}
 
 	// Blended draws wait until everything they could show is drawn
@@ -141,7 +143,7 @@ void ForwardRenderStage::Render(RenderContext& context)
 	m_batches.Upload();
 	m_batches.BindInstances();
 
-	// Consecutive batches often share a shader, so it's only set when it changes
+	// The opaque batches of one shader come together (MeshBatchGrouping's sort), so it's only set when it changes
 	const PixelShader* boundPixelShader = nullptr;
 	// The blended batches come last, so the first one switches to blending for the rest
 	bool isBlending = false;

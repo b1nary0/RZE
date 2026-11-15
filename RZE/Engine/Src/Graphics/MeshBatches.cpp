@@ -20,16 +20,16 @@ void MeshBatches::Clear()
 	m_ids.clear();
 }
 
-void MeshBatches::Add(const MeshDraw& draw, const void* bindKey)
+void MeshBatches::Add(const MeshDraw& draw, const void* bindKey, const void* orderKey)
 {
 	AssertExpr(!m_instances.GetFormat().CarriesID);
-	m_grouping.Add(draw, bindKey);
+	m_grouping.Add(draw, bindKey, orderKey);
 }
 
-void MeshBatches::Add(const MeshDraw& draw, const void* bindKey, U64 id)
+void MeshBatches::Add(const MeshDraw& draw, const void* bindKey, const void* orderKey, U64 id)
 {
 	AssertExpr(m_instances.GetFormat().CarriesID);
-	m_grouping.Add(draw, bindKey);
+	m_grouping.Add(draw, bindKey, orderKey);
 	m_ids.push_back(id);
 }
 

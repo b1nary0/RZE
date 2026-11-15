@@ -15,9 +15,12 @@ struct MeshDraw;
 //
 // A pass: Clear, Add each draw, Build, then GetBatches, and GetPlacements for a stream to build the instances from.
 //
-// Batches come in the order their first draw was added, and a batch's instances in the order they were added, so the
-// draw order is the same every run: exactly coplanar surfaces depend on it (the depth prepass keeps the first, the
-// forward pass shades the last).
+// Batches of grouped draws are sorted by state, so the batches that bind the same things come together: by order key
+// (what the stage changes least often, e.g. the pixel shader), then by bind key. Each key ranks by when its first draw
+// was added, and batches of equal keys stay in the order their first draws were added. In-order batches stay where they
+// were added, and grouped batches aren't moved across them. A batch's instances come in the order they were added. So
+// the draw order is the same every run whenever the draws are added in the same order, without comparing addresses:
+// exactly coplanar surfaces depend on it (the depth prepass keeps the first, the forward pass shades the last).
 class MeshBatchGrouping
 {
 public:
@@ -41,10 +44,12 @@ public:
 	// Forgets the last pass's draws
 	void Clear();
 	// Batched with the draws added with the same bindKey and the same geometry. bindKey stands for everything else the
-	// stage binds per batch, so draws with equal keys must draw identically; it's only compared, never read. A grouped
-	// draw joins its batch wherever that batch is, so it can move ahead of draws added before it, in-order ones too.
-	// The draw must stay put until the batches are drawn, as a RenderObject's draws do for the frame.
-	void Add(const MeshDraw& draw, const void* bindKey);
+	// stage binds per batch, so draws with equal keys must draw identically. orderKey is what the stage binds that
+	// changes least often, such as the pixel shader: batches with the same one are drawn together. It must be the same
+	// for draws with equal bindKeys. Both are only compared, never read. A grouped draw joins its batch wherever that
+	// batch is, so it can move ahead of draws added before it, in-order ones too. The draw must stay put until the batches
+	// are drawn, as a RenderObject's draws do for the frame.
+	void Add(const MeshDraw& draw, const void* bindKey, const void* orderKey);
 	// Drawn where it's added, for draws whose order matters (blended draws, sorted back to front): never moved ahead of
 	// anything added before it. It joins the batch just before it, as its next instance, only if that batch's draw was
 	// also added in order, last, with the same bindKey and geometry: an instanced draw runs its instances in order on
@@ -69,7 +74,17 @@ private:
 	{
 		const MeshDraw* Draw = nullptr;
 		const void* BindKey = nullptr;
+		// Null for an in-order draw
+		const void* OrderKey = nullptr;
 		// Add's, rather than AddInOrder's
+		bool IsGrouped = true;
+	};
+
+	// Where a batch sorts among the grouped batches around it: its keys' ranks
+	struct BatchRank
+	{
+		U32 OrderKey = 0;
+		U32 BindKey = 0;
 		bool IsGrouped = true;
 	};
 
@@ -88,6 +103,11 @@ private:
 	};
 
 private:
+	// Sorts each run of grouped batches by state (see the class comment), and points the placements at the batches'
+	// new places
+	void SortGroupedBatches();
+
+private:
 	std::vector<Entry> m_entries;
 
 	// The rest are worked out by Build, and kept to reuse their memory
@@ -95,4 +115,12 @@ private:
 	std::vector<Placement> m_placements;
 	// Each group's batch while building
 	std::unordered_map<GroupKey, U32, GroupKeyHash> m_groupBatches;
+	// While sorting: each key's rank, by the first batch that has it
+	std::unordered_map<const void*, U32> m_orderKeyRanks;
+	std::unordered_map<const void*, U32> m_bindKeyRanks;
+	// While sorting: each batch's rank, the batches in their new order, and each batch's new place
+	std::vector<BatchRank> m_batchRanks;
+	std::vector<U32> m_sortedBatchIndices;
+	std::vector<U32> m_newBatchIndices;
+	std::vector<Batch> m_sortedBatches;
 };

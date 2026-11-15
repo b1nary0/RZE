@@ -22,8 +22,9 @@ void IDMeshBatches::Add(const MeshDraw& draw, U64 id)
 {
 	const MaterialInstance& materialInstance = draw.Slot->GetMaterial();
 
-	// As DepthOnlyMeshBatches::Add: without an opacity map, nothing the pixel shader reads differs by material
-	m_batches.Add(draw, materialInstance.HasOpacityMap() ? &materialInstance : nullptr, id);
+	// As DepthOnlyMeshBatches::Add: without an opacity map, nothing the pixel shader reads differs by material. The
+	// stage's one pixel shader draws every batch, so nothing orders them before their material.
+	m_batches.Add(draw, materialInstance.HasOpacityMap() ? &materialInstance : nullptr, nullptr, id);
 }
 
 U32 IDMeshBatches::Draw()

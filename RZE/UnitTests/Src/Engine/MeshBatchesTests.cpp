@@ -99,7 +99,7 @@ namespace
 	}
 }
 
-TEST_CASE("Draws with the same bind key and geometry are one batch; either differing splits them")
+TEST_CASE("Draws with the same bind key and geometry are one batch; either differing splits them, keys together")
 {
 	const MeshGeometry geometryA;
 	const MeshGeometry geometryB;
@@ -107,23 +107,94 @@ TEST_CASE("Draws with the same bind key and geometry are one batch; either diffe
 	const std::vector<MeshDraw> drawsB = MakeDraws(2, geometryB);
 
 	MeshBatchGrouping grouping;
-	grouping.Add(drawsA[0], &k_materialA);
-	grouping.Add(drawsA[1], &k_materialA);
+	grouping.Add(drawsA[0], &k_materialA, nullptr);
+	grouping.Add(drawsA[1], &k_materialA, nullptr);
 	// Same geometry, another key
-	grouping.Add(drawsA[2], &k_materialB);
+	grouping.Add(drawsA[2], &k_materialB, nullptr);
 	// Same key, another geometry
-	grouping.Add(drawsB[0], &k_materialA);
-	grouping.Add(drawsB[1], &k_materialA);
+	grouping.Add(drawsB[0], &k_materialA, nullptr);
+	grouping.Add(drawsB[1], &k_materialA, nullptr);
 	grouping.Build();
 
+	// Key A's two batches come together, ahead of key B's: A's first draw was added first
 	const std::vector<MeshBatchGrouping::Batch>& built = grouping.GetBatches();
 	REQUIRE(built.size() == 3);
 	CHECK(built[0].Draw == &drawsA[0]);
 	CHECK(built[0].InstanceCount == 2);
-	CHECK(built[1].Draw == &drawsA[2]);
-	CHECK(built[1].InstanceCount == 1);
-	CHECK(built[2].Draw == &drawsB[0]);
-	CHECK(built[2].InstanceCount == 2);
+	CHECK(built[1].Draw == &drawsB[0]);
+	CHECK(built[1].InstanceCount == 2);
+	CHECK(built[2].Draw == &drawsA[2]);
+	CHECK(built[2].InstanceCount == 1);
+	CheckContiguous(grouping);
+}
+
+TEST_CASE("Grouped batches sort by order key, then bind key, each ranked by its first draw, ties in the order added")
+{
+	const MeshGeometry geometries[4];
+	std::vector<MeshDraw> draws = MakeDraws(4, geometries[0]);
+	for (size_t index = 0; index < draws.size(); ++index)
+	{
+		draws[index].Geometry = &geometries[index];
+	}
+
+	// Stand-ins for two pixel shaders and a third material: only their addresses are compared
+	const int shaderX = 0;
+	const int shaderY = 0;
+	const int materialC = 0;
+
+	MeshBatchGrouping grouping;
+	// Shader Y is seen first, so its batches come first; among them, material B's before C's
+	grouping.Add(draws[0], &k_materialB, &shaderY);
+	grouping.Add(draws[1], &k_materialA, &shaderX);
+	grouping.Add(draws[2], &materialC, &shaderY);
+	grouping.Add(draws[3], &k_materialB, &shaderY);
+	grouping.Build();
+
+	const std::vector<MeshBatchGrouping::Batch>& built = grouping.GetBatches();
+	REQUIRE(built.size() == 4);
+	CHECK(built[0].Draw == &draws[0]);
+	CHECK(built[1].Draw == &draws[3]);
+	CHECK(built[2].Draw == &draws[2]);
+	CHECK(built[3].Draw == &draws[1]);
+	CheckContiguous(grouping);
+
+	// The instances follow their batches
+	const std::vector<const MeshDraw*> instanceDraws = InstanceDraws(grouping);
+	REQUIRE(instanceDraws.size() == 4);
+	CHECK(instanceDraws[0] == &draws[0]);
+	CHECK(instanceDraws[1] == &draws[3]);
+	CHECK(instanceDraws[2] == &draws[2]);
+	CHECK(instanceDraws[3] == &draws[1]);
+}
+
+TEST_CASE("Grouped batches sort only among their neighbours: in-order batches stay where they were added")
+{
+	const MeshGeometry geometries[5];
+	std::vector<MeshDraw> draws = MakeDraws(5, geometries[0]);
+	for (size_t index = 0; index < draws.size(); ++index)
+	{
+		draws[index].Geometry = &geometries[index];
+	}
+
+	const int shaderX = 0;
+	const int shaderY = 0;
+
+	MeshBatchGrouping grouping;
+	grouping.Add(draws[0], &k_materialB, &shaderY);
+	grouping.Add(draws[1], &k_materialA, &shaderX);
+	grouping.AddInOrder(draws[2], &k_materialA);
+	// After the in-order draw: these two sort between themselves, Y (ranked first) ahead of X
+	grouping.Add(draws[3], &k_materialA, &shaderX);
+	grouping.Add(draws[4], &k_materialB, &shaderY);
+	grouping.Build();
+
+	const std::vector<MeshBatchGrouping::Batch>& built = grouping.GetBatches();
+	REQUIRE(built.size() == 5);
+	CHECK(built[0].Draw == &draws[0]);
+	CHECK(built[1].Draw == &draws[1]);
+	CHECK(built[2].Draw == &draws[2]);
+	CHECK(built[3].Draw == &draws[4]);
+	CHECK(built[4].Draw == &draws[3]);
 	CheckContiguous(grouping);
 }
 
@@ -138,11 +209,11 @@ TEST_CASE("Batches come where their first draw was added, and a batch's instance
 
 	// Interleaved, as a scene's objects come
 	MeshBatchGrouping grouping;
-	grouping.Add(draws[3], nullptr);
-	grouping.Add(draws[2], nullptr);
-	grouping.Add(draws[4], nullptr);
-	grouping.Add(draws[0], nullptr);
-	grouping.Add(draws[1], nullptr);
+	grouping.Add(draws[3], nullptr, nullptr);
+	grouping.Add(draws[2], nullptr, nullptr);
+	grouping.Add(draws[4], nullptr, nullptr);
+	grouping.Add(draws[0], nullptr, nullptr);
+	grouping.Add(draws[1], nullptr, nullptr);
 	grouping.Build();
 
 	const std::vector<MeshBatchGrouping::Batch>& built = grouping.GetBatches();
@@ -168,7 +239,7 @@ TEST_CASE("In-order draws come in the order added, and neighbours with the same 
 	const std::vector<MeshDraw> draws = MakeDraws(5, geometry);
 
 	MeshBatchGrouping grouping;
-	grouping.Add(draws[0], &k_materialA);
+	grouping.Add(draws[0], &k_materialA, nullptr);
 	// The same key and geometry as the grouped draw, but in order: apart from it
 	grouping.AddInOrder(draws[3], &k_materialA);
 	grouping.AddInOrder(draws[1], &k_materialA);
@@ -229,7 +300,7 @@ TEST_CASE("A grouped draw added between two in-order draws keeps them apart")
 
 	MeshBatchGrouping grouping;
 	grouping.AddInOrder(draws[0], &k_materialA);
-	grouping.Add(draws[1], &k_materialB);
+	grouping.Add(draws[1], &k_materialB, nullptr);
 	grouping.AddInOrder(draws[2], &k_materialA);
 	grouping.Build();
 
@@ -247,9 +318,9 @@ TEST_CASE("A grouped draw added after an in-order one joins its batch ahead of i
 	const std::vector<MeshDraw> draws = MakeDraws(3, geometry);
 
 	MeshBatchGrouping grouping;
-	grouping.Add(draws[0], nullptr);
+	grouping.Add(draws[0], nullptr, nullptr);
 	grouping.AddInOrder(draws[1], nullptr);
-	grouping.Add(draws[2], nullptr);
+	grouping.Add(draws[2], nullptr, nullptr);
 	grouping.Build();
 
 	const std::vector<MeshBatchGrouping::Batch>& built = grouping.GetBatches();
@@ -272,8 +343,8 @@ TEST_CASE("Each instance is its draw's transform and inverse, shared matrices in
 	draws[1].Transform = &objectMatrices.Transform;
 
 	MeshBatchGrouping grouping;
-	grouping.Add(draws[0], nullptr);
-	grouping.Add(draws[1], nullptr);
+	grouping.Add(draws[0], nullptr, nullptr);
+	grouping.Add(draws[1], nullptr, nullptr);
 	grouping.Build();
 
 	MeshInstanceStream stream(MeshInstanceFormats::Forward());
@@ -308,7 +379,7 @@ TEST_CASE("Draws of slots that differ only in tint, shininess or opacity share a
 	MeshBatchGrouping grouping;
 	for (const MeshDraw& draw : draws)
 	{
-		grouping.Add(draw, &k_materialA);
+		grouping.Add(draw, &k_materialA, nullptr);
 	}
 	grouping.Build();
 
@@ -356,7 +427,7 @@ TEST_CASE("Building again after Clear replaces the last pass's batches, and a st
 	REQUIRE(stream.GetCount() == 4);
 
 	grouping.Clear();
-	grouping.Add(draws[3], nullptr);
+	grouping.Add(draws[3], nullptr, nullptr);
 	grouping.Build();
 	REQUIRE(grouping.GetBatches().size() == 1);
 	REQUIRE(grouping.GetInstanceCount() == 1);
@@ -472,8 +543,8 @@ TEST_CASE("A Depth instance is its draw's transform's columns without their four
 	draws[1].Slot = nullptr;
 
 	MeshBatchGrouping grouping;
-	grouping.Add(draws[0], nullptr);
-	grouping.Add(draws[1], nullptr);
+	grouping.Add(draws[0], nullptr, nullptr);
+	grouping.Add(draws[1], nullptr, nullptr);
 	grouping.Build();
 
 	MeshInstanceStream stream(MeshInstanceFormats::Depth());
@@ -543,7 +614,7 @@ TEST_CASE("An ID instance is its draw's Depth instance and the ID it was given, 
 	draws[0].Slot = nullptr;
 
 	MeshBatchGrouping grouping;
-	grouping.Add(draws[0], nullptr);
+	grouping.Add(draws[0], nullptr, nullptr);
 	grouping.Build();
 
 	MeshInstanceStream depthStream(MeshInstanceFormats::Depth());
@@ -568,10 +639,10 @@ TEST_CASE("Each draw's ID goes with it when grouping moves its instance ahead of
 	draws[1].Geometry = &geometryB;
 
 	MeshBatchGrouping grouping;
-	grouping.Add(draws[0], nullptr);
-	grouping.Add(draws[1], nullptr);
-	grouping.Add(draws[2], nullptr);
-	grouping.Add(draws[3], &k_materialA);
+	grouping.Add(draws[0], nullptr, nullptr);
+	grouping.Add(draws[1], nullptr, nullptr);
+	grouping.Add(draws[2], nullptr, nullptr);
+	grouping.Add(draws[3], &k_materialA, nullptr);
 	grouping.Build();
 
 	// One an Add, in their order, as MeshBatches keeps them

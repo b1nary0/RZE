@@ -26,8 +26,15 @@ void DepthOnlyMeshBatches::Add(const MeshDraw& draw)
 	const MaterialInstance& materialInstance = draw.Slot->GetMaterial();
 
 	// Without an opacity map, only the geometry is bound, so draws of it share a batch whatever their material.
-	// With one, its material's opacity is bound too.
-	m_batches.Add(draw, materialInstance.HasOpacityMap() ? &materialInstance : nullptr);
+	// With one, its material's opacity is bound too, with the cutout shader, so the cutouts are drawn together.
+	if (materialInstance.HasOpacityMap())
+	{
+		m_batches.Add(draw, &materialInstance, m_cutoutShader.Get());
+	}
+	else
+	{
+		m_batches.Add(draw, nullptr, nullptr);
+	}
 }
 
 U32 DepthOnlyMeshBatches::Draw()

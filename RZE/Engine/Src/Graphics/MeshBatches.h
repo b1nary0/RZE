@@ -37,12 +37,12 @@ public:
 
 	// Forgets the last pass's draws
 	void Clear();
-	// As MeshBatchGrouping::Add: batched with the draws added with the same bindKey and geometry. For a format without
-	// an ID.
-	void Add(const MeshDraw& draw, const void* bindKey);
+	// As MeshBatchGrouping::Add: batched with the draws added with the same bindKey and geometry, and drawn with the
+	// batches of the same orderKey. For a format without an ID.
+	void Add(const MeshDraw& draw, const void* bindKey, const void* orderKey);
 	// The same, for a format that CarriesID: id goes in the draw's instance, so draws of one batch can each have their
 	// own (which object they are)
-	void Add(const MeshDraw& draw, const void* bindKey, U64 id);
+	void Add(const MeshDraw& draw, const void* bindKey, const void* orderKey, U64 id);
 	// As MeshBatchGrouping::AddInOrder: drawn where it's added, joining the batch before it only if that one was added
 	// in order with the same bindKey and geometry. For a format without an ID.
 	void AddInOrder(const MeshDraw& draw, const void* bindKey);
