@@ -27,6 +27,8 @@ struct RenderStageStats
 	double TimeMS = 0.0;
 	double DrawCalls = 0.0;
 	double Instances = 0.0;
+	// The binds it recorded, and how many of them repeated what the slot already had, per Rendering::EStateCategory
+	Rendering::GPUStateChangeAverages StateChanges = {};
 	// Already per frame: the render thread's average over its own stats window (RenderThreadStats::GPUScopeTimesMS)
 	double GPUTimeMS = 0.0;
 	// Already per frame, the same way (RenderThreadStats::GPUScopeStatistics); zero without them

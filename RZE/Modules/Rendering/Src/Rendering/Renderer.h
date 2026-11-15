@@ -4,6 +4,7 @@
 #include <Rendering/BufferHandle.h>
 #include <Rendering/DrawCounts.h>
 #include <Rendering/ShaderHandle.h>
+#include <Rendering/StateTracker.h>
 #include <Rendering/RenderCommand.h>
 
 #include <Rendering/RenderThread.h>
@@ -214,6 +215,12 @@ namespace Rendering
 		static void Dispatch(U32 groupsX, U32 groupsY = 1, U32 groupsZ = 1);
 
 	private:
+#ifdef RZE_RENDER_STATS
+		// Counts a bind of one of the slots StateTracker tracks, and whether it repeats what the slot had. Every set call
+		// makes it through RZE_COUNT_STATE_BIND (Renderer.cpp). object is what's bound (nullptr for an unset), related and
+		// detail what else the bind chooses (StateBinding).
+		static void CountStateBind(EStateKind kind, U32 slot, const void* object, const void* related = nullptr, U64 detail = 0);
+#endif
 		static void InternalUploadDataToBuffer(const ConstantBufferHandle& buffer, const void* data, size_t dataSize);
 
 	private:
@@ -227,6 +234,8 @@ namespace Rendering
 #ifdef RZE_RENDER_STATS
 		// Draws recorded since TakeDrawCounts()
 		static DrawCounts m_drawCounts;
+		// What the slots were last bound to in this pass (CountStateBind)
+		static StateTracker m_stateTracker;
 #endif
 		// ReadBackBuffer's requests, which DevicePresent records before it presents
 		static std::vector<std::shared_ptr<TextureReadback>> m_backBufferReadbacks;

@@ -33,7 +33,7 @@ struct RenderStats
 {
 	// Per frame, recording every view's render stages
 	double RecordTimeMS = 0.0;
-	// Each stage's part of RecordTimeMS, DrawCalls, Instances and GPUStatistics per frame, in the order they run
+	// Each stage's part of RecordTimeMS, DrawCalls, Instances, state binds and GPUStatistics per frame, in the order they run
 	std::vector<RenderStageStats> Stages;
 	// Per frame, not counting the UI's
 	double DrawCalls = 0.0;

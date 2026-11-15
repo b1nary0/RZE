@@ -10,11 +10,16 @@
 #include <algorithm>
 #include <fstream>
 #include <iomanip>
+#include <iterator>
 
 namespace
 {
 	// GPUPipelineStatistics' columns, in WriteStatistics' order
 	constexpr const char* k_statisticsHeader = "triangles,verticesShaded,trianglesInView,pixelsShaded";
+
+	// Rendering::EStateCategory's columns, in its order: each is written as <name>Binds then <name>Repeats
+	constexpr const char* k_stateColumns[] = { "targets", "shaders", "fixedState", "constantBuffers", "textures", "vertexBuffers", "indexBuffers" };
+	static_assert(std::size(k_stateColumns) == Rendering::k_stateCategoryCount, "a column for each state category");
 
 	void WriteStatistics(std::ofstream& file, const Rendering::GPUPipelineStatistics& statistics)
 	{
@@ -82,6 +87,10 @@ bool FrameTimeCapture::AddFrame(double elapsedSeconds, const FrameTimeSample& sa
 			m_stageTotals[index].TimeMS += renderStats.Stages[index].TimeMS;
 			m_stageTotals[index].DrawCalls += renderStats.Stages[index].DrawCalls;
 			m_stageTotals[index].Instances += renderStats.Stages[index].Instances;
+			for (U32 category = 0; category < Rendering::k_stateCategoryCount; ++category)
+			{
+				m_stageTotals[index].StateChanges[category] += renderStats.Stages[index].StateChanges[category];
+			}
 			m_stageTotals[index].GPUTimeMS += renderStats.Stages[index].GPUTimeMS;
 			m_stageTotals[index].GPUStatistics += renderStats.Stages[index].GPUStatistics;
 		}
@@ -89,13 +98,13 @@ bool FrameTimeCapture::AddFrame(double elapsedSeconds, const FrameTimeSample& sa
 		return false;
 	}
 
-	Write();
-	WriteStages();
+	WriteFramesCSV();
+	WriteStagesCSV();
 	m_isEnabled = false;
 	return true;
 }
 
-void FrameTimeCapture::Write() const
+void FrameTimeCapture::WriteFramesCSV() const
 {
 	std::ofstream file(m_outputPath);
 	if (!file)
@@ -114,7 +123,7 @@ void FrameTimeCapture::Write() const
 	}
 }
 
-void FrameTimeCapture::WriteStages() const
+void FrameTimeCapture::WriteStagesCSV() const
 {
 	const std::string stagesPath = m_outputPath + ".stages.csv";
 	std::ofstream file(stagesPath);
@@ -126,12 +135,21 @@ void FrameTimeCapture::WriteStages() const
 
 	// Averages of averages: each frame added RenderStats' figures, which are per frame over its stats window
 	const double frameCount = static_cast<double>(std::max<size_t>(m_stageFrameCount, 1));
-	file << "stage,timeMs,drawCalls,gpuMs,instances," << k_statisticsHeader << '\n';
+	file << "stage,timeMs,drawCalls,gpuMs,instances," << k_statisticsHeader;
+	for (U32 category = 0; category < Rendering::k_stateCategoryCount; ++category)
+	{
+		file << ',' << k_stateColumns[category] << "Binds," << k_stateColumns[category] << "Repeats";
+	}
+	file << '\n';
 	for (const StageTotals& totals : m_stageTotals)
 	{
 		file << totals.Name << ',' << totals.TimeMS / frameCount << ',' << totals.DrawCalls / frameCount << ',' << totals.GPUTimeMS / frameCount << ','
 			<< totals.Instances / frameCount << ',';
 		WriteStatistics(file, totals.GPUStatistics * (1.0 / frameCount));
+		for (U32 category = 0; category < Rendering::k_stateCategoryCount; ++category)
+		{
+			file << ',' << totals.StateChanges[category].Binds / frameCount << ',' << totals.StateChanges[category].Repeats / frameCount;
+		}
 		file << '\n';
 	}
 }

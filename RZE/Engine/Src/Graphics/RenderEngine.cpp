@@ -230,10 +230,11 @@ void RenderEngine::UpdateStats(double now)
 	m_stats.Stages.clear();
 	for (RenderStageStats& stageStats : m_pipeline->TakeStageStats())
 	{
-		// The time and draws are totals over this window; the GPU's figures are already per frame
+		// The time, draws and state changes are totals over this window; the GPU's figures are already per frame
 		stageStats.TimeMS = m_statsWindow.PerFrame(stageStats.TimeMS);
 		stageStats.DrawCalls = m_statsWindow.PerFrame(stageStats.DrawCalls);
 		stageStats.Instances = m_statsWindow.PerFrame(stageStats.Instances);
+		stageStats.StateChanges = Rendering::ToPerFrame(stageStats.StateChanges, m_statsWindow.GetFrameCount());
 		m_stats.Stages.push_back(std::move(stageStats));
 	}
 

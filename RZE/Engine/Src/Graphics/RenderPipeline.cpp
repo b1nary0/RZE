@@ -96,6 +96,7 @@ std::vector<RenderStageStats> RenderPipeline::TakeStageStats()
 		stats.TimeMS = m_stageTimes[stageIndex] * 1000.0;
 		stats.DrawCalls = static_cast<double>(m_stageDrawCounts[stageIndex].DrawCalls);
 		stats.Instances = static_cast<double>(m_stageDrawCounts[stageIndex].Instances);
+		stats.StateChanges = Rendering::ToAverages(m_stageDrawCounts[stageIndex].StateChanges.ByCategory);
 		stats.GPUTimeMS = stageIndex < gpuTimes.size() ? gpuTimes[stageIndex] : 0.0;
 		if (stageIndex < gpuStatistics.size())
 		{

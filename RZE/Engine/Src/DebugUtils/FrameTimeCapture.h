@@ -6,6 +6,7 @@
 #ifdef RZE_RENDER_STATS
 
 #include <Rendering/Driver/GPUStatistics.h>
+#include <Rendering/DrawCounts.h>
 
 #include <Utils/PrimitiveDefs.h>
 
@@ -66,8 +67,8 @@ public:
 	bool AddFrame(double elapsedSeconds, const FrameTimeSample& sample, const RenderStats& renderStats);
 
 private:
-	void Write() const;
-	void WriteStages() const;
+	void WriteFramesCSV() const;
+	void WriteStagesCSV() const;
 
 private:
 	// A render stage's figures, summed over the frames recorded
@@ -77,6 +78,7 @@ private:
 		double TimeMS = 0.0;
 		double DrawCalls = 0.0;
 		double Instances = 0.0;
+		Rendering::GPUStateChangeAverages StateChanges = {};
 		double GPUTimeMS = 0.0;
 		Rendering::GPUPipelineStatistics GPUStatistics;
 	};

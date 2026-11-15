@@ -28,6 +28,8 @@ namespace Editor
 		constexpr char k_widestMS[] = "000.00";
 		// StringUtils::FormatCount's widest
 		constexpr char k_widestCount[] = "00.0M";
+		// A state change table's cell: the binds and, in brackets, the ones that repeated what the slot had
+		constexpr char k_widestBinds[] = "00.0k (00.0k)";
 #endif
 		// The label tables' values: the widest of the above
 		constexpr char k_widestValue[] = "0000.00";
@@ -188,6 +190,53 @@ namespace Editor
 			ImGui::EndTable();
 		}
 
+		// A stage's binds of a category, and in brackets how many of them repeated what the slot already had
+		std::string FormatBinds(const Rendering::GPUStateChangeAverage& change)
+		{
+			return StringUtils::FormatCount(change.Binds) + " (" + StringUtils::FormatCount(change.Repeats) + ")";
+		}
+
+		// Each stage's binds a frame, by category: the state it sets that the draws use
+		void DrawStateChangeTable(const RenderStats& stats)
+		{
+			constexpr int k_columnCount = 1 + static_cast<int>(Rendering::k_stateCategoryCount);
+			if (!BeginFiguresTable("##StateChanges", k_columnCount, ImGuiTableFlags_RowBg))
+			{
+				return;
+			}
+
+			ImGui::TableSetupColumn("Stage", ImGuiTableColumnFlags_WidthStretch);
+			for (U32 category = 0; category < Rendering::k_stateCategoryCount; ++category)
+			{
+				EditorUI::SetupFiguresColumn(Rendering::GetStateCategoryName(static_cast<Rendering::EStateCategory>(category)), k_widestBinds);
+			}
+			FiguresHeaderRow(k_columnCount);
+
+			RenderStageStats total;
+			for (const RenderStageStats& stage : stats.Stages)
+			{
+				ImGui::TableNextRow();
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted(stage.Name.c_str());
+				for (U32 category = 0; category < Rendering::k_stateCategoryCount; ++category)
+				{
+					FigureCell(FormatBinds(stage.StateChanges[category]));
+					total.StateChanges[category] += stage.StateChanges[category];
+				}
+			}
+
+			ImGui::TableNextRow();
+			ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32(ImGuiCol_TableHeaderBg));
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Total");
+			for (U32 category = 0; category < Rendering::k_stateCategoryCount; ++category)
+			{
+				FigureCell(FormatBinds(total.StateChanges[category]));
+			}
+
+			ImGui::EndTable();
+		}
+
 		void DrawProbeTable(const RenderWorkCounts& work)
 		{
 			constexpr int k_columnCount = 5;
@@ -321,6 +370,13 @@ namespace Editor
 			{
 				ImGui::TextDisabled("The GPU's counts are off (-gpustats 0), or the graphics driver doesn't have them.");
 			}
+
+			// What the stages bind, and how much of it changes nothing
+			ImGui::Indent();
+			ImGui::SeparatorText("State changes, a frame");
+			DrawStateChangeTable(renderStats);
+			ImGui::TextDisabled("Binds, and in brackets the ones that repeat what the slot had in the pass.");
+			ImGui::Unindent();
 
 			// The scene's probe and shadow work: what objects and lights changing cost, and the probes' relighting
 			const RenderWorkCounts& work = renderStats.Work;

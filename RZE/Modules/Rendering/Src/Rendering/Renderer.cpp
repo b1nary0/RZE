@@ -1,11 +1,13 @@
 #include <Rendering/Renderer.h>
 
+#include <Utils/HashUtils.h>
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector4D.h>
 #include <Utils/Memory/MemoryUtils.h>
 #include <Utils/Platform/Filepath.h>
 
 #include <Rendering/RenderCommand.h>
+#include <Rendering/StateTracker.h>
 #include <Rendering/MemArena.h>
 #include <Rendering/UIFrameData.h>
 
@@ -29,14 +31,21 @@ namespace Rendering
 	std::vector<TextureBuffer2DHandle> Renderer::m_uiTextures;
 #ifdef RZE_RENDER_STATS
 	DrawCounts Renderer::m_drawCounts;
+	StateTracker Renderer::m_stateTracker;
 #endif
 	std::vector<std::shared_ptr<TextureReadback>> Renderer::m_backBufferReadbacks;
 
 #ifdef RZE_RENDER_STATS
+	// A target bind's Detail for the back buffer, which has no object of its own. A depth slice is never this high.
+	constexpr U64 k_backBufferTarget = ~0ull;
+
+	// Counts a bind of one of the slots StateTracker tracks (Renderer::CountStateBind)
+#define RZE_COUNT_STATE_BIND(...) CountStateBind(__VA_ARGS__)
 	// Counts a draw call of instances instances
 #define RZE_COUNT_DRAW(instances) do { ++m_drawCounts.DrawCalls; m_drawCounts.Instances += (instances); } while (0)
 #else
-// Without render stats the counting is gone, its argument with it: it isn't worked out
+// Without render stats the counting is gone, its arguments with it: none of them is worked out
+#define RZE_COUNT_STATE_BIND(...) do {} while (0)
 #define RZE_COUNT_DRAW(instances) do {} while (0)
 #endif
 
@@ -90,6 +99,10 @@ namespace Rendering
 		command->drawSetName = drawSetName;
 
 		m_renderThread.PushCommand(command);
+#ifdef RZE_RENDER_STATS
+		// A pass starts from nothing known: the rasterizer state is reset, and the passes before it don't count
+		m_stateTracker.Clear();
+#endif
 	}
 
 	void Renderer::End()
@@ -372,6 +385,23 @@ namespace Rendering
 		return ComputeShaderHandle(command->bufferPtr);
 	}
 
+#ifdef RZE_RENDER_STATS
+	void Renderer::CountStateBind(EStateKind kind, U32 slot, const void* object, const void* related, U64 detail)
+	{
+		StateBinding binding;
+		binding.Object = object;
+		binding.Related = related;
+		binding.Detail = detail;
+
+		GPUStateChangeCount& change = m_drawCounts.StateChanges.ByCategory[static_cast<U32>(GetStateCategory(kind))];
+		++change.Binds;
+		if (m_stateTracker.Bind(kind, slot, binding))
+		{
+			++change.Repeats;
+		}
+	}
+#endif
+
 	void Renderer::InternalUploadDataToBuffer(const ConstantBufferHandle& buffer, const void* data, size_t dataSize)
 	{
 		RenderCommand_UploadDataToBuffer* command = MemArena::AllocType<RenderCommand_UploadDataToBuffer>();
@@ -429,6 +459,7 @@ namespace Rendering
 	{
 		RenderCommand_ClearRenderTargets* command = MemArena::AllocType<RenderCommand_ClearRenderTargets>();
 
+		RZE_COUNT_STATE_BIND(EStateKind::Targets, 0, nullptr);
 		m_renderThread.PushCommand(command);
 	}
 
@@ -436,6 +467,7 @@ namespace Rendering
 	{
 		RenderCommand_SetRenderTargetBackBuffer* command = MemArena::AllocType<RenderCommand_SetRenderTargetBackBuffer>();
 
+		RZE_COUNT_STATE_BIND(EStateKind::Targets, 0, nullptr, nullptr, k_backBufferTarget);
 		m_renderThread.PushCommand(command);
 	}
 
@@ -445,6 +477,7 @@ namespace Rendering
 		command->depthTexture = depthTexture;
 		command->slice = slice;
 
+		RZE_COUNT_STATE_BIND(EStateKind::Targets, 0, nullptr, depthTexture.m_buffer.get(), slice);
 		m_renderThread.PushCommand(command);
 	}
 
@@ -454,6 +487,7 @@ namespace Rendering
 		command->colourTarget = colourTarget;
 		command->hasDepth = false;
 
+		RZE_COUNT_STATE_BIND(EStateKind::Targets, 0, colourTarget.m_buffer.get());
 		m_renderThread.PushCommand(command);
 	}
 
@@ -464,6 +498,7 @@ namespace Rendering
 		command->depthTexture = depthTexture;
 		command->hasDepth = true;
 
+		RZE_COUNT_STATE_BIND(EStateKind::Targets, 0, colourTarget.m_buffer.get(), depthTexture.m_buffer.get());
 		m_renderThread.PushCommand(command);
 	}
 
@@ -561,6 +596,8 @@ namespace Rendering
 		RenderCommand_SetViewport* command = MemArena::AllocType<RenderCommand_SetViewport>();
 		command->params = viewportParams;
 
+		RZE_COUNT_STATE_BIND(EStateKind::Viewport, 0, nullptr, nullptr, HashUtils::HashFloats(
+			{ viewportParams.Width, viewportParams.Height, viewportParams.MinDepth, viewportParams.MaxDepth, viewportParams.TopLeftX, viewportParams.TopLeftY }));
 		m_renderThread.PushCommand(command);
 	}
 
@@ -569,6 +606,7 @@ namespace Rendering
 		RenderCommand_SetInputLayout* command = MemArena::AllocType<RenderCommand_SetInputLayout>();
 		command->shaderHandle = vertexShader;
 
+		RZE_COUNT_STATE_BIND(EStateKind::InputLayout, 0, vertexShader.m_shader.get());
 		m_renderThread.PushCommand(command);
 	}
 
@@ -577,6 +615,7 @@ namespace Rendering
 		RenderCommand_SetPrimitiveTopology* command = MemArena::AllocType<RenderCommand_SetPrimitiveTopology>();
 		command->topology = topologyType;
 
+		RZE_COUNT_STATE_BIND(EStateKind::Topology, 0, nullptr, nullptr, static_cast<U64>(topologyType));
 		m_renderThread.PushCommand(command);
 	}
 
@@ -585,6 +624,7 @@ namespace Rendering
 		RenderCommand_SetRasterizerState* command = MemArena::AllocType<RenderCommand_SetRasterizerState>();
 		command->state = state;
 
+		RZE_COUNT_STATE_BIND(EStateKind::Rasterizer, 0, nullptr, nullptr, static_cast<U64>(state));
 		m_renderThread.PushCommand(command);
 	}
 
@@ -593,6 +633,7 @@ namespace Rendering
 		RenderCommand_SetBlendState* command = MemArena::AllocType<RenderCommand_SetBlendState>();
 		command->state = state;
 
+		RZE_COUNT_STATE_BIND(EStateKind::Blend, 0, nullptr, nullptr, static_cast<U64>(state));
 		m_renderThread.PushCommand(command);
 	}
 
@@ -601,6 +642,7 @@ namespace Rendering
 		RenderCommand_SetDepthState* command = MemArena::AllocType<RenderCommand_SetDepthState>();
 		command->state = state;
 
+		RZE_COUNT_STATE_BIND(EStateKind::Depth, 0, nullptr, nullptr, static_cast<U64>(state));
 		m_renderThread.PushCommand(command);
 	}
 
@@ -609,6 +651,7 @@ namespace Rendering
 		RenderCommand_SetVertexShader* command = MemArena::AllocType<RenderCommand_SetVertexShader>();
 		command->shaderHandle = vertexShader;
 
+		RZE_COUNT_STATE_BIND(EStateKind::VertexShader, 0, vertexShader.m_shader.get());
 		m_renderThread.PushCommand(command);
 	}
 
@@ -617,6 +660,7 @@ namespace Rendering
 		RenderCommand_SetPixelShader* command = MemArena::AllocType<RenderCommand_SetPixelShader>();
 		command->shaderHandle = pixelShader;
 
+		RZE_COUNT_STATE_BIND(EStateKind::PixelShader, 0, pixelShader.m_shader.get());
 		m_renderThread.PushCommand(command);
 	}
 
@@ -624,6 +668,7 @@ namespace Rendering
 	{
 		RenderCommand_UnsetPixelShader* command = MemArena::AllocType<RenderCommand_UnsetPixelShader>();
 
+		RZE_COUNT_STATE_BIND(EStateKind::PixelShader, 0, nullptr);
 		m_renderThread.PushCommand(command);
 	}
 
@@ -633,6 +678,7 @@ namespace Rendering
 		command->bufferHandle = buffer;
 		command->bufferSlot = bufferSlot;
 
+		RZE_COUNT_STATE_BIND(EStateKind::ConstantBufferVS, bufferSlot, buffer.m_buffer.get());
 		m_renderThread.PushCommand(command);
 	}
 
@@ -642,6 +688,7 @@ namespace Rendering
 		command->bufferHandle = buffer;
 		command->bufferSlot = bufferSlot;
 
+		RZE_COUNT_STATE_BIND(EStateKind::ConstantBufferPS, bufferSlot, buffer.m_buffer.get());
 		m_renderThread.PushCommand(command);
 	}
 
@@ -651,6 +698,7 @@ namespace Rendering
 		command->bufferHandle = buffer;
 		command->bufferSlot = bufferSlot;
 
+		RZE_COUNT_STATE_BIND(EStateKind::VertexBuffer, bufferSlot, buffer.m_buffer.get());
 		m_renderThread.PushCommand(command);
 	}
 
@@ -659,6 +707,7 @@ namespace Rendering
 		RenderCommand_SetIndexBuffer* command = MemArena::AllocType<RenderCommand_SetIndexBuffer>();
 		command->bufferHandle = buffer;
 
+		RZE_COUNT_STATE_BIND(EStateKind::IndexBuffer, 0, buffer.m_buffer.get());
 		m_renderThread.PushCommand(command);
 	}
 
@@ -668,6 +717,7 @@ namespace Rendering
 		command->bufferHandle = texture;
 		command->bufferSlot = textureSlot;
 
+		RZE_COUNT_STATE_BIND(EStateKind::TexturePS, textureSlot, texture.m_buffer.get());
 		m_renderThread.PushCommand(command);
 	}
 
@@ -676,6 +726,7 @@ namespace Rendering
 		RenderCommand_UnsetTextureResource* command = MemArena::AllocType<RenderCommand_UnsetTextureResource>();
 		command->textureSlot = textureSlot;
 
+		RZE_COUNT_STATE_BIND(EStateKind::TexturePS, textureSlot, nullptr);
 		m_renderThread.PushCommand(command);
 	}
 
@@ -722,6 +773,7 @@ namespace Rendering
 		RenderCommand_SetComputeShader* command = MemArena::AllocType<RenderCommand_SetComputeShader>();
 		command->shaderHandle = computeShader;
 
+		RZE_COUNT_STATE_BIND(EStateKind::ComputeShader, 0, computeShader.m_shader.get());
 		m_renderThread.PushCommand(command);
 	}
 
@@ -731,6 +783,7 @@ namespace Rendering
 		command->bufferHandle = buffer;
 		command->bufferSlot = bufferSlot;
 
+		RZE_COUNT_STATE_BIND(EStateKind::ConstantBufferCS, bufferSlot, buffer.m_buffer.get());
 		m_renderThread.PushCommand(command);
 	}
 
@@ -740,6 +793,7 @@ namespace Rendering
 		command->bufferHandle = texture;
 		command->bufferSlot = textureSlot;
 
+		RZE_COUNT_STATE_BIND(EStateKind::TextureCS, textureSlot, texture.m_buffer.get());
 		m_renderThread.PushCommand(command);
 	}
 
@@ -748,6 +802,7 @@ namespace Rendering
 		RenderCommand_UnsetTextureResourceCS* command = MemArena::AllocType<RenderCommand_UnsetTextureResourceCS>();
 		command->textureSlot = textureSlot;
 
+		RZE_COUNT_STATE_BIND(EStateKind::TextureCS, textureSlot, nullptr);
 		m_renderThread.PushCommand(command);
 	}
 
@@ -758,6 +813,7 @@ namespace Rendering
 		command->slot = slot;
 		command->mip = mip;
 
+		RZE_COUNT_STATE_BIND(EStateKind::UnorderedAccess, slot, texture.m_buffer.get(), nullptr, mip);
 		m_renderThread.PushCommand(command);
 	}
 
@@ -766,6 +822,7 @@ namespace Rendering
 		RenderCommand_UnsetUnorderedAccess* command = MemArena::AllocType<RenderCommand_UnsetUnorderedAccess>();
 		command->slot = slot;
 
+		RZE_COUNT_STATE_BIND(EStateKind::UnorderedAccess, slot, nullptr);
 		m_renderThread.PushCommand(command);
 	}
 
