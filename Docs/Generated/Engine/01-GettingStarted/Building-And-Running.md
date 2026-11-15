@@ -137,8 +137,9 @@ The `run-rze` skill (`.claude/skills/run-rze/`) builds, runs and drives the Edit
 stdin, so the real cursor and focus are left alone. On Linux, `launch --harness --nested` runs the session off-screen,
 in a KWin of its own, for smoke tests while the machine is in use. Both drivers put `RZE/Config/imgui.ini` back after
 a session.
-`.claude/WindowsChecks.md` lists the checks a Windows machine still has to run for changes made on Linux, and records
-their results. See [EditorHarness-And-Drivers.md](../07-Editor/EditorHarness-And-Drivers.md).
+The checks a Windows machine still has to run for changes made on Linux are issues in the Linear **Windows** project,
+and `.claude/WindowsChecks.md` says how to run them. See
+[EditorHarness-And-Drivers.md](../07-Editor/EditorHarness-And-Drivers.md#windowschecksmd).
 
 ## CI
 

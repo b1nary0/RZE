@@ -300,13 +300,17 @@ still restored first, at `launch`. Left on disk, `close` would restore it over t
 
 ## `WindowsChecks.md`
 
-Work done on Linux can't be built or run on Windows there. `.claude/WindowsChecks.md` lists what a Windows machine
-still has to check after it, in sections by area: building and the tests, the window and input, DX11 rendering,
-Editor features and profiling, plus work items (Windows-only changes, started only when the user agrees) when there
-are any. Checks that need someone at the machine are marked (person). It's kept up to date on Linux: a check is added
-with each change that affects Windows, and removed, with its result, once the result is read; earlier results are in
-the file's git history. On Windows, Claude follows it and records each result in its table, along with fixes made
-there and what Linux should rerun.
+Work done on Linux can't be built or run on Windows there. What a Windows machine still has to check after it is
+tracked in Linear, in the RZE team's **Windows** project: one issue per check (`[Windows] Check <ID>: ...`, with its
+steps and what to expect), under five parents, RZE-225 for the harness checks and RZE-226 to RZE-229 for the hands-on
+sessions that need someone at the machine. Windows-only work items are issues in the same project.
+
+`.claude/WindowsChecks.md` is how to run them: pull, the steps every run starts with (build all three configurations,
+the unit tests, a burn and a smoke run of the Editor), then the open check issues in order, and notes about the
+Windows machine. Claude on Windows reads and comments on the issues through the Linear MCP server, so that machine
+needs it set up. It records each result as a comment on its issue and leaves the issue open; on Linux, Claude reads the
+comments, closes the checks that passed and turns failures into work items. A check is added with each change that
+affects Windows. Results from before the checks moved to Linear (2026-11-14) are at the end of the file.
 
 ## Key files
 

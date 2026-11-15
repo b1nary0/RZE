@@ -95,8 +95,9 @@ From the repo's `CLAUDE.md`, where they're kept up to date:
 - **Saved files are the same on both.** Scene files store `\\` separators (`Filepath::GetSerializedPath()`), and an
   object's components save in the order the file had them, not in a hash map's order, which differs between standard
   libraries.
-- **Checking the platform you can't build.** On Linux, `.claude/WindowsChecks.md` lists what a Windows machine still
-  has to check, for Windows Claude to run; the drivers in `.claude/skills/run-rze/` drive the Editor on each
+- **Checking the platform you can't build.** What a Windows machine still has to check after work on Linux is an
+  issue per check in the Linear **Windows** project, run by Windows Claude as `.claude/WindowsChecks.md` describes
+  ([EditorHarness-And-Drivers.md](../07-Editor/EditorHarness-And-Drivers.md#windowschecksmd)); the drivers in `.claude/skills/run-rze/` drive the Editor on each
   platform for automated checks ([Building-And-Running.md](../01-GettingStarted/Building-And-Running.md#driving-the-running-editor)).
 
 ## Adding a platform
