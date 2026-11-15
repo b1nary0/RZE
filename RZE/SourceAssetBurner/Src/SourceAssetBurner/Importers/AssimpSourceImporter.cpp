@@ -9,6 +9,8 @@
 #include <Asset/AssetImport/SourceMaterialRules.h>
 #include <Asset/AssetPaths.h>
 
+#include <Graphics/MeshVertexOrder.h>
+
 #include <Utils/Memory/ByteStream.h>
 
 #include <Utils/DebugUtils/Debug.h>
@@ -62,6 +64,21 @@ namespace
 			}
 		}
 		return sanitized;
+	}
+
+	// Puts each mesh's triangles in vertex-cache order with Assimp's own step (Tipsify, for a cache of
+	// PP_ICL_PTCACHE_SIZE vertices), so a draw shades fewer vertices. Run on its own after the rest: the step skips any
+	// mesh marked as built from polygons (aiPrimitiveType_NGONEncodingFlag, which Triangulate sets wherever the source
+	// had quads), so the mark is cleared first. It only says that consecutive triangles sharing a first vertex form one
+	// polygon, which the new order ends, and nothing here reads it.
+	const aiScene* OrderTrianglesForVertexCache(Assimp::Importer& importer)
+	{
+		const aiScene& scene = *importer.GetScene();
+		for (U32 meshIndex = 0; meshIndex < scene.mNumMeshes; ++meshIndex)
+		{
+			scene.mMeshes[meshIndex]->mPrimitiveTypes &= ~static_cast<unsigned int>(aiPrimitiveType_NGONEncodingFlag);
+		}
+		return importer.ApplyPostProcessing(aiProcess_ImproveCacheLocality);
 	}
 }
 
@@ -298,6 +315,13 @@ bool AssimpSourceImporter::Import(const Filepath& filePath)
 		return false;
 	}
 
+	AssimpScene = OrderTrianglesForVertexCache(ModelImporter);
+	if (!AssimpScene)
+	{
+		RZE_LOG_ERROR_ARGS("Failed to load model from [%s]: ordering its triangles failed: %s", filePath.GetRelativePath().c_str(), ModelImporter.GetErrorString());
+		return false;
+	}
+
 	// Each mesh is read once, however many nodes place it
 	m_meshes.reserve(AssimpScene->mNumMeshes);
 	for (U32 meshIndex = 0; meshIndex < AssimpScene->mNumMeshes; ++meshIndex)
@@ -499,6 +523,10 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 			outMeshData.IndexArray.push_back(assimpFace.mIndices[indexIdx]);
 		}
 	}
+
+	// Assimp's cache order moves only the triangles. Stored in the order those use them, a draw reads its vertices
+	// about in sequence.
+	MeshVertexOrder::OrderByFirstUse(outMeshData.VertexDataArray, outMeshData.IndexArray);
 
 	if (mesh.mMaterialIndex < scene.mNumMaterials)
 	{
