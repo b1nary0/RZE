@@ -56,6 +56,7 @@ bool StaticMeshResource::LoadCPU(const Filepath& filePath)
 	{
 		PendingSubmesh& pendingSubmesh = m_pendingSubmeshes.emplace_back();
 		pendingSubmesh.InterleavedVertexData = MeshGeometry::BuildInterleavedVertexData(importedSubmesh.Vertices);
+		pendingSubmesh.DepthData = MeshGeometry::BuildDepthData(importedSubmesh.Vertices, importedSubmesh.Indices);
 		pendingSubmesh.Data = std::move(importedSubmesh);
 	}
 	m_pendingMaterials = std::move(meshImporter.GetMaterials());
@@ -92,7 +93,9 @@ ResourceFinalizeCost StaticMeshResource::GetNextFinalizeStepCost() const
 	{
 		const PendingSubmesh& pendingSubmesh = m_pendingSubmeshes[m_nextSubmeshToFinalize];
 		const size_t dataBytes = pendingSubmesh.InterleavedVertexData.size() * sizeof(float)
-			+ pendingSubmesh.Data.Indices.size() * sizeof(U32);
+			+ pendingSubmesh.Data.Indices.size() * sizeof(U32)
+			+ pendingSubmesh.DepthData.Positions.size() * sizeof(float)
+			+ pendingSubmesh.DepthData.Indices.size() * sizeof(U32);
 
 		cost.ArenaBytes = dataBytes + k_submeshCommandOverheadBytes;
 		cost.UploadBytes = dataBytes;
@@ -123,7 +126,10 @@ bool StaticMeshResource::FinalizeStep()
 		geometry.SetName(pendingSubmesh.Data.Name);
 		geometry.SetVertexData(std::move(pendingSubmesh.Data.Vertices));
 		geometry.SetIndexData(std::move(pendingSubmesh.Data.Indices));
-		geometry.AllocateData(pendingSubmesh.InterleavedVertexData);
+		geometry.AllocateData(pendingSubmesh.InterleavedVertexData, pendingSubmesh.DepthData);
+		// Uploaded, so freed now rather than with the last submesh's step
+		pendingSubmesh.InterleavedVertexData = std::vector<float>();
+		pendingSubmesh.DepthData = MeshGeometry::DepthData();
 
 		++m_nextSubmeshToFinalize;
 	}

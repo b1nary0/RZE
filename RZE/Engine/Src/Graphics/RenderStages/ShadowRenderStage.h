@@ -6,8 +6,6 @@
 #include <Graphics/RenderData/SceneLightingData.h>
 #include <Graphics/RenderStage.h>
 
-#include <EngineCore/Resources/TypedResourceHandle.h>
-
 #include <Rendering/BufferHandle.h>
 
 #include <Utils/LiveIDAllocator.h>
@@ -17,7 +15,6 @@
 
 class LightObject;
 class RenderScene;
-class VertexShader;
 
 // Turns a scene's lights into what shading reads (SceneLightingData): a buffer of every light, uploaded each time
 // it runs, and the shadow maps of the lights that cast shadows, which ForwardRenderStage samples. Each light type
@@ -125,8 +122,6 @@ private:
 
 private:
 	RenderOutput<SceneLightingData> m_sceneLightingOutput;
-
-	TypedResourceHandle<VertexShader> m_vertexShader;
 
 	// What one DrawCasters call draws; used within it, so every light view shares it
 	DepthOnlyMeshBatches m_casters;

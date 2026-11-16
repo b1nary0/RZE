@@ -41,6 +41,7 @@ private:
 	{
 		MeshAssetImporter::ImportedSubmesh Data;
 		std::vector<float> InterleavedVertexData;
+		MeshGeometry::DepthData DepthData;
 	};
 
 private:

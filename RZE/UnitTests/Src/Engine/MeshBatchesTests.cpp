@@ -529,6 +529,37 @@ TEST_CASE("The Depth format reads the vertex's position and UV where they are, a
 	}
 }
 
+TEST_CASE("The DepthPosition format reads only the vertex's position, and the Depth format's instances from slot 1")
+{
+	const MeshInstanceFormat& format = MeshInstanceFormats::DepthPosition();
+	const MeshInstanceFormat& depth = MeshInstanceFormats::Depth();
+	// The same instances, so a stream of Depth's feeds a shader reading either
+	CHECK(format.Stride == depth.Stride);
+	CHECK(format.Fill == depth.Fill);
+	CHECK(format.CarriesID == depth.CarriesID);
+
+	const Rendering::ShaderInputLayout& layout = format.InputLayout;
+	REQUIRE(layout.GetDataCount() == 5);
+	CHECK(layout[0].Name == "POSITION");
+	CHECK(layout[0].Offset == 0);
+	CHECK(layout[0].InputSlot == 0);
+	CHECK(layout[0].DataFormat == Rendering::EDataFormat::R32G32B32_FLOAT);
+	CHECK(layout[0].DataClassification == Rendering::EDataClassification::PER_VERTEX);
+
+	// The instance's elements are Depth's, after its UV
+	for (size_t column = 0; column < 4; ++column)
+	{
+		const Rendering::ShaderInputLayout::ShaderInputLayoutData& element = layout[1 + column];
+		const Rendering::ShaderInputLayout::ShaderInputLayoutData& depthElement = depth.InputLayout[2 + column];
+		CAPTURE(element.Name);
+		CHECK(element.Name == depthElement.Name);
+		CHECK(element.Offset == depthElement.Offset);
+		CHECK(element.InputSlot == MeshInstanceFormats::k_instanceSlot);
+		CHECK(element.DataClassification == Rendering::EDataClassification::PER_INSTANCE);
+		CHECK(element.DataFormat == depthElement.DataFormat);
+	}
+}
+
 TEST_CASE("A Depth instance is its draw's transform's columns without their fourth values, shared matrices included")
 {
 	const MeshGeometry geometry;

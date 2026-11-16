@@ -35,14 +35,26 @@ public:
 	MeshGeometry(U32 vertexCount, U32 indexCount);
 	~MeshGeometry();
 
-	// Creates the GPU vertex/index buffers, then frees the CPU copies of the vertices and indices: nothing reads them
-	// once they're uploaded. The bounds stay. Main thread only.
+	// What depth-only passes draw it from (DepthOnlyMeshBatches): the positions alone, welded, with their own indices
+	// (MeshDepthGeometry)
+	struct DepthData
+	{
+		// X, Y, Z of each vertex
+		std::vector<float> Positions;
+		std::vector<U32> Indices;
+	};
+
+	// Creates the GPU vertex/index buffers, for drawing and for depth, then frees the CPU copies of the vertices and
+	// indices: nothing reads them once they're uploaded. The bounds stay. Main thread only.
 	void AllocateData();
-	// As above, using vertex data already laid out by BuildInterleavedVertexData (e.g. prepared on a worker thread).
-	void AllocateData(const std::vector<float>& interleavedVertexData);
+	// As above, using vertex data already laid out by BuildInterleavedVertexData and depth data from BuildDepthData
+	// (e.g. prepared on a worker thread).
+	void AllocateData(const std::vector<float>& interleavedVertexData, const DepthData& depthData);
 
 	// Converts vertices into the layout the vertex shader expects. Pure CPU work; safe on any thread.
 	static std::vector<float> BuildInterleavedVertexData(const std::vector<MeshVertex>& vertices);
+	// What a geometry's vertices and indices are drawn from for depth alone. Pure CPU work; safe on any thread.
+	static DepthData BuildDepthData(const std::vector<MeshVertex>& vertices, const std::vector<U32>& indices);
 
 	// Building the geometry, before AllocateData; asserts after it
 	void AddVertex(const MeshVertex& vertex);
@@ -66,6 +78,9 @@ public:
 	// Binds its vertices and indices and draws them instanced: instanceCount instances from firstInstance in the
 	// instance stream bound beside them. After AllocateData.
 	void Draw(U32 instanceCount, U32 firstInstance) const;
+	// The same, from the depth buffers: positions only, so for a pass whose vertex shader reads nothing else
+	// (MeshInstanceFormats::DepthPosition). After AllocateData.
+	void DrawDepth(U32 instanceCount, U32 firstInstance) const;
 
 private:
 	void CalculateBounds();
@@ -82,4 +97,7 @@ private:
 
 	std::shared_ptr<VertexBuffer> m_vertexBuffer;
 	std::shared_ptr<IndexBuffer> m_indexBuffer;
+	// The same triangles as DepthData has them
+	std::shared_ptr<VertexBuffer> m_depthVertexBuffer;
+	std::shared_ptr<IndexBuffer> m_depthIndexBuffer;
 };

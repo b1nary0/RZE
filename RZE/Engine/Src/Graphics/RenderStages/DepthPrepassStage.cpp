@@ -1,8 +1,6 @@
 #include <Graphics/RenderStages/DepthPrepassStage.h>
 
-#include <Graphics/MeshInstanceFormat.h>
 #include <Graphics/RenderEngine.h>
-#include <Graphics/Shader.h>
 
 #include <Rendering/Renderer.h>
 #include <Rendering/Graphics/RenderTarget.h>
@@ -11,8 +9,9 @@
 
 void DepthPrepassStage::Initialize()
 {
-	// Places vertices as ForwardRenderStage's shader does, to the bit (MeshClipPosition in Common/MeshVertex.hlsli)
-	m_vertexShader = LoadVertexShader("Vertex_MeshDepthOnly", MeshInstanceFormats::Depth().InputLayout);
+	// The camera the vertex shaders (DepthOnlyMeshBatches) read from slot 0: they place vertices as ForwardRenderStage's
+	// shader does, to the bit (MeshClipPosition in Common/MeshVertex.hlsli)
+	m_cameraBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(RenderCamera), 128, 1);
 
 	m_batches.Initialize();
 }
@@ -36,15 +35,11 @@ void DepthPrepassStage::Render(RenderContext& context)
 	Rendering::Renderer::SetDepthTarget(sceneDepthData.Depth);
 	Rendering::Renderer::ClearDepthStencilBuffer(sceneDepthData.Depth);
 
-	// The forward pass uploads the same camera to the same buffer again, so the order doesn't matter
-	Rendering::Renderer::UploadDataToBuffer<RenderCamera>(m_vertexShader->GetCameraDataBuffer(), &view.Camera);
-
-	Rendering::Renderer::SetVertexShader(m_vertexShader->GetPlatformObject());
-	Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetCameraDataBuffer(), 0);
+	Rendering::Renderer::UploadDataToBuffer<RenderCamera>(m_cameraBuffer, &view.Camera);
+	Rendering::Renderer::SetConstantBufferVS(m_cameraBuffer, 0);
 
 	Rendering::Renderer::SetViewport({ view.ViewportSize.X(), view.ViewportSize.Y() });
 
-	Rendering::Renderer::SetInputLayout(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetPrimitiveTopology(Rendering::EPrimitiveTopology::TriangleList);
 
 	// What the forward pass sees too, so it draws over exactly this depth. Blended draws don't write depth: whatever

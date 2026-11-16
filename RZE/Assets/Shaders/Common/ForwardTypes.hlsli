@@ -54,6 +54,19 @@ struct DepthVertexInput
 	float2 UV       : UV;
 };
 
+// What Vertex_MeshDepthOnlyPosition reads of a mesh vertex: where it is. A depth-only vertex buffer holds only this
+// (MeshGeometry::DrawDepth; MeshInstanceFormats::DepthPosition).
+struct DepthPositionVertexInput
+{
+	float3 Position : POSITION;
+};
+
+// Vertex_MeshDepthOnlyPosition's output. Nothing reads more: opaque draws run no pixel shader.
+struct DepthPositionVertexToPixel
+{
+	float4 Position : SV_POSITION;
+};
+
 // Vertex_MeshDepthOnly's output, which Pixel_DepthOnlyCutout reads
 struct DepthVertexToPixel
 {

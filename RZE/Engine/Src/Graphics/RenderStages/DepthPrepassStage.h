@@ -4,9 +4,7 @@
 #include <Graphics/RenderData/SceneDepthData.h>
 #include <Graphics/RenderStage.h>
 
-#include <EngineCore/Resources/TypedResourceHandle.h>
-
-class VertexShader;
+#include <Rendering/BufferHandle.h>
 
 // Draws the depth of everything that isn't blended before any shading, so the forward pass shades each pixel once,
 // by its nearest surface, and so later passes (ambient occlusion) can read the scene's depth before lighting it.
@@ -28,8 +26,8 @@ public:
 private:
 	RenderOutput<SceneDepthData> m_sceneDepthOutput;
 
-	// Vertex_MeshDepthOnly: computes the same depths as the forward pass's, from only what depth needs
-	TypedResourceHandle<VertexShader> m_vertexShader;
+	// The camera DepthOnlyMeshBatches' vertex shaders read: computes the same depths as the forward pass's
+	Rendering::ConstantBufferHandle m_cameraBuffer;
 
 	// What's drawn each Render
 	DepthOnlyMeshBatches m_batches;

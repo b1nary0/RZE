@@ -5,12 +5,16 @@
 #include <Graphics/MaterialSlot.h>
 #include <Graphics/MeshDraw.h>
 #include <Graphics/MeshGeometry.h>
+#include <Graphics/MeshInstanceFormat.h>
 #include <Graphics/Shader.h>
 
 #include <Rendering/Renderer.h>
 
 void DepthOnlyMeshBatches::Initialize()
 {
+	// The same instances, so one stream feeds both (MeshInstanceFormats::DepthPosition)
+	m_opaqueVertexShader = LoadVertexShader("Vertex_MeshDepthOnlyPosition", MeshInstanceFormats::DepthPosition().InputLayout);
+	m_cutoutVertexShader = LoadVertexShader("Vertex_MeshDepthOnly", MeshInstanceFormats::Depth().InputLayout);
 	m_cutoutShader = LoadPixelShader("Pixel_DepthOnlyCutout");
 
 	m_batches.Initialize();
@@ -43,8 +47,11 @@ U32 DepthOnlyMeshBatches::Draw()
 	m_batches.BindInstances();
 
 	// Opaque draws need no pixel shader, so it's only set when a cutout's turn comes, and unset after
-	bool isCutoutShaderBound = false;
+	bool isCutoutBound = false;
 	Rendering::Renderer::UnsetPixelShader();
+
+	// Each vertex shader is bound with its input layout when the first batch of a run comes
+	bool isVertexShaderBound = false;
 
 	for (const MeshBatches::Batch& batch : m_batches.GetBatches())
 	{
@@ -52,7 +59,15 @@ U32 DepthOnlyMeshBatches::Draw()
 		const MaterialInstance& materialInstance = draw.Slot->GetMaterial();
 
 		const bool isCutout = materialInstance.HasOpacityMap();
-		if (isCutout != isCutoutShaderBound)
+		if (!isVertexShaderBound || isCutout != isCutoutBound)
+		{
+			const VertexShader& vertexShader = isCutout ? *m_cutoutVertexShader.Get() : *m_opaqueVertexShader.Get();
+			Rendering::Renderer::SetVertexShader(vertexShader.GetPlatformObject());
+			Rendering::Renderer::SetInputLayout(vertexShader.GetPlatformObject());
+			isVertexShaderBound = true;
+		}
+
+		if (isCutout != isCutoutBound)
 		{
 			if (isCutout)
 			{
@@ -62,15 +77,18 @@ U32 DepthOnlyMeshBatches::Draw()
 			{
 				Rendering::Renderer::UnsetPixelShader();
 			}
-			isCutoutShaderBound = isCutout;
+			isCutoutBound = isCutout;
 		}
 
 		if (isCutout)
 		{
 			materialInstance.Bind({ TEXTURE_SLOT_OPACITY });
+			draw.Geometry->Draw(batch.InstanceCount, batch.FirstInstance);
 		}
-
-		draw.Geometry->Draw(batch.InstanceCount, batch.FirstInstance);
+		else
+		{
+			draw.Geometry->DrawDepth(batch.InstanceCount, batch.FirstInstance);
+		}
 	}
 
 	return static_cast<U32>(m_batches.GetBatches().size());

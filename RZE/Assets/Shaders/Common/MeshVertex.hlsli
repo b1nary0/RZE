@@ -26,10 +26,11 @@ MeshWorld GetMeshWorld(float4x4 world)
 }
 
 // Where a mesh vertex is in the world, and in the camera's clip space. Every mesh vertex shader places its vertices
-// with these two, so the depth prepass (Vertex_MeshDepthOnly) and the forward pass (Vertex_MeshInstanced) give the
-// same depths to the bit: forward tests LessEqual against the prepass's depth and writes none, so a depth one ULP
-// nearer in the prepass would drop the pixel. precise keeps the compiler from fusing or reordering the arithmetic, so
-// it's done as written in both; the GL translator also marks the position invariant (GLShaderTranslator).
+// with these two, so the depth prepass (Vertex_MeshDepthOnly, Vertex_MeshDepthOnlyPosition) and the forward pass
+// (Vertex_MeshInstanced) give the same depths to the bit: forward tests LessEqual against the prepass's depth and
+// writes none, so a depth one ULP nearer in the prepass would drop the pixel. precise keeps the compiler from fusing
+// or reordering the arithmetic, so it's done as written in both; the GL translator also marks the position invariant
+// (GLShaderTranslator).
 float3 MeshWorldPosition(float3 position, MeshWorld world)
 {
 	precise float3 worldPos = world.ColumnA * position.x + world.ColumnB * position.y + world.ColumnC * position.z + world.ColumnD;

@@ -1,10 +1,8 @@
 #include <Graphics/RenderStages/ShadowRenderStage.h>
 
 #include <Graphics/CubeMap.h>
-#include <Graphics/MeshInstanceFormat.h>
 #include <Graphics/RenderEngine.h>
 #include <Graphics/SceneChangeLog.h>
-#include <Graphics/Shader.h>
 
 #include <Rendering/Renderer.h>
 #include <Rendering/Driver/GFXBuffer.h>
@@ -104,9 +102,6 @@ namespace
 
 void ShadowRenderStage::Initialize()
 {
-	// The depth prepass's vertex shader, with each light view's view-projection as its camera
-	m_vertexShader = LoadVertexShader("Vertex_MeshDepthOnly", MeshInstanceFormats::Depth().InputLayout);
-
 	m_casters.Initialize();
 
 	// Separate from the vertex shader's own camera buffer so the forward pass's camera isn't overwritten
@@ -345,11 +340,10 @@ void ShadowRenderStage::BeginShadowPass()
 {
 	Rendering::Renderer::Begin("ShadowRenderStage");
 
-	// The same for every light's views. DrawCasters sets the pixel shader, only for cutouts.
-	Rendering::Renderer::SetVertexShader(m_vertexShader->GetPlatformObject());
+	// The same for every light's views, with each view's view-projection as the camera the casters' vertex shaders read.
+	// DrawCasters' draws set the vertex shaders and the pixel shader, which only cutouts have.
 	Rendering::Renderer::SetConstantBufferVS(m_lightCameraBuffer, 0);
 	Rendering::Renderer::SetRasterizerState(Rendering::ERasterizerState::ShadowCaster);
-	Rendering::Renderer::SetInputLayout(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetPrimitiveTopology(Rendering::EPrimitiveTopology::TriangleList);
 }
 

@@ -148,6 +148,18 @@ const MeshInstanceFormat& MeshInstanceFormats::Depth()
 	return format;
 }
 
+const MeshInstanceFormat& MeshInstanceFormats::DepthPosition()
+{
+	// DepthPositionVertexInput's and MeshDepthInstanceInput's semantics, in their order. Instances as Depth's.
+	static const MeshInstanceFormat format =
+	{
+		static_cast<U32>(sizeof(GraphicsLayouts::MeshDepthInstanceLayout)),
+		MakeInputLayout({ "POSITION" }, { { EDataFormat::R32G32B32_FLOAT, k_columnSize, { "WORLDA", "WORLDB", "WORLDC", "WORLDD" } } }),
+		&FillDepth
+	};
+	return format;
+}
+
 const MeshInstanceFormat& MeshInstanceFormats::ID()
 {
 	// DepthVertexInput's and MeshIDInstanceInput's semantics, in their order

@@ -35,6 +35,10 @@ namespace MeshInstanceFormats
 	// What a depth-only pass needs: the vertex's position and UV (for cutouts' masks), and the draw's world transform
 	// (a GraphicsLayouts::MeshDepthInstanceLayout), built without its material slot. Read by MeshDepthInstanceInput.
 	const MeshInstanceFormat& Depth();
+	// Depth's instances, read with only the vertex's position: for the geometry's depth buffers
+	// (MeshGeometry::DrawDepth), which hold nothing else. Streams as Depth does, so a MeshBatches of Depth's can
+	// feed it. Read by MeshDepthInstanceInput.
+	const MeshInstanceFormat& DepthPosition();
 	// What a pass that writes an ID for each draw's pixels needs: Depth's, and the ID the stage gave the draw (a
 	// GraphicsLayouts::MeshIDInstanceLayout), built without its material slot. Read by MeshIDInstanceInput.
 	const MeshInstanceFormat& ID();

@@ -1,6 +1,7 @@
 #include <Graphics/MeshGeometry.h>
 
 #include <Graphics/IndexBuffer.h>
+#include <Graphics/MeshDepthGeometry.h>
 #include <Graphics/VertexBuffer.h>
 
 #include <Rendering/Renderer.h>
@@ -16,6 +17,17 @@ namespace
 		Vector2D uv;
 		Vector3D tangent;
 	};
+
+	// A depth vertex is a position: X, Y, Z
+	constexpr U32 k_depthPositionFloats = 3;
+
+	void DrawBuffers(const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer, U32 instanceCount, U32 firstInstance)
+	{
+		const Rendering::IndexBufferHandle& indices = indexBuffer.GetPlatformObject();
+		Rendering::Renderer::SetVertexBuffer(vertexBuffer.GetPlatformObject(), 0);
+		Rendering::Renderer::SetIndexBuffer(indices);
+		Rendering::Renderer::DrawIndexedInstanced(indices, instanceCount, firstInstance);
+	}
 }
 
 MeshGeometry::MeshGeometry(U32 vertexCount, U32 indexCount)
@@ -30,13 +42,15 @@ MeshGeometry::~MeshGeometry()
 
 void MeshGeometry::AllocateData()
 {
-	AllocateData(BuildInterleavedVertexData(m_vertices));
+	AllocateData(BuildInterleavedVertexData(m_vertices), BuildDepthData(m_vertices, m_indices));
 }
 
-void MeshGeometry::AllocateData(const std::vector<float>& interleavedVertexData)
+void MeshGeometry::AllocateData(const std::vector<float>& interleavedVertexData, const DepthData& depthData)
 {
 	AssertExpr(m_vertexBuffer == nullptr);
 	AssertExpr(m_indexBuffer == nullptr);
+	AssertExpr(m_depthVertexBuffer == nullptr);
+	AssertExpr(m_depthIndexBuffer == nullptr);
 
 	// Again, in case the vertices were filled in some other way
 	CalculateBounds();
@@ -46,6 +60,12 @@ void MeshGeometry::AllocateData(const std::vector<float>& interleavedVertexData)
 
 	m_indexBuffer = std::make_shared<IndexBuffer>();
 	m_indexBuffer->Initialize(m_indices);
+
+	m_depthVertexBuffer = std::make_shared<VertexBuffer>();
+	m_depthVertexBuffer->Initialize(depthData.Positions, sizeof(float) * k_depthPositionFloats);
+
+	m_depthIndexBuffer = std::make_shared<IndexBuffer>();
+	m_depthIndexBuffer->Initialize(depthData.Indices);
 
 	// The uploads took their own copies. Swapped with empty vectors, since clear() keeps the memory.
 	std::vector<MeshVertex>().swap(m_vertices);
@@ -82,6 +102,22 @@ std::vector<float> MeshGeometry::BuildInterleavedVertexData(const std::vector<Me
 	}
 
 	return vertexDataBuffer;
+}
+
+MeshGeometry::DepthData MeshGeometry::BuildDepthData(const std::vector<MeshVertex>& vertices, const std::vector<U32>& indices)
+{
+	std::vector<Vector3D> positions;
+	DepthData depthData;
+	MeshDepthGeometry::Build(vertices, indices, positions, depthData.Indices);
+
+	depthData.Positions.reserve(positions.size() * k_depthPositionFloats);
+	for (const Vector3D& position : positions)
+	{
+		depthData.Positions.push_back(position.X());
+		depthData.Positions.push_back(position.Y());
+		depthData.Positions.push_back(position.Z());
+	}
+	return depthData;
 }
 
 void MeshGeometry::CalculateBounds()
@@ -163,9 +199,11 @@ const std::shared_ptr<IndexBuffer>& MeshGeometry::GetIndexBuffer() const
 void MeshGeometry::Draw(U32 instanceCount, U32 firstInstance) const
 {
 	AssertExpr(IsAllocated());
+	DrawBuffers(*m_vertexBuffer, *m_indexBuffer, instanceCount, firstInstance);
+}
 
-	const Rendering::IndexBufferHandle& indexBuffer = m_indexBuffer->GetPlatformObject();
-	Rendering::Renderer::SetVertexBuffer(m_vertexBuffer->GetPlatformObject(), 0);
-	Rendering::Renderer::SetIndexBuffer(indexBuffer);
-	Rendering::Renderer::DrawIndexedInstanced(indexBuffer, instanceCount, firstInstance);
+void MeshGeometry::DrawDepth(U32 instanceCount, U32 firstInstance) const
+{
+	AssertExpr(IsAllocated());
+	DrawBuffers(*m_depthVertexBuffer, *m_depthIndexBuffer, instanceCount, firstInstance);
 }
