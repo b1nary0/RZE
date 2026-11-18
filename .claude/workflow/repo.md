@@ -13,7 +13,7 @@ differs between repositories. It's per repository and never synced.
 | Lane worktree      | `/home/JPOD/dev/RZE-RZE-N`, branch `RZE-N`                   |
 | Small-items lane   | worktree `/home/JPOD/dev/RZE-small`, tab `RZE-small`, hook name `small` |
 | Lanes by default   | yes: lanes is the default way to work an RZE issue          |
-| Peer repository    | `/home/JPOD/dev/RZGitClient` (for `sync-workflow`)           |
+| Peer repository    | `/home/JPOD/dev/RZGit` (for `sync-workflow`)                 |
 
 `<main>` in the shared skills means the main checkout above.
 

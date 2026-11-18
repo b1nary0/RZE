@@ -159,7 +159,7 @@ How a lane tells the coordinator it needs the user, and how its tab shows that. 
 - **Start** (SessionStart, also on a resume): the lane is working. It records the state `working` silently, so the tab turns orange as soon as the lane's Claude session starts, not at its first Stop.
 - **Stop**: the lane finished its turn. The event reads `waiting for you: <the end of its last message>` (up to 200 characters).
 - **Notification**: only a **permission prompt** counts (`needs permission: <message>`). Idle reminders are ignored, since they repeat the Stop event.
-- **Done**: the lane runs `python3 <main>/.claude/skills/lanes/lane_hook.py "$LANE_DIR" "$LANE_NAME" done` as its last landing step, once its commit is on the base and its issue is Done and archived (the lane prompt says so). It records the state `done` silently; the Stop that ends that turn keeps it `done` and reports `free: <the end of its last message>`. A Stop counts as free only while the user hasn't answered since the done command.
+- **Done**: the lane runs `python3 <main>/.claude/skills/lanes/lane_hook.py "$LANE_DIR" "$LANE_NAME" done` as its last landing step, once its commit is on the base and its issue is Done and archived (the lane prompt says so). It records the state `done` silently and marks the lane **landed**. From then on every Stop keeps it `done` and reports `free: <the end of its last message>`, even after the user has asked it for more: a landed lane isn't waiting on the user. It stays landed until the lane switches to another issue's branch (the small-items lane starting its next issue). The branch is read from the session's own folder at the first Stop after the done command.
 - Each event (apart from the silent Start and Done) appends one line to `<dir>/attention.log` (`HH:MM <lane> <what>`); each records `<dir>/state/<lane>.json`: the lane's Konsole session (`KONSOLE_DBUS_SESSION`), its transcript, the transcript's size at that moment, the state (`attention` or `done`), and the event.
 - **An answer** is a `user` record in the transcript that carries the user's words. Tool results are stored as `user` records too and don't count (`lane_state.py`).
 
@@ -170,9 +170,9 @@ How a lane tells the coordinator it needs the user, and how its tab shows that. 
 | red    | `#c0392b` | the lane needs the user: a Stop or a permission prompt they haven't answered |
 | orange | `#d68910` | the lane is working: its session has just started (Start), or the user has answered (a new answer in its transcript after the recorded size) |
 | blue   | `#2f6fd0` | the lane stopped, but one of its own shell commands is still running (a background task), so it's waiting on that, not the user |
-| green  | `#3b8f5a` | the lane has landed its work and is free for more (the done command). The small-items lane: this issue landed, ready for the next |
+| green  | `#3b8f5a` | the lane has landed its work and is free for more (the done command), at every Stop after that. The small-items lane: this issue landed, ready for the next |
 
-- An answer turns red or green into orange: a lane the user writes to again is working, and its next Stop is red as usual.
+- An answer turns red or green into orange: a lane the user writes to again is working. Its next Stop is red as usual, or green again if it has landed.
 
 - Blue applies only to a Stop. A permission prompt stays red even while a shell command runs. The check is a `shell-snapshots` child of the lane's `claude` process under the tab's shell.
 - A tab is recoloured only when its colour changes. A lane with no Konsole session in its state file gets events but no colour.

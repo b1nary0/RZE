@@ -5,7 +5,7 @@ Per repository, never synced. The shared rules (archiving, the API key, views, e
 
 **Workspace and teams**
 - The workspace is `rze` (urlKey `rze`). Team **RZE**, key `RZE`. Issue identifiers `RZE-<n>` are assigned by Linear.
-- **RZG** is RZGitClient's team. Don't work its issues from here.
+- **RZG** is RZGit's team. Don't work its issues from here.
 - Projects: Rendering, RZEStudio, Asset Pipeline, GameObject infrastructure, Cleanup, MeshEditor, RZE Hub, Linux,
   Windows, Engine Core, Build, Test.
 - **If an item's project or shape is unclear, ask before creating it**, not after.

@@ -1,11 +1,11 @@
 ---
 name: sync-workflow
-description: Compare and copy the shared workflow skills (lanes, work-graph, linear, sync-workflow) between this repository and its peer (RZE and RZGitClient each commit their own copy). Use when the user asks to sync the workflow skills, or after changing a shared skill, to offer carrying the change across.
+description: Compare and copy the shared workflow skills (lanes, work-graph, linear, sync-workflow) between this repository and its peer (RZE and RZGit each commit their own copy). Use when the user asks to sync the workflow skills, or after changing a shared skill, to offer carrying the change across.
 ---
 
 # Sync the workflow skills
 
-RZE and RZGitClient each commit their own copy of the shared workflow skills, so each works without the other. Only the skill folders are shared; each repository's `.claude/workflow/` (repo settings, Linear conventions, lane prompt) is its own and never synced.
+RZE and RZGit each commit their own copy of the shared workflow skills, so each works without the other. Only the skill folders are shared; each repository's `.claude/workflow/` (repo settings, Linear conventions, lane prompt) is its own and never synced.
 
 **Keep the shared skills free of repository details.** Anything that differs between the repositories goes in `.claude/workflow/repo.md` (or `linear.md`, `lane-prompt.md`), and the skill refers to it.
 

@@ -1,4 +1,4 @@
-"""Shared by lane_hook.py and watch.py (lanes skill, "Attention highlights")."""
+"""Used by watch.py (lanes skill, "Attention highlights") to notice when the user has answered."""
 import json
 
 

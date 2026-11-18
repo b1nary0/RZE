@@ -11,12 +11,10 @@ watch.py uses to colour the lane's tab and to notice when the user has answered.
 """
 import json
 import os
+import subprocess
 import sys
 import time
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lane_state import answered  # noqa: E402
 
 root, lane, event = Path(sys.argv[1]), sys.argv[2], sys.argv[3]
 state_file = root / "state" / f"{lane}.json"
@@ -54,7 +52,28 @@ def size(path):
     return os.path.getsize(path) if path and os.path.exists(path) else 0
 
 
+def branch(cwd):
+    """The branch checked out in cwd; "" when detached or unknown."""
+    try:
+        return subprocess.run(["git", "-C", cwd, "branch", "--show-current"],
+                              capture_output=True, text=True).stdout.strip()
+    except OSError:
+        return ""
+
+
 tp = data.get("transcript_path") or previous.get("transcript", "")
+# Landed: set by the done command, and kept until the lane starts another issue's branch (the
+# small-items lane). The branch is read at the first Stop after done, from the session's own folder.
+landed, landed_branch = previous.get("landed", False), previous.get("landed_branch")
+if event == "done":
+    landed, landed_branch = True, None
+elif landed and event in ("start", "stop"):
+    current = branch(data.get("cwd") or os.getcwd())
+    if landed_branch is None:
+        landed_branch = current
+    if current not in (landed_branch, ""):
+        landed, landed_branch = False, None  # on a new issue's branch: an ordinary lane again
+
 state_name = "attention"
 if event == "done":
     state_name, what = "done", None  # silent: the Stop that ends this turn reports it
@@ -62,8 +81,8 @@ elif event == "start":
     state_name, what = "working", None  # silent: the tab turns orange as soon as the lane starts
 elif event == "stop":
     text = " ".join(last_text().split())[-200:] or "(no text)"
-    if previous.get("state") == "done" and not answered(tp, previous.get("offset", 0)):
-        state_name, what = "done", "free: " + text  # the Stop that ends the done command's turn
+    if landed:
+        state_name, what = "done", "free: " + text  # landed: every Stop is free, not waiting
     else:
         what = "waiting for you: " + text
 else:
@@ -73,7 +92,8 @@ else:
     what = "needs permission: " + msg
 
 state = {"session": os.environ.get("KONSOLE_DBUS_SESSION", "") or previous.get("session", ""),
-         "transcript": tp, "offset": size(tp), "state": state_name, "event": event}
+         "transcript": tp, "offset": size(tp), "state": state_name, "event": event,
+         "landed": landed, "landed_branch": landed_branch}
 (root / "state").mkdir(parents=True, exist_ok=True)
 state_file.write_text(json.dumps(state))
 if what:
