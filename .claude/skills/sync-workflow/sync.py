@@ -1,8 +1,9 @@
-"""Compare and copy the shared workflow skills between this repository and its peer.
+"""Compare and copy the shared workflow skills between this repository and its peers.
 
 The shared set is SHARED below, under .claude/skills/. The per-repository files in
-.claude/workflow/ are never touched. The peer comes from this repository's
-.claude/workflow/repo.md ("Peer repository" row), or --peer PATH.
+.claude/workflow/ are never touched. No repository names another: the peers are found
+here (peers() below), or given with --peer PATH. With several peers, status shows each,
+and diff, push and pull need --peer.
 
     python3 sync.py                    # status: same / differs / only here / only there
     python3 sync.py diff [FILE ...]    # unified diffs, here (a) against the peer (b)
@@ -31,12 +32,31 @@ def skills(root: Path) -> Path:
     return root / ".claude" / "skills"
 
 
-def peer_from_repo_md() -> Path:
-    repo_md = HERE / ".claude" / "workflow" / "repo.md"
-    match = re.search(r"^\|\s*Peer repository\s*\|\s*`([^`]+)`", repo_md.read_text(), re.M)
-    if not match:
-        raise SystemExit(f"no 'Peer repository' row in {repo_md}; pass --peer PATH")
-    return Path(match.group(1))
+def git_common_dir(root: Path) -> Path | None:
+    """The repository's shared .git folder, the same for a main checkout and its worktrees."""
+    out = subprocess.run(["git", "-C", str(root), "rev-parse", "--path-format=absolute", "--git-common-dir"],
+                         capture_output=True, text=True).stdout.strip()
+    return Path(out).resolve() if out else None
+
+
+def peers() -> list[Path]:
+    """The other repositories beside this one that use the shared skills.
+
+    A peer is a folder next to this repository's folder whose .claude/workflow/repo.md names
+    that same folder as its "Main checkout" (so a lane worktree, which carries a copy of
+    repo.md, isn't one), that has the sync-workflow skill, and that isn't this repository.
+    """
+    mine = git_common_dir(HERE)
+    found = []
+    for repo_md in sorted(HERE.parent.glob("*/.claude/workflow/repo.md")):
+        root = repo_md.parents[2]
+        match = re.search(r"^\|\s*Main checkout\s*\|[^`\n]*`([^`]+)`", repo_md.read_text(), re.M)
+        if not match or Path(match.group(1)).resolve() != root.resolve():
+            continue
+        if not (skills(root) / "sync-workflow").is_dir() or git_common_dir(root) == mine:
+            continue
+        found.append(root.resolve())
+    return found
 
 
 def files(root: Path) -> set[str]:
@@ -102,14 +122,21 @@ def main() -> None:
         i = args.index("--peer")
         peer = Path(args[i + 1])
         del args[i:i + 2]
-    peer = (peer or peer_from_repo_md()).resolve()
     command, names = (args[0], args[1:]) if args else ("status", [])
+    found = [peer.resolve()] if peer else peers()
+    if not found:
+        raise SystemExit(f"no peer found beside {HERE}; pass --peer PATH")
 
     if command == "status":
-        print(f"here:  {HERE}\nthere: {peer}")
-        for rel, state in status(peer).items():
-            print(f"  {state:<10} {rel}")
-    elif command == "diff":
+        for peer in found:
+            print(f"here:  {HERE}\nthere: {peer}")
+            for rel, state in status(peer).items():
+                print(f"  {state:<10} {rel}")
+        return
+    if len(found) > 1:
+        raise SystemExit("several peers: " + ", ".join(map(str, found)) + "; pass --peer PATH")
+    peer = found[0]
+    if command == "diff":
         for rel in pick(peer, names or ["all"]):
             a, b = skills(HERE) / rel, skills(peer) / rel
             lines = [p.read_text().splitlines(keepends=True) if p.exists() else [] for p in (a, b)]
