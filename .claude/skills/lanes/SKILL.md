@@ -104,6 +104,7 @@ Write its prompt from `<main>/.claude/workflow/lane-prompt.md` into the session'
 ```json
 {"env": {"LANE_DIR": "<dir>", "LANE_NAME": "<lane>"},
  "hooks": {
+  "SessionStart": [{"hooks": [{"type": "command", "command": "python3 <main>/.claude/skills/lanes/lane_hook.py <dir> <lane> start"}]}],
   "Stop": [{"hooks": [{"type": "command", "command": "python3 <main>/.claude/skills/lanes/lane_hook.py <dir> <lane> stop"}]}],
   "Notification": [{"hooks": [{"type": "command", "command": "python3 <main>/.claude/skills/lanes/lane_hook.py <dir> <lane> notify"}]}]
 }}
@@ -155,10 +156,11 @@ Tell the user which lanes started (the tab, the session ID and the base). They r
 How a lane tells the coordinator it needs the user, and how its tab shows that. `lane_hook.py` and `watch.py` implement these rules; change the scripts and this section together.
 
 **What counts as needing the user** (`lane_hook.py`, run by the lane's own hooks):
+- **Start** (SessionStart, also on a resume): the lane is working. It records the state `working` silently, so the tab turns orange as soon as the lane's Claude session starts, not at its first Stop.
 - **Stop**: the lane finished its turn. The event reads `waiting for you: <the end of its last message>` (up to 200 characters).
 - **Notification**: only a **permission prompt** counts (`needs permission: <message>`). Idle reminders are ignored, since they repeat the Stop event.
 - **Done**: the lane runs `python3 <main>/.claude/skills/lanes/lane_hook.py "$LANE_DIR" "$LANE_NAME" done` as its last landing step, once its commit is on the base and its issue is Done and archived (the lane prompt says so). It records the state `done` silently; the Stop that ends that turn keeps it `done` and reports `free: <the end of its last message>`. A Stop counts as free only while the user hasn't answered since the done command.
-- Each event appends one line to `<dir>/attention.log` (`HH:MM <lane> <what>`) and records `<dir>/state/<lane>.json`: the lane's Konsole session (`KONSOLE_DBUS_SESSION`), its transcript, the transcript's size at that moment, the state (`attention` or `done`), and the event.
+- Each event (apart from the silent Start and Done) appends one line to `<dir>/attention.log` (`HH:MM <lane> <what>`); each records `<dir>/state/<lane>.json`: the lane's Konsole session (`KONSOLE_DBUS_SESSION`), its transcript, the transcript's size at that moment, the state (`attention` or `done`), and the event.
 - **An answer** is a `user` record in the transcript that carries the user's words. Tool results are stored as `user` records too and don't count (`lane_state.py`).
 
 **Tab colours** (`watch.py`, run by the coordinator as a Monitor):
@@ -166,7 +168,7 @@ How a lane tells the coordinator it needs the user, and how its tab shows that. 
 | Colour | Hex       | When |
 |--------|-----------|------|
 | red    | `#c0392b` | the lane needs the user: a Stop or a permission prompt they haven't answered |
-| orange | `#d68910` | the lane is working: the user has answered (a new answer in its transcript after the recorded size) |
+| orange | `#d68910` | the lane is working: its session has just started (Start), or the user has answered (a new answer in its transcript after the recorded size) |
 | blue   | `#2f6fd0` | the lane stopped, but one of its own shell commands is still running (a background task), so it's waiting on that, not the user |
 | green  | `#3b8f5a` | the lane has landed its work and is free for more (the done command). The small-items lane: this issue landed, ready for the next |
 

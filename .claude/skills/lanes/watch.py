@@ -1,8 +1,9 @@
 """The coordinator's lane watch (lanes skill, step 3). Run it as a Monitor:
     python3 -u watch.py <dir>
 Prints each new line of <dir>/attention.log (one event per lane that needs the user), and
-colours each lane's Konsole tab: red while it needs the user, orange while it's working (the user
-answered: a new answer in the lane's transcript after the point the hook recorded), blue while it
+colours each lane's Konsole tab: red while it needs the user, orange while it's working (its session
+has just started, or the user answered: a new answer in the lane's transcript after the point the
+hook recorded), blue while it
 has stopped but is waiting on one of its own shell commands (a background task), not the user, and
 green once it has landed its work and is free for more (the lane's done command).
 """

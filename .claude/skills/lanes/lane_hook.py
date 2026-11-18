@@ -1,6 +1,7 @@
 """A lane's attention hook (lanes skill, step 2 and "Attention highlights").
 
 Run by the lane's Claude session from its --settings file:
+    python3 lane_hook.py <dir> <lane> start     # SessionStart: the lane is working (silent)
     python3 lane_hook.py <dir> <lane> stop      # Stop: the lane finished its turn
     python3 lane_hook.py <dir> <lane> notify    # Notification: only permission prompts count
 and by the lane itself, as the last landing step (the settings file's env sets both):
@@ -57,6 +58,8 @@ tp = data.get("transcript_path") or previous.get("transcript", "")
 state_name = "attention"
 if event == "done":
     state_name, what = "done", None  # silent: the Stop that ends this turn reports it
+elif event == "start":
+    state_name, what = "working", None  # silent: the tab turns orange as soon as the lane starts
 elif event == "stop":
     text = " ".join(last_text().split())[-200:] or "(no text)"
     if previous.get("state") == "done" and not answered(tp, previous.get("offset", 0)):
