@@ -93,7 +93,10 @@ driving the editor are covered by the `run-rze` skill (`.claude/skills/run-rze/`
 
 ## Working together
 
-- **One item at a time.** After each item: build, verify, and report results (with numbers when relevant). Then give
+- **Issues run as lanes by default**: one worktree, tab and session per Linear issue (the `lanes` skill). The workflow
+  skills (`lanes`, `work-graph`, `linear`, `sync-workflow`) are shared with RZGitClient; RZE's own settings, Linear
+  conventions and lane prompt are in `.claude/workflow/`.
+- **One item at a time** in each session or lane. After each item: build, verify, and report results (with numbers when relevant). Then give
   that item's commit subject and description, ending with the Co-Authored-By line, and wait. **Never commit without
   being told to.** "commit" or "committed" in reply means make the commit yourself, then check `git log -1`. Once it's
   committed, ask to start the next item, with that item's plan in implementation order in the same message.
