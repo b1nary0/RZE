@@ -111,6 +111,7 @@ Kinds are `lane`, `small`, `discussion first`, `epic` and `held`. The waves are 
 
 These are the user's standing rules; they apply to whoever coordinates the lanes.
 - **Only graph nodes get lanes.** A task created along the way, by the user or as a lane's follow-up, joins the graph only if it **directly relates** to graph work: a split of a graph issue into an epic's children, or an issue that blocks a graph issue. Everything else goes to the backlog, with no lane and no link to the graph's last-alone node, until the user asks for it.
-- When a landing unblocks a graph node, start it, and say so in one line. Stay silent when nothing was unblocked.
+- When a landing unblocks a graph node of the wave already running, start it, and say so in one line. Stay silent when nothing was unblocked.
+- **Waves are gated:** before the first node of a new wave starts, tell the user which wave and which nodes, and wait for their go.
 - When an epic's children are all done, ask the user before closing it.
 - The user can change the graph at any time: hold, reorder, add or drop nodes. Update the graph file and the Linear relations to match, and add a line to its Log.
