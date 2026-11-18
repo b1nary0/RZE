@@ -12,6 +12,10 @@ This skill is shared between repositories (kept in step with `sync-workflow`). T
 
 Work only the team in `repo.md`, unless the user explicitly asks about another. Use the Linear MCP tools first. Use the API key only for what they can't do (archiving, views).
 
+## Creating issues: through the Task Coordinator
+
+Unless you are the "Task Coordinator" session, don't create an issue yourself, even when the user asks you to. Send the request to Task Coordinator (`SendMessage` to "Task Coordinator") with the team, project, title, labels, relations (parent, blocks, blocked by) and details, and tell the user in one line that you handed it over. If `ListAgents` doesn't list that session, tell the user; don't create the issue as a fallback.
+
 ## Archive closed issues (every time, when `repo.md` turns the sweep on)
 
 The rule, agreed with the user:
