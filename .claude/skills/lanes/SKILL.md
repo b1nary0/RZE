@@ -102,11 +102,14 @@ Write its prompt from `<main>/.claude/workflow/lane-prompt.md` into the session'
 **The attention hooks.** Each lane's Claude session runs with a settings file that tells the coordinator when the lane needs the user. `<dir>` is `<scratchpad>/lanes`, shared by all of this coordinator's lanes. Write `<dir>/settings-<lane>.json` (`<lane>` is `<TEAM>-N`, or `small`):
 
 ```json
-{"hooks": {
+{"env": {"LANE_DIR": "<dir>", "LANE_NAME": "<lane>"},
+ "hooks": {
   "Stop": [{"hooks": [{"type": "command", "command": "python3 <main>/.claude/skills/lanes/lane_hook.py <dir> <lane> stop"}]}],
   "Notification": [{"hooks": [{"type": "command", "command": "python3 <main>/.claude/skills/lanes/lane_hook.py <dir> <lane> notify"}]}]
 }}
 ```
+
+The `env` lets the lane's own done command (Attention highlights) find its state file.
 
 Then open the tab and start Claude in it. This is Konsole's D-Bus API on this window (see the memory note "Konsole tabs via D-Bus"). `runCommand` needs Konsole's "Enable the security sensitive parts of the DBus API" setting, which the user has turned on.
 
@@ -140,7 +143,7 @@ Tell the user which lanes started (the tab, the session ID and the base). They r
 
 ## 3. While lanes run
 
-- **When a lane needs the user, tell them.** Each watch event is a lane that finished its turn (questions, a plan waiting for "start", a report) or is stuck on a permission prompt. Reply with just one line naming the lane and what it needs ("RZG-58 needs you: six review questions"). Don't mention the monitor or the event.
+- **When a lane needs the user, tell them.** Each watch event is a lane that finished its turn (questions, a plan waiting for "start", a report), is stuck on a permission prompt, or is free. Reply with just one line naming the lane and what it needs ("RZG-58 needs you: six review questions"), or that it's free ("RZG-58 landed and is free"). Don't mention the monitor or the event.
 - Tab colours and events follow the attention highlight rules below.
 - When the user says a lane has landed, check `git -C <main> log --oneline <base>`. Then start any lane that was waiting for it (step 2).
 - If the user switches the main checkout to another branch while lanes run, lanes started on the old base stop before landing and ask (their prompt says so). New lanes take the new branch as their base.
@@ -154,15 +157,20 @@ How a lane tells the coordinator it needs the user, and how its tab shows that. 
 **What counts as needing the user** (`lane_hook.py`, run by the lane's own hooks):
 - **Stop**: the lane finished its turn. The event reads `waiting for you: <the end of its last message>` (up to 200 characters).
 - **Notification**: only a **permission prompt** counts (`needs permission: <message>`). Idle reminders are ignored, since they repeat the Stop event.
-- Each event appends one line to `<dir>/attention.log` (`HH:MM <lane> <what>`) and records `<dir>/state/<lane>.json`: the lane's Konsole session (`KONSOLE_DBUS_SESSION`), its transcript, the transcript's size at that moment, the state `attention`, and the event.
+- **Done**: the lane runs `python3 <main>/.claude/skills/lanes/lane_hook.py "$LANE_DIR" "$LANE_NAME" done` as its last landing step, once its commit is on the base and its issue is Done and archived (the lane prompt says so). It records the state `done` silently; the Stop that ends that turn keeps it `done` and reports `free: <the end of its last message>`. A Stop counts as free only while the user hasn't answered since the done command.
+- Each event appends one line to `<dir>/attention.log` (`HH:MM <lane> <what>`) and records `<dir>/state/<lane>.json`: the lane's Konsole session (`KONSOLE_DBUS_SESSION`), its transcript, the transcript's size at that moment, the state (`attention` or `done`), and the event.
+- **An answer** is a `user` record in the transcript that carries the user's words. Tool results are stored as `user` records too and don't count (`lane_state.py`).
 
 **Tab colours** (`watch.py`, run by the coordinator as a Monitor):
 
 | Colour | Hex       | When |
 |--------|-----------|------|
 | red    | `#c0392b` | the lane needs the user: a Stop or a permission prompt they haven't answered |
-| green  | `#3b8f5a` | the user has answered: a new `user` record in the lane's transcript after the recorded size |
+| orange | `#d68910` | the lane is working: the user has answered (a new answer in its transcript after the recorded size) |
 | blue   | `#2f6fd0` | the lane stopped, but one of its own shell commands is still running (a background task), so it's waiting on that, not the user |
+| green  | `#3b8f5a` | the lane has landed its work and is free for more (the done command). The small-items lane: this issue landed, ready for the next |
+
+- An answer turns red or green into orange: a lane the user writes to again is working, and its next Stop is red as usual.
 
 - Blue applies only to a Stop. A permission prompt stays red even while a shell command runs. The check is a `shell-snapshots` child of the lane's `claude` process under the tab's shell.
 - A tab is recoloured only when its colour changes. A lane with no Konsole session in its state file gets events but no colour.
@@ -194,5 +202,5 @@ git branch -d <TEAM>-N       # -d: refuses if not merged; then ask
 
 - Lanes follow the `linear` skill and `.claude/workflow/linear.md`. The prompt points at the main checkout's copies by absolute path, so a lane always reads the current ones.
 - One issue per lane (the small-items lane: its issues in order, one at a time), and the team's per-issue workflow (`linear.md`): review, Decisions, plan, wait for "start", build, verify, report, commit only on the user's yes.
-- Landing: check the main checkout is still on the base (stop and ask if not), `git rebase <base>`, the verification once more, one commit `<TEAM>-N: <title>` with the Co-Authored-By line, then `git -C <main> merge --ff-only <TEAM>-N`. Never force anything, never merge non-fast-forward, never commit in the main checkout.
+- Landing: check the main checkout is still on the base (stop and ask if not), `git rebase <base>`, the verification once more, one commit in the repository's style with the Co-Authored-By line, then `git -C <main> merge --ff-only <TEAM>-N`. Never force anything, never merge non-fast-forward, never commit in the main checkout. After the issue is Done and archived, the done command (Attention highlights) marks the lane free.
 - The repository's own lane rules are listed in `repo.md`.
