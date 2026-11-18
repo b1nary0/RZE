@@ -1,7 +1,7 @@
-"""The coordinator's lane watch (lanes skill, step 3). Run it as a Monitor:
-    python3 -u watch.py <dir>
-Prints each new line of <dir>/attention.log (one event per lane that needs the user), and
-colours each lane's Konsole tab: red while it needs the user, orange while it's working (its session
+"""The coordinator's lane watch (lanes skill, step 2). Run it in the background, output discarded:
+    python3 -u watch.py <dir> > /dev/null 2>&1
+Prints each new line of <dir>/attention.log (one event per lane that needs the user; the
+coordinator doesn't relay them, step 3), and colours each lane's Konsole tab: red while it needs the user, orange while it's working (its session
 has just started, or the user answered: a new answer in the lane's transcript after the point the
 hook recorded), blue while it
 has stopped but is waiting on one of its own shell commands (a background task), not the user, and
