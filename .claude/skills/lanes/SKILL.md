@@ -123,19 +123,19 @@ qdbus-qt6 "$KONSOLE_DBUS_SERVICE" "$KONSOLE_DBUS_WINDOW" setCurrentSession "$HER
 qdbus-qt6 "$KONSOLE_DBUS_SERVICE" /Sessions/$ID setTabTitleFormat 0 "<TEAM>-N"
 qdbus-qt6 "$KONSOLE_DBUS_SERVICE" /Sessions/$ID setTabTitleFormat 1 "<TEAM>-N"
 qdbus-qt6 "$KONSOLE_DBUS_SERVICE" /Sessions/$ID setTitle 1 "<TEAM>-N"
-qdbus-qt6 "$KONSOLE_DBUS_SERVICE" /Sessions/$ID runCommand "claude --settings $SET \"\$(cat $P)\""
+qdbus-qt6 "$KONSOLE_DBUS_SERVICE" /Sessions/$ID runCommand "claude --name <tab title> --settings $SET \"\$(cat $P)\""
 ```
 
-The tab title format is set to the literal lane name, so Claude's own terminal title doesn't replace it.
+`<tab title>` is `<TEAM>-N`, or the small-items lane's tab title from `repo.md`. `--name` names the lane's session after it, so Claude's own terminal title (its spinner and the session name) reads the lane name too. The tab title format starts as the literal lane name, so the tab is named before Claude starts. A tab format that shows the program's title (`%w`, for example set by a user hook) then shows Claude's title, spinner included.
 
 **Check that Claude started.** `runCommand` sent before the new tab's shell is ready is lost. This happened to one of two tabs. Check for a `claude` child of the tab's shell, and send the command again if there is none:
 
 ```bash
 pgrep -a -P "$(qdbus-qt6 "$KONSOLE_DBUS_SERVICE" /Sessions/$ID processId)" | grep -q claude \
-  || qdbus-qt6 "$KONSOLE_DBUS_SERVICE" /Sessions/$ID runCommand "claude --settings $SET \"\$(cat $P)\""
+  || qdbus-qt6 "$KONSOLE_DBUS_SERVICE" /Sessions/$ID runCommand "claude --name <tab title> --settings $SET \"\$(cat $P)\""
 ```
 
-- If `KONSOLE_DBUS_SERVICE` is unset (not running in Konsole), or `runCommand` is refused, give the user the exact command to run in a new tab: `cd <wt> && claude --settings <SET> "$(cat <P>)"`.
+- If `KONSOLE_DBUS_SERVICE` is unset (not running in Konsole), or `runCommand` is refused, give the user the exact command to run in a new tab: `cd <wt> && claude --name <tab title> --settings <SET> "$(cat <P>)"`.
 - Don't retry temporary Konsole profiles: a running Konsole ignores them.
 - **Folder trust.** Claude Code records a lane worktree's trust under its main checkout's path (`~/.claude.json` has no entries for worktrees), so once the main checkout is trusted, new lanes open without a trust prompt. After the main checkout is new or has moved, it isn't trusted yet: start one lane, let the user accept its trust prompt, then start the rest. Never write the trust flag yourself.
 
