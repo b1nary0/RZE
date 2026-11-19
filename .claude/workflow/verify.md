@@ -14,11 +14,13 @@ After restoring a file from a scratchpad copy, `touch` it before building, or th
 
 ## 2. Tests
 
+The runner, which runs UnitTests N times and shows the count on a lane's tab:
+
 ```
-./RZE/_build/development/UnitTests
+python3 /home/JPOD/dev/RZE/.claude/workflow/run_tests.py --runs 1
 ```
 
-Exit code 0 means all passed (`-tc="<pattern>"` runs matching test cases). Once for a full check, once for a small issue, and once more after rebasing, before landing. There's no counting runner yet, so a lane's tab shows the test-run sweep, not a count.
+Exit code 0 means every run passed. Name test cases to run only those (`run_tests.py "*Undo*"`, as doctest's `-tc`); `-v` also prints each test case's duration. N is 1 for a full check, for a small issue, and for the rerun after rebasing, before landing.
 
 ## 3. Compare with base
 
@@ -38,7 +40,7 @@ Covered by stage 3's launch. No timing here: A/B performance runs follow CLAUDE.
 
 ## 5. Mutation checks
 
-none required today (RZE's workflow doesn't ask for them). When you do one, restore from the scratchpad copy, `touch` it, and rebuild.
+none required today (RZE's workflow doesn't ask for them). When you do one, run only the affected test cases through the runner (`run_tests.py "<test case>"`, expect exit code 1), then restore from the scratchpad copy, `touch` it, and rebuild.
 
 ## 6. Other platforms
 
