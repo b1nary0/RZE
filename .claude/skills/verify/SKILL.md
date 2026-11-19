@@ -27,7 +27,7 @@ A small issue (as `repo.md` defines it) takes the lighter version where a sectio
 - **Fresh folders:** settings, scratch clones and outputs go in fresh `mktemp -d` folders under your session's scratchpad. Never clear an old folder, and never `rm -rf` a path built from a variable or a glob.
 - **Never write to a real repository** you're testing against: anything that writes uses a scratch clone (`git clone --no-hardlinks <repo> <fresh folder>/…`). A local value such as the test repository comes from the repository's local settings when `verify.md` names one; if it isn't set, stop and ask the user, never guess.
 - **Restore** temporary code (mutation checks, debugging) from a scratchpad copy of the file, never with `git checkout` or `git stash`.
-- **Tests through the runner:** when `verify.md` names a test runner, use it, so the lane's tab shows the count (the lanes skill's "Test runs").
+- **Tests through the runner:** when `verify.md` names a test runner, every test run goes through it, at every stage and while building too, targeted runs included (name the tests), so the lane's tab shows the count (the lanes skill's "Test runs"). Never call the test framework directly.
 - **Timings and performance:** other lanes may be running builds, launches and suites at the same time. Say timings are noisy, and leave A/B performance comparisons until no other lane runs.
 - **Numbers:** report results as numbers where they exist: tests run and passed, runs, timings, pixels that differ.
 - **A stage that fails** stops the report: fix the change, or tell the user what failed and why, before going on.

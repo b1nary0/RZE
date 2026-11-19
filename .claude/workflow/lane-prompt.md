@@ -21,6 +21,7 @@ Generated projects and ProjectData are gitignored, so a new worktree has neither
   make -C RZE -j"$(nproc)"
   ./RZE/_build/development/SourceAssetBurner
 Rerun GenerateSolutions.sh after adding or removing a source file. Other lanes build at the same time, so builds are slower than usual.
+Every UnitTests run goes through the runner, including targeted runs while building (name the test cases, as doctest's -tc): `python3 /home/JPOD/dev/RZE/.claude/workflow/run_tests.py --runs 1 [-v] ["<test case>" ...]`, so your tab shows the count. Never start UnitTests directly.
 
 Specs in Docs/Plans/ are gitignored, so your worktree doesn't have them: read them from /home/JPOD/dev/RZE/Docs/Plans/. Write a new spec there only if the user asks, and never commit it.
 
