@@ -11,8 +11,10 @@ While a lane runs its tests, its tab turns blue (unless a permission prompt is w
 colour strip becomes a progress bar (Konsole's OSC 9;4 progress, written to the lane's terminal).
 The bar shows tests finished out of the total, from <dir>/progress/<lane>.json ({"done", "total",
 "run", "runs"}, written by the repository's test runner); without that file it sweeps. With the
-file, the tab's label also gets " · <run>/<runs> · <percent>%" after its own title format, which is
-put back exactly when the run ends. A test run is a process
+file, the tab's label becomes "<issue ID> · <run>/<runs> · <percent>%" (the ID is the branch of the
+lane's worktree, e.g. RZG-99); the tab's own title formats are saved first (also to
+<dir>/progress/<lane>.label.json, so a restart mid-run still has them) and put back exactly when the
+run ends. A test run is a process
 under the lane's Claude whose command line matches the "Test runs" row of
 <main>/.claude/workflow/repo.md (a regular expression). Without that row, there is no bar.
 """
@@ -96,7 +98,7 @@ def testing(table, claude, pattern):
                                        for pid in claude for p in descendants(children, pid))
 
 
-SUFFIX = re.compile(r" · \d+/\d+ · \d+%$")  # what label() adds; stripped if the watch restarts mid-run
+ISSUE_ID = re.compile(r"^[A-Z][A-Z0-9]*-\d+$")
 
 
 def counted(lane):
@@ -115,13 +117,49 @@ def tab_format(session, context):
                           capture_output=True, text=True).stdout.rstrip("\n")
 
 
-def set_tab_format(session, formats, suffix=""):
+def set_tab_format(session, formats):
     """Set both title formats. Konsole shows the change at its next refresh, about 2 s after the
     tab's last output. Never use D-Bus setTitle 1 to hurry it: that also overwrites both formats
     with the literal text, which would lose `%w`."""
     for context, fmt in enumerate(formats):
-        subprocess.run(["qdbus-qt6", SERVICE, session, "setTabTitleFormat", str(context), fmt + suffix],
+        subprocess.run(["qdbus-qt6", SERVICE, session, "setTabTitleFormat", str(context), fmt],
                        capture_output=True)
+
+
+def issue_id(claude, lane):
+    """The lane's issue ID: its worktree's branch (the folder its claude runs in), else the lane name."""
+    for pid in claude:
+        try:
+            branch = subprocess.run(["git", "-C", os.readlink(f"/proc/{pid}/cwd"), "branch", "--show-current"],
+                                    capture_output=True, text=True).stdout.strip()
+        except OSError:
+            continue
+        if ISSUE_ID.match(branch):
+            return branch
+    return lane
+
+
+def saved_formats(lane, session):
+    """The tab's own title formats from before the label, saved once per run (and kept on disk)."""
+    path = PROGRESS / f"{lane}.label.json"
+    try:
+        d = json.loads(path.read_text())
+        if d.get("session") == session:
+            return d["own"]
+    except (OSError, ValueError, KeyError):
+        pass
+    own = [tab_format(session, c) for c in (0, 1)]
+    PROGRESS.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"session": session, "own": own}))
+    return own
+
+
+def restore_formats(lane, session, own):
+    set_tab_format(session, own)
+    try:
+        (PROGRESS / f"{lane}.label.json").unlink()
+    except FileNotFoundError:
+        pass
 
 
 def progress(shell, value):
@@ -145,7 +183,7 @@ LOG.touch()
 pos = LOG.stat().st_size
 shown = {}
 bars = {}  # lane state file name -> the lane's shell pid while its bar is up
-labels = {}  # lane state file name -> (session, its own two title formats, the suffix now shown)
+labels = {}  # lane state file name -> (session, its own two title formats, the label now shown)
 tick = 0
 while True:
     if LOG.stat().st_size > pos:
@@ -183,21 +221,20 @@ while True:
         elif p.name in bars:
             progress(bars.pop(p.name), None)
         if count and s["session"]:
-            suffix = f" · {count[1]}/{count[2]} · {count[0]}%"
             if p.name not in labels:
-                own = [SUFFIX.sub("", tab_format(s["session"], c)) for c in (0, 1)]
-                labels[p.name] = (s["session"], own, None)
-            session, own, shown_suffix = labels[p.name]
-            if shown_suffix != suffix:
-                set_tab_format(session, own, suffix)
-                labels[p.name] = (session, own, suffix)
+                labels[p.name] = (s["session"], saved_formats(p.stem, s["session"]), None)
+            session, own, shown_label = labels[p.name]
+            label = f"{issue_id(claude, p.stem)} · {count[1]}/{count[2]} · {count[0]}%"
+            if shown_label != label:
+                set_tab_format(session, [label, label])
+                labels[p.name] = (session, own, label)
         elif p.name in labels:
             session, own, _ = labels.pop(p.name)
-            set_tab_format(session, own)  # the run ended: the tab's own title format, exactly
+            restore_formats(p.stem, session, own)  # the run ended: the tab's own title formats, exactly
     for name in [n for n in bars if not (STATE / n).exists()]:
         progress(bars.pop(name), None)  # the lane was cleaned up mid-run
     for name in [n for n in labels if not (STATE / n).exists()]:
         session, own, _ = labels.pop(name)
-        set_tab_format(session, own)
+        restore_formats(Path(name).stem, session, own)
     tick += 1
     time.sleep(1)
