@@ -32,18 +32,13 @@ Then:
 1. **Review:** findings and a plan first. Go through the issue's questions with the user, each with a recommendation; push back where there's a decision-relevant case. Record the answers under **Decisions** in the issue.
 2. **Plan:** in implementation order. Wait for the user to say "start".
 3. **Build:** set the issue In Progress, and its parent too, if any.
-4. **Verify:**
-   - The Linux Development build (`make -C RZE -j"$(nproc)"`; warnings are errors) and `./RZE/_build/development/UnitTests` (exit code 0).
-   - The editor check, off-screen so lanes don't fight over the desktop: `.claude/skills/run-rze/driver.py launch --harness --nested --scene <scene>`, screenshots of the change (read each one), then close. The driver backs up and restores imgui.ini.
-   - You build Linux only. Name what Windows needs checked (DX11 paths, MSVC-only rules in CLAUDE.md).
-   - No A/B performance numbers while other lanes run: they'd be noise. If the change is perf-relevant, say so and offer the A/B for after the lanes are done.
-   - Restore temporary code from a scratchpad copy (then `touch` it), never with `git checkout`.
+4. **Verify:** follow the `verify` skill (/home/JPOD/dev/RZE/.claude/skills/verify/SKILL.md) with this repository's /home/JPOD/dev/RZE/.claude/workflow/verify.md. Read both when you get to this step: they're always the current ones.
 5. **Report:** set the issue In Review and add a "**Result (date, uncommitted):**" note. Give the commit subject and description, and wait.
 6. **Commit** only when the user says "commit". Then:
    - Check the main checkout is still on `{{BASE}}` (`git -C /home/JPOD/dev/RZE branch --show-current`). If it isn't, stop and ask the user.
-   - `git rebase {{BASE}}`, resolving conflicts if it moved (other lanes land on it too). Rebuild and rerun UnitTests once.
+   - `git rebase {{BASE}}`, resolving conflicts if it moved (other lanes land on it too). Rebuild and rerun the tests once (verify.md, stages 1 and 2: the rerun before landing).
    - One commit in RZE's style, `<Area>: <subject>` (no issue ID in the subject), whose description ends with a link to the issue and the line `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. Stage only the files the commit is about. Check `git log -1`.
-   - Land it: `git -C /home/JPOD/dev/RZE merge --ff-only {{LANE}}`. If that fails because `{{BASE}}` moved, rebase again, rebuild, rerun UnitTests and retry. If it fails because the main checkout's uncommitted files overlap your commit, stop and tell the user.
+   - Land it: `git -C /home/JPOD/dev/RZE merge --ff-only {{LANE}}`. If that fails because `{{BASE}}` moved, rebase again, rebuild, rerun the tests and retry. If it fails because the main checkout's uncommitted files overlap your commit, stop and tell the user.
    - Never force anything, never merge non-fast-forward, never commit in the main checkout, never push.
    - Set the issue Done, and replace "uncommitted" with the hash now on `{{BASE}}`. Then run the archive sweep: `python3 /home/JPOD/dev/RZE/.claude/skills/linear/archive_closed.py --team RZE`.
    - Ask whether to update Docs/Generated/Engine, naming the pages likely affected.

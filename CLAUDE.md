@@ -94,7 +94,7 @@ driving the editor are covered by the `run-rze` skill (`.claude/skills/run-rze/`
 ## Working together
 
 - **Issues run as lanes by default**: one worktree, tab and session per Linear issue (the `lanes` skill). The workflow
-  skills (`lanes`, `work-graph`, `linear`, `sync-workflow`) are shared with the other repositories that use them (kept in step by `sync-workflow`); RZE's own settings, Linear
+  skills (`lanes`, `work-graph`, `linear`, `sync-workflow`, `verify`) are shared with the other repositories that use them (kept in step by `sync-workflow`); RZE's own settings, Linear
   conventions and lane prompt are in `.claude/workflow/`.
 - **One item at a time** in each session or lane. After each item: build, verify, and report results (with numbers when relevant). Then give
   that item's commit subject and description, ending with the Co-Authored-By line, and wait. **Never commit without

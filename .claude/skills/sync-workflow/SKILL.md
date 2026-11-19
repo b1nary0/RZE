@@ -1,6 +1,6 @@
 ---
 name: sync-workflow
-description: Compare and copy the shared workflow skills (lanes, work-graph, linear, sync-workflow) between this repository and its peers (each repository that uses them commits its own copy). Use when the user asks to sync the workflow skills, or after changing a shared skill, to offer carrying the change across.
+description: Compare and copy the shared workflow skills (lanes, work-graph, linear, sync-workflow, verify) between this repository and its peers (each repository that uses them commits its own copy). Use when the user asks to sync the workflow skills, or after changing a shared skill, to offer carrying the change across.
 ---
 
 # Sync the workflow skills

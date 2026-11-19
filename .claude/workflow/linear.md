@@ -66,8 +66,7 @@ The rules in CLAUDE.md ("Working together") apply; in Linear terms:
    push back where there's a decision-relevant case. Record the answers under `**Decisions** (date)` in the issue.
 2. **Plan:** in implementation order. Wait for "start".
 3. **Build:** set the issue **In Progress**, and its parent too.
-4. **Verify:** the Linux Development build (warnings are errors), `UnitTests`, and the editor check. Name what Windows
-   needs checked. Numbers when relevant.
+4. **Verify:** the `verify` skill, with `.claude/workflow/verify.md`.
 5. **Report:** set it **In Review**. Add `**Result (date, uncommitted):**` before the Notes: what was done, changes from
    the Decisions, and the results. Give the commit subject and description, and wait.
 6. **Commit** only when told ("commit"):

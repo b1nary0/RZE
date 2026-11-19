@@ -1,6 +1,6 @@
 # Workflow settings: RZE
 
-The shared workflow skills (`lanes`, `work-graph`, `linear`, `sync-workflow`) read this file for everything that
+The shared workflow skills (`lanes`, `work-graph`, `linear`, `sync-workflow`, `verify`) read this file for everything that
 differs between repositories. It's per repository and never synced.
 
 | Setting            | Value                                                        |
@@ -28,8 +28,8 @@ file; never stage, stash or restore them.
 
 ## Small issues
 
-Small means a few files, no new module, no change to the architecture, and about one short sitting. Its verification
-is the Linux Development build and `UnitTests`; the editor check only when the change is visible in the editor.
+Small means a few files, no new module, no change to the architecture, and about one short sitting. Its lighter verification
+is in `verify.md`.
 
 ## Overlap hints for planning
 

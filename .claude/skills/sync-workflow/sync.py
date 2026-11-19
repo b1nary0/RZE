@@ -24,7 +24,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-SHARED = ("lanes", "work-graph", "linear", "sync-workflow")
+SHARED = ("lanes", "work-graph", "linear", "sync-workflow", "verify")
 HERE = Path(__file__).resolve().parents[3]
 
 
