@@ -12,6 +12,7 @@ differs between repositories. It's per repository and never synced.
 | Lane name          | `RZE-N` (the issue ID)                                       |
 | Lane worktree      | `/home/JPOD/dev/RZE-RZE-N`, branch `RZE-N`                   |
 | Small-items lane   | worktree `/home/JPOD/dev/RZE-small`, tab `RZE-small`, hook name `small` |
+| Test runs          | `/UnitTests(\.exe)?\b` (a regular expression over a lane's process command lines; see the lanes skill's "Test runs") |
 | Lanes by default   | yes: lanes is the default way to work an RZE issue          |
 
 `<main>` in the shared skills means the main checkout above.
